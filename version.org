@@ -1,0 +1,197 @@
+
+*** api 版本问题
+后端与 app 对接时的接口一般类似于这样:
+
+#+BEGIN_VERSE
+示例
+#+END_VERSE
+: 示例说明
++ 请求地址: *GET /example*+ 移动端的请求参数如下( *** 表示参数必须传入)
+| 参数   | 示例值  | 类型       | 说明                                         |
+|--------+---------+------------+----------------------------------------------|
+| param1 | example | string *** | 参数 1 说明                                  |
+| param2 | 1       | int        | 0.表示xx, 1.表示yy, 2.表示zz, 不传则默认是 0 |
+| param3 | true    | string     | 1/true/y 表示 true, 0/false/n 表示 false     |
++ 返回结果如下
+#+BEGIN_SRC json
+{
+  "code": 1,          // 1.表示请求成功, 0.表示请求时有错误, 10.表示请求时需要登录. etc...
+  "msg": "请求说明",
+  "data": {
+    "back1": 123,    // 返回的 1 字段的说明
+    "back2": true,   // 返回的 2 字段的说明
+    "back2": "xxxx"  // 返回的 3 字段的说明
+  }
+}
+#+END_SRC
+
+#+BEGIN_VERSE
+接口是经常会变化的, 但是却无法保证 app 一直都是最新的. 因此要做 api 上的兼容.
+
+通常有这么几种方式
++ url 上加版本, 如: /v1/example 表示针对 v1 版本的 url, /v2/example 表示针对 v2 版本的 url
++ 把版本信息附加到 user-agent 中去: 如: example/1.0 (iPhone; iOS 9.1; ...), example/2.0 Mozilla/5.0 Android...
++ 与上面的类似, 只是单独抽出来, 把版本信息放到 header 或者 param 中. 如: _v=(1|2)
+
+这几种方式对于 app 来说都可以很轻松的全局配置, 通常后面两种方式是比较好的, 也建议这么弄.
+
+
+对于后台实现(spring mvc)来说, 也就是这几种方式:
++ 针对上面传过来的值做相关的判断和返回. 这种方式最为拙劣. 一定不要考虑, 会为后期的维护带来无尽的麻烦
++ 新加处理方法, 如添加 v1 v2 方法, 分别用来处理对应版本的 url 请求
+
+比较好的方式是使用第二种.
+
+可是这样会引发一个新的问题: 当有一个 /user 的请求有 v1 v4 两个方法,
+但是当用户使用 v2 v3 请求的时候, 将如何做? 好的实现是做向下兼容,
+也就是如果 /user 请求到 v4 的时候才有了更新, 那么当 v2 v3 请求时只返回 v1 的就好了,
+当然, 这里忽略到了 v5 又变回去成了 v1 的情况.
+
+基于 spring 强大的条件处理, 可以很轻松的实现这一点
+#+END_VERSE
+
++ 新建一个枚举, 定义相关的版本, 要添加时要保证后加的枚举值的 code 要比前面的大
+#+BEGIN_SRC java
+/** app 访问版本 */
+public enum Version {
+
+    // !!!保证大版本的 code 比小版本的 code 要大(比如 V3 的 code 是 300, 如果设定成 30 比 V2 的 200 小了, 将会出问题)!!!
+
+    V1(100, "1.0"),
+    V2(200, "2.0"),
+    V3(300, "3.0"),
+    V4(400, "4.0"),
+    V5(500, "5.0");
+
+    int code;
+    String value;
+    Version(int code, String value) {
+        this.code = code;
+        this.value = value;
+    }
+    public int getCode() {return code;}
+    public String getValue() {return value;}
+}
+#+END_SRC
+
++ 新建一个注解, 用来在 controller 方法上标注, 重点在 spring 提供的 Mapping 注解, 没有这个将会导致 mvc 程序无法启动
+#+BEGIN_SRC java
+/** 在需要对 url 做多版本的时候标注, 可以在类上, 也可以在方法上. */
+@Target({ElementType.TYPE, ElementType.METHOD})
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Mapping
+public @interface ApiVersion {
+
+    /**
+     * 标注的方法版本, 将会从小到大做兼容.<br>
+     * 比如代码中有 v v1、v5 三个版本的代码, 其中 v 表示不带版本. 当用户使用 v2 v3 v4 的版本请求时, 也将进到 v1 里面去
+     */
+    Version value();
+}
+#+END_SRC
+
++ 建立一个请求条件, 这里是处理逻辑的地方, 相关的注释已经写得很清楚
+#+BEGIN_SRC java
+public class ApiVersionCondition implements RequestCondition<ApiVersionCondition> {
+
+    private Version version;
+    /** 参数 version 表示: 标注在 controller 方法上的注解 ApiVersion 里面的值 */
+    public ApiVersionCondition(Version version) {
+        this.version = version;
+    }
+
+    public ApiVersionCondition combine(ApiVersionCondition other) {
+        return new ApiVersionCondition(other.version);
+    }
+
+    public ApiVersionCondition getMatchingCondition(HttpServletRequest request) {
+        // 从请求中获取到的版本. 多个纬度:「user-agent」或「header(param) 中的 app-ver」参数
+        Integer reqVer = ...getVersion(request);
+        // 如果请求的是 v3, Controller 中标注的有 v v1 v2 和 v5 四个方法, 则 v1 和 v2 会返回, 而 v5 则不会, v 不会参与对比
+        return (reqVer != null && version != null && reqVer >= version.getCode()) ? this : null;
+    }
+
+    /**
+     * 从上面的匹配中将会导致匹配到多个, 如上面的 v3, 将会返回三个: v v1 v2.<br>
+     * spring 会基于下面这个方法返回的值做排序, 然后将排序后的第一个方法做为最佳匹配, 如果多于一个则将第二个做为第二匹配.<br>
+     * 而后将第一匹配和第二匹配再按照这个方法进行比较. 如果两个匹配的比较结果一致, 将会抛出两个方法对于这个请求太过暧昧的异常.<br>
+     * 将最佳匹配做为请求的处理方法去执行!
+     *
+     * @see org.springframework.web.servlet.handler.AbstractHandlerMethodMapping#lookupHandlerMethod
+     */
+    public int compareTo(ApiVersionCondition other, HttpServletRequest request) {
+        return (other != null && version != null) ? (other.version.getCode() - version.getCode()) : 0;
+    }
+}
+#+END_SRC
+
++ 把上面建立的覆盖到默认的里面去, 此示例并没有考虑 xml 的情况
+#+BEGIN_SRC java
+@Configuration
+public class WarInit extends WebMvcConfigurationSupport {
+
+    @Override
+    protected RequestMappingHandlerMapping createRequestMappingHandlerMapping() {
+        return new RequestMappingHandlerMapping() {
+            /** 在类上标注了 ApiVersion 时 */
+            protected RequestCondition<?> getCustomTypeCondition(Class<?> handlerType) {
+                ApiVersion apiVersion = AnnotationUtils.findAnnotation(handlerType, ApiVersion.class);
+                return apiVersion == null ? null : new ApiVersionCondition(apiVersion.value());
+            }
+            /** 在方法上标注了 ApiVersion 时 */
+            protected RequestCondition<?> getCustomMethodCondition(Method method) {
+                ApiVersion apiVersion = AnnotationUtils.findAnnotation(method, ApiVersion.class);
+                return apiVersion == null ? null : new ApiVersionCondition(apiVersion.value());
+            }
+        };
+    }
+}
+#+END_SRC
+
+其中, WebMvcAutoConfigurationAdapter 与 WebMvcConfigurationSupport 的区别在于
+#+BEGIN_QUOTE
+If the customization options of WebMvcConfigurer do not expose something you need to configure,
+consider removing the @EnableWebMvc annotation and extending directly from WebMvcConfigurationSupport overriding selected @Bean methods
+#+END_QUOTE
+意思是说, 如果要扩展一些默认的 bean, 继承 Support 并重写相关的 @Bean 方法即可, 没有这些扩展继承 Adapter 即可.
+
+#+BEGIN_SRC java
+@SpringBootApplication
+@RequestMapping("/v")
+@Controller
+public class ExampleApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(ExampleApplication.class, args);
+    }
+
+
+    // 当前示例共有 5 个版本, v1 ~ v5, 其中只定义了 v2 和 v5 方法, 还有一个未定义版本的默认方法
+
+    /** 「错误的版本号」或「不带版本号」的请求将会路由至此, 在这个示例中, v1 v10 或不带版本的都将被路由过来 */
+    @ResponseBody
+    @RequestMapping("/e")
+    public String v() {
+        return "example";
+    }
+
+    /** 在这个示例中, v2、v3、v4 版本的请求将会路由至此 */
+    @ApiVersion(Version.V2)
+    @ResponseBody
+    @RequestMapping("/e")
+    public String v2() {
+        return "example: " + Version.V2;
+    }
+
+    /** 在这个示例中, v5 版本的请求将会路由至此 */
+    @ApiVersion(Version.V5)
+    @ResponseBody
+    @RequestMapping("/e")
+    public String v5() {
+        return "example: " + Version.V5;
+    }
+}
+#+END_SRC
+
+hf gl...
