@@ -127,6 +127,7 @@ public class ApiVersionCondition implements RequestCondition<ApiVersionCondition
 
 + 把上面建立的覆盖到默认的里面去, 此示例是基于 spring boot, 并没有考虑 xml 的情况
 #+BEGIN_SRC java
+/** @see org.springframework.boot.autoconfigure.web.WebMvcAutoConfiguration */
 @Configuration
 public class WarInit extends WebMvcConfigurationSupport {
 
