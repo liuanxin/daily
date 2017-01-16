@@ -41,18 +41,17 @@
 
 对于后台实现(spring mvc)来说, 也就是这几种方式:
 + 针对上面传过来的值做相关的判断和返回. 这种方式最为拙劣. 一定不要考虑, 会为后期的维护带来无尽的麻烦
-+ 新加处理方法, 如添加 v1 v2 方法, 分别用来处理对应版本的 url 请求
++ 新加处理方法, 如添加 v2 v3 方法, 分别用来处理对应版本的 url 请求
 
-比较好的方式是使用第二种.
+第一种不予考虑, 可是第二种会引发一个新的问题:
 
-可是这样会引发一个新的问题: 当有一个 /user 的请求有 v1 v4 两个方法,
-但是当用户使用 v2 v3 请求的时候, 将如何做? 好的实现是做向下兼容,
-也就是如果 /user 请求到 v4 的时候才有了更新, 那么当 v2 v3 请求时只返回 v1 的就好了,
-当然, 这里忽略到了 v5 又变回去成了 v1 的情况.
+比如 /user 的请求有 v1 v4 两个方法, 但是当用户使用 v2 v3 请求的时候, 将如何做? 
+好的实现是做向下兼容, 也就是如果 /user 请求到 v4 的时候才有了更新, 那么当 v2 v3 请求时只返回 v1 的就好了,
+当然, 这里忽略了如果 v5 又变回去成了 v1 的情况.
 
 -----
 
-基于 spring 强大的条件处理, 可以很轻松的实现这一点, 基本的步骤如下
+基于 spring 强大的条件处理, 可以很轻松的实现这上面的问题, 基本的步骤如下:
 
 + 新建一个枚举, 定义相关的版本, 要添加时要保证后加的枚举值的 code 要比前面的大
 #+BEGIN_SRC java
@@ -61,11 +60,7 @@ public enum Version {
 
     // !!!保证大版本的 code 比小版本的 code 要大(比如 V3 的 code 是 300, 如果设定成 30 比 V2 的 200 小了, 将会出问题)!!!
 
-    V1(100, "1.0"),
-    V2(200, "2.0"),
-    V3(300, "3.0"),
-    V4(400, "4.0"),
-    V5(500, "5.0");
+    V1(100, "1.0"), V2(200, "2.0"), V3(300, "3.0"), V4(400, "4.0"), V5(500, "5.0");
 
     int code;
     String value;
@@ -78,7 +73,7 @@ public enum Version {
 }
 #+END_SRC
 
-+ 新建一个注解, 用来在 controller 方法上标注, 重点在 spring 提供的 Mapping 注解, 没有这个将会导致 mvc 程序无法启动
++ 新建一个注解, 在 controller 中标注, 重点在 spring 的 Mapping 注解, 如果没有这个, 多个 url 及 method 相同将会无法启动
 #+BEGIN_SRC java
 /** 在需要对 url 做多版本的时候标注, 可以在类上, 也可以在方法上. */
 @Target({ElementType.TYPE, ElementType.METHOD})
@@ -95,7 +90,7 @@ public @interface ApiVersion {
 }
 #+END_SRC
 
-+ 建立一个请求条件, 这里是处理逻辑的地方, 相关的注释已经写得很清楚
++ 建立一个请求条件, 这里是处理逻辑的地方
 #+BEGIN_SRC java
 public class ApiVersionCondition implements RequestCondition<ApiVersionCondition> {
 
@@ -130,7 +125,7 @@ public class ApiVersionCondition implements RequestCondition<ApiVersionCondition
 }
 #+END_SRC
 
-+ 把上面建立的覆盖到默认的里面去, 此示例并没有考虑 xml 的情况
++ 把上面建立的覆盖到默认的里面去, 此示例是基于 spring boot, 并没有考虑 xml 的情况
 #+BEGIN_SRC java
 @Configuration
 public class WarInit extends WebMvcConfigurationSupport {
@@ -158,7 +153,7 @@ public class WarInit extends WebMvcConfigurationSupport {
 If the customization options of WebMvcConfigurer do not expose something you need to configure,
 consider removing the @EnableWebMvc annotation and extending directly from WebMvcConfigurationSupport overriding selected @Bean methods
 #+END_QUOTE
-意思是说, 如果要扩展一些默认的 bean, 继承 Support 并重写相关的 @Bean 方法即可, 没有这些扩展继承 Adapter 即可.
+意思是说, 如果要扩展一些默认的 bean, 继承 ..Support 并重写相关的 @Bean 方法即可, 没有这些扩展继承 ..Adapter 即可.
 
 #+BEGIN_SRC java
 @SpringBootApplication
@@ -197,5 +192,19 @@ public class ExampleApplication {
     }
 }
 #+END_SRC
+
+相关的请求及路由到的方法如下:
+| url              | 方法 |
+| /v/e             | v()  |
+| /v/e?app-ver=1   | v()  |
+|                  |      |
+| /v/e?app-ver=2   | v2() |
+| /v/e?app-ver=3   | v2() |
+| /v/e?app-ver=4   | v2() |
+|                  |      |
+| /v/e?app-ver=5   | v5() |
+|                  |      |
+| /v/e?app-ver=10  | v()  |
+| /v/e?app-ver=abc | v()  |
 
 hf gl...
