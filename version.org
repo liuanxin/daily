@@ -90,7 +90,7 @@ public @interface ApiVersion {
 }
 #+END_SRC
 
-+ 建立一个请求条件, 这里是处理逻辑的地方
++ 在 spring mvc 中建立一个自定义的请求条件, 这里是真正起作用的地方
 #+BEGIN_SRC java
 public class ApiVersionCondition implements RequestCondition<ApiVersionCondition> {
 
@@ -106,8 +106,8 @@ public class ApiVersionCondition implements RequestCondition<ApiVersionCondition
 
     public ApiVersionCondition getMatchingCondition(HttpServletRequest request) {
         // 从请求中获取到的版本. 多个纬度:「user-agent」或「header(param) 中的 app-ver」参数
-        Integer reqVer = ...getVersion(request);
-        // 如果请求的是 v3, Controller 中标注的有 v v1 v2 和 v5 四个方法, 则 v1 和 v2 会返回, 而 v5 则不会, v 不会参与对比
+        Integer reqVer = ...getVersion(request);
+        // 如果请求的是 v3, Controller 中标注的有 v v1 v2 和 v5 四个方法, 则 v1 和 v2 会返回, 而 v5 则不会, v 不会参与对比
         return (reqVer != null && version != null && reqVer >= version.getCode()) ? this : null;
     }
 
