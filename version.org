@@ -16,7 +16,7 @@
 + 返回结果如下
 #+BEGIN_SRC json
 {
-  "code": 1,         // 1.表示请求成功, 0.表示请求时有错误, 10.表示请求时需要登录. etc...
+  "code": 1,         // 1 表示请求成功, 0 表示请求时有错误, 10 表示请求时需要登录. etc...
   "msg": "请求说明",
   "data": {
     "back1": 123,    // 返回的 1 字段的说明
@@ -125,7 +125,7 @@ public class ApiVersionCondition implements RequestCondition<ApiVersionCondition
 }
 #+END_SRC
 
-+ 把上面建立的覆盖到默认的里面去, 此示例是基于 spring boot, 并没有考虑 xml 的情况
++ 把上面建立的添加到默认的 RequestMappingHandlerMapping 里面去, 此示例是基于 spring boot, 并没有考虑 xml 的情况
 #+BEGIN_SRC java
 /** @see org.springframework.boot.autoconfigure.web.WebMvcAutoConfiguration */
 @Configuration
