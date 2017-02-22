@@ -423,7 +423,7 @@ public class JsonUtil {
             super();
             // 不确定值的枚举返回 null
             configure(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL, true);
-            // 不确定的属性项上不要失败, 这一项很重要!!
+            // 不确定的属性项上不要失败, 默认如果失败将会抛出 JsonMappingException
             configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
             // null 不序列化(正是这一策略保证过滤字段成为可能), 如果想要 空字符串也不序列化, 改成 NON_EMPTY 即可
             setSerializationInclusion(JsonInclude.Include.NON_NULL);
