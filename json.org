@@ -1,0 +1,456 @@
+* 自定义 json 返回
+
+** 不好的方式
+spring 有使用一个 [[https://spring.io/blog/2014/12/02/latest-jackson-integration-improvements-in-spring][json return]], 然而这种方式并不是很友好.当不同的接口想要返回不同的字段时, 这种方式会完全无法实现.
+
+
+** 通常的做法
+通常的做法是建立很多的 vo, 在返回数据之前使用类似 Build 的功能将从数据
+库来的 model 转换成相应的 vo. 但是这样一来, 也容易导致 vo 会有非常多,
+而且扩展起来也蛮难受的, 尤其涉及到级联时.
+
+
+** 当前做法
+目前用到的这个解决办法是基于 spring core 中的 AntPathMatcher 配合 json
+的一个插件([[https://github.com/Antibrumm/jackson-antpathfilter][json-filter]])来完成, 因为这个 filter 的核心只有一个类, 因此
+做了一些借鉴, 没有再引入这个 jar
+
+具体如下:
+#+BEGIN_SRC java
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonStreamContext;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.ser.BeanPropertyWriter;
+import com.fasterxml.jackson.databind.ser.PropertyWriter;
+import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
+import org.springframework.util.AntPathMatcher;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+/**
+ * see : <span style="color:red;">https://github.com/Antibrumm/jackson-antpathfilter</span><br><br>
+ *
+ * Implementation that allows to set nested properties. The filter will use the
+ * parents from the context to identify if a property has to be filtered.
+ * <pre>
+ * Example: user -&gt; manager (user)
+ *
+ * "id", "firstName", "lastName", "manager", "manager.id", "manager.fullName"
+ *
+ * {
+ *  "id": "2",
+ *  "firstName": "Martin",
+ *  "lastName": "Frey",
+ *  "manager" : {
+ *    "id": "1",
+ *    "fullName": "System Administrator"
+ *  }
+ * }
+ * </pre>
+ * @author Martin Frey
+ */
+public class AntPathPropertyFilter extends SimpleBeanPropertyFilter {
+
+    /** The matcher. */
+    private static final AntPathMatcher MATCHER = new AntPathMatcher(".");
+
+    /** The _properties to exclude. */
+    protected final Set<String> _propertiesToExclude;
+
+    /** Set of property names to include. */
+    protected final Set<String> _propertiesToInclude;
+
+    /** Cache of patterns to test, and match results */
+    private final Map<String, Boolean> matchCache = new HashMap<String, Boolean>();
+
+    /**
+     * Instantiates a new ant path property filter.
+     *
+     * @param properties the properties
+     */
+    public AntPathPropertyFilter(final String... properties) {
+        super();
+        _propertiesToInclude = new HashSet<String>(properties.length);
+        _propertiesToExclude = new HashSet<String>(properties.length);
+        for (String property : properties) {
+            if (property.startsWith("-") || property.startsWith("!")) {
+                _propertiesToExclude.add(property.substring(1));
+            } else {
+                _propertiesToInclude.add(property);
+            }
+        }
+    }
+
+    /**
+     * Gets the path to test.
+     *
+     * @param writer the writer
+     * @param gen    the jsonGenerator
+     * @return the path to test
+     */
+    private String getPathToTest(final PropertyWriter writer, final JsonGenerator gen) {
+        StringBuilder nestedPath = new StringBuilder();
+        nestedPath.append(writer.getName());
+        JsonStreamContext sc = gen.getOutputContext();
+        if (sc != null) {
+            sc = sc.getParent();
+        }
+        while (sc != null) {
+            if (sc.getCurrentName() != null) {
+                if (nestedPath.length() > 0) {
+                    nestedPath.insert(0, ".");
+                }
+                nestedPath.insert(0, sc.getCurrentName());
+            }
+            sc = sc.getParent();
+        }
+        return nestedPath.toString();
+    }
+
+    /**
+     * @see com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter#include(
+     * com.fasterxml.jackson.databind.ser.BeanPropertyWriter)
+     */
+    @Override
+    protected boolean include(final BeanPropertyWriter writer) {
+        throw new UnsupportedOperationException("Cannot call include without JsonGenerator");
+    }
+
+    /**
+     * @see com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter#include(
+     * com.fasterxml.jackson.databind.ser.PropertyWriter)
+     */
+    @Override
+    protected boolean include(final PropertyWriter writer) {
+        throw new UnsupportedOperationException("Cannot call include without JsonGenerator");
+    }
+
+    /**
+     * Include.
+     *
+     * @param writer the writer
+     * @param gen    the jsonGenerator
+     * @return true, if successful
+     */
+    protected boolean include(final PropertyWriter writer, final JsonGenerator gen) {
+        String pathToTest = getPathToTest(writer, gen);
+        // Check cache first
+        if (matchCache.containsKey(pathToTest)) {
+            return matchCache.get(pathToTest);
+        }
+        // Only Excludes.
+        if (_propertiesToInclude.isEmpty()) {
+            for (String pattern : _propertiesToExclude) {
+                if (matchPath(pathToTest, pattern)) {
+                    matchCache.put(pathToTest, false);
+                    return false;
+                }
+            }
+            matchCache.put(pathToTest, true);
+            return true;
+        }
+        // Else do full check
+        boolean include = false;
+        // Check Includes first
+        for (String pattern : _propertiesToInclude) {
+            if (matchPath(pathToTest, pattern)) {
+                include = true;
+                break;
+            }
+        }
+        // Might still be excluded
+        if (include && !_propertiesToExclude.isEmpty()) {
+            for (String pattern : _propertiesToExclude) {
+                if (matchPath(pathToTest, pattern)) {
+                    include = false;
+                    break;
+                }
+            }
+        }
+        matchCache.put(pathToTest, include);
+        return include;
+    }
+
+    /** Only uses AntPathMatcher if the pattern contains wildcards, else use simple equals */
+    private boolean matchPath(String pathToTest, String pattern) {
+        if (pattern.contains("*")) {
+            return MATCHER.match(pattern, pathToTest);
+        } else {
+            return pattern.equals(pathToTest);
+        }
+    }
+
+    /**
+     * @see com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter#serializeAsField(
+     *  Object,
+     *  com.fasterxml.jackson.core.JsonGenerator,
+     *  com.fasterxml.jackson.databind.SerializerProvider,
+     *  com.fasterxml.jackson.databind.ser.PropertyWriter
+     * )
+     */
+    @Override
+    public void serializeAsField(final Object pojo, final JsonGenerator gen, final SerializerProvider provider,
+                                 final PropertyWriter writer) throws Exception {
+        if (include(writer, gen)) {
+            writer.serializeAsField(pojo, gen, provider);
+        } else if (!gen.canOmitFields()) { // since 2.3
+            writer.serializeAsOmittedField(pojo, gen, provider);
+        }
+    }
+}
+#+END_SRC
+
+
+JsonUtil
+#+BEGIN_SRC java
+import com.fasterxml.jackson.annotation.JsonFilter;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
+
+import java.util.List;
+
+public class JsonUtil {
+
+    public static final ObjectMapper BASIC = new BasicObjectMapper();
+    private static class BasicObjectMapper extends ObjectMapper {
+        private BasicObjectMapper() {
+            super();
+            // 不确定值的枚举返回 null
+            configure(DeserializationFeature.READ_UNKNOWN_ENUM_VALUES_AS_NULL, true);
+            // 不确定的属性项上不要失败, 这一项很重要!!
+            configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+            // null 不序列化(正是这一策略保证过滤字段成为可能), 如果想要 空字符串也不序列化, 改成 NON_EMPTY 即可
+            setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        }
+    }
+
+    /** 将 json 字符串转换为对象 */
+    public static <T> T toObject(String json, Class<T> clazz) {
+        try {
+            return BASIC.readValue(json, clazz);
+        } catch (Exception e) {
+            throw new RuntimeException("json (" + json + ") to object(" + clazz.getName() + ") exception", e);
+        }
+    }
+
+    /** 对象转换成 json 字符串 */
+    public static String toJson(Object obj) {
+        return toJson(BASIC, obj);
+    }
+
+    private static String toJson(ObjectMapper om, Object obj) {
+        try {
+            return om.writeValueAsString(obj);
+        } catch (Exception e) {
+            throw new RuntimeException("object(" + obj + ") to json exception.", e);
+        }
+    }
+
+    /** 将 json 字符串转换为指定的数组列表 */
+    public static <T> List<T> toList(String json, Class<T> clazz) {
+        try {
+            return BASIC.readValue(json, BASIC.getTypeFactory().constructCollectionType(List.class, clazz));
+        } catch (Exception e) {
+            throw new RuntimeException("json(" + json + ") to list(" + clazz.getName() + ") exception.", e);
+        }
+    }
+    
+
+    // ========== 返回自定义属性 ==========
+
+    private static final String CUSTOM_FILTER = "customFilter";
+
+    @JsonFilter(CUSTOM_FILTER)
+    private static class CustomFilterMixin {
+    }
+
+    /**
+     * <pre>
+     * 只输出传入的属性, 支持级联! 参考:
+     * https://github.com/Antibrumm/jackson-antpathfilter<br>
+     * 此方法是为了输出 json 字符串, 在 controller 中应该调用 {@link #toObjectWithField}
+     *
+     * public class User {
+     * 	Long id;
+     * 	String name;
+     * 	String password;
+     * 	Msg info;
+     * }
+     * public class Msg {
+     * 	Long id;
+     * 	String name;
+     * }
+     *
+     * User user = new User(123l, "ruby", "encrypt-code", new Msg(890l, "abc123"));
+     *
+     * // 输出 {"id":123,"name":"ruby","password":"encrypt-code","info":{"id":890,"name":"abc123"}}
+     * toJsonWithField(user);
+     *
+     * // 输出 {"name":"ruby","info":{}}
+     * toJsonWithField(user, "name", "info");
+     *
+     * // 输出 {"name":"ruby"}
+     * toJsonWithField(user, "name", "info.name");
+     *
+     * // 输出 {"name":"ruby","info":{"name":"abc123"}}
+     * toJsonWithField(user, "name", "phone", "info", "info.name");
+     *
+     * // 输出 {"id":123,"name":"ruby","password":"encrypt-code","info":{}}
+     * toJsonWithField(user, "*");
+     *
+     * // 输出 {"id":123,"name":"ruby","info":{}} <span style="color:red;">星号代表全部, 感叹(!) 和 减号(-) 都能排除属性</span>
+     * toJsonWithField(user, "*", "!password");
+     *
+     * // 输出 {"id":123,"name":"ruby","info":{"id":890,"name":"abc123"}}
+     * toJsonWithField(user, "**", "!password");
+     *
+     * // 输出 {"id":123,"name":"ruby","info":{"name":"abc123"}}
+     * toJsonWithField(user, "**", "!password", "-info.id");
+     * </pre>
+     *
+     */
+    public static String toJsonWithField(Object obj, String... fields) {
+        return (obj == null) ? null : toJson(toObjectWithField(obj, fields));
+    }
+
+    /** 基于 spring mvc 的设置, 当前方法返回的对象会被 {@link #toJson} 渲染后才会返回到前台 */
+    public static Object toObjectWithField(Object obj, String... fields) {
+        if (obj == null) return null;
+
+        String json = customField(obj, fields);
+        // 返回使用 Object 将会是一个 LinkedHashMap 与原对象无关, 如果返回原对象, 对象上有默认值也将会被序列化
+        if (obj instanceof List) {
+            // 将过滤好的字符串「反序列化」成一个 List 并返回
+            Class<?> clazz = ((List) obj).isEmpty() ? Object.class : ((List) obj).iterator().next().getClass();
+            return toList(json, clazz);
+        } else {
+            // 将过滤好的字符串「反序列化」成一个 Object 并返回
+            return toObject(json, obj.getClass());
+        }
+    }
+
+    /** 将对象过滤掉相关属性并序列化成一个字符串返回 */
+    private static String customField(Object obj, String... fields) {
+        // 构建一个专门用来过滤字段的映射器
+        ObjectMapper om = new BasicObjectMapper();
+        // 过滤属性时会改变映射器的一些内部信息, 因此要每次都实例化一个映射器. 随之而来的代价就是性能会稍差一点
+        om.addMixIn(Object.class, CustomFilterMixin.class);
+        om.setFilterProvider(new SimpleFilterProvider().addFilter(CUSTOM_FILTER, new AntPathPropertyFilter(fields)));
+
+        // 使用此映射器序列化对象成一个字符串
+        return toJson(om, obj);
+    }
+}
+#+END_SRC
+
+
+Test
+
+#+BEGIN_SRC java
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.util.Arrays;
+import java.util.List;
+
+public class JsonUtilTest {
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    static class User {
+        Long id;
+        String name;
+        String password;
+        Msg info;
+    }
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    static class Msg {
+        Long id;
+        String name;
+        Some some;
+    }
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    static class Some {
+        Long id;
+        String name;
+    }
+
+    private static final String[] TWO = new String[] {"name", "info"};
+    private static final String[] NO_CASCADE = new String[] {"name", "info.name"};
+    private static final String[] CASCADE = new String[] {"name", "phone", "info", "info.name"};
+
+    private static final String[] JUST_LEVEL_ONE = new String[] {"*"};
+    private static final String[] LEVEL_ONE_EXCEPT = new String[] {"*", "!password"};
+    private static final String[] LEVEL_TWO = new String[] {"*", "info.*"};
+    private static final String[] LEVEL_THREE = new String[] {"*", "info.*", "info.some.*"};
+    private static final String[] ALL = new String[] {"**"};
+    private static final String[] ALL_EXCEPT = new String[] {"**", "!password"};
+    private static final String[] ALL_MULTI_EXCEPT = new String[] {"**", "!password", "!info.id"};
+
+    @SuppressWarnings("unchecked")
+    public static void main(String[] args) {
+        User user = new User(123l, "ruby", "monkey-patch", new Msg(456l, "abc123", new Some(789l, "some")));
+        User otherUser = new User(999l, "python", "snake", new Msg(888l, "xyz456", new Some(777l, "nice")));
+
+        System.out.println("所有:\t\t\t" + JsonUtil.toJsonWithField(user) + "\n");
+        System.out.println("两个:\t\t\t" + JsonUtil.toJsonWithField(user, TWO));
+        System.out.println("无法被级联:\t\t" + JsonUtil.toJsonWithField(user, NO_CASCADE));
+        System.out.println("级联:\t\t\t" + JsonUtil.toJsonWithField(user, CASCADE));
+        System.out.println("仅仅第一层:\t\t" + JsonUtil.toJsonWithField(user, JUST_LEVEL_ONE));
+        System.out.println("第一层加排除:\t" + JsonUtil.toJsonWithField(user, LEVEL_ONE_EXCEPT));
+        System.out.println("第二层:\t\t\t" + JsonUtil.toJsonWithField(user, LEVEL_TWO));
+        System.out.println("第三层:\t\t\t" + JsonUtil.toJsonWithField(user, LEVEL_THREE));
+        System.out.println("所有的层:\t\t" + JsonUtil.toJsonWithField(user, ALL));
+        System.out.println("所有的层加排除:\t" + JsonUtil.toJsonWithField(user, ALL_EXCEPT));
+        System.out.println("所有的层加多排除:" + JsonUtil.toJsonWithField(user, ALL_MULTI_EXCEPT));
+
+        List<User> users = Arrays.asList(user, otherUser);
+        System.out.println("基于集合加排除:\t" + JsonUtil.toJsonWithField(users, ALL_MULTI_EXCEPT));
+
+        List<User> userList = (List<User>) JsonUtil.toObjectWithField(users, ALL_MULTI_EXCEPT);
+        for (User u : userList) {
+            System.out.println("用户: " + u);
+        }
+    }
+}
+#+END_SRC
+
+
+结果如下:
+#+BEGIN_EXAMPLE
+所有:			{"id":123,"name":"ruby","password":"monkey-patch","info":{"id":456,"name":"abc123","some":{"id":789,"name":"some"}}}
+
+两个:			{"name":"ruby","info":{}}
+无法被级联:		{"name":"ruby"}
+级联:			{"name":"ruby","info":{"name":"abc123"}}
+仅仅第一层:		{"id":123,"name":"ruby","password":"monkey-patch","info":{}}
+第一层加排除:	{"id":123,"name":"ruby","info":{}}
+第二层:			{"id":123,"name":"ruby","password":"monkey-patch","info":{"id":456,"name":"abc123","some":{}}}
+第三层:			{"id":123,"name":"ruby","password":"monkey-patch","info":{"id":456,"name":"abc123","some":{"id":789,"name":"some"}}}
+所有的层:		{"id":123,"name":"ruby","password":"monkey-patch","info":{"id":456,"name":"abc123","some":{"id":789,"name":"some"}}}
+所有的层加排除:	{"id":123,"name":"ruby","info":{"id":456,"name":"abc123","some":{"id":789,"name":"some"}}}
+所有的层加多排除:{"id":123,"name":"ruby","info":{"name":"abc123","some":{"id":789,"name":"some"}}}
+基于集合加排除:	[{"id":123,"name":"ruby","info":{"name":"abc123","some":{"id":789,"name":"some"}}},{"id":999,"name":"python","info":{"name":"xyz456","some":{"id":777,"name":"nice"}}}]
+用户: JsonUtilTest.User(id=123, name=ruby, password=null, info=JsonUtilTest.Msg(id=null, name=abc123, some=JsonUtilTest.Some(id=789, name=some)))
+用户: JsonUtilTest.User(id=999, name=python, password=null, info=JsonUtilTest.Msg(id=null, name=xyz456, some=JsonUtilTest.Some(id=777, name=nice)))
+#+END_EXAMPLE
+
+
+以后的重点, 只要在具体的 model 类中定义下面这样的字段列表就可以了, 当字段名发生变更时, 同步改这里面的字段名
+#+BEGIN_SRC java
+/** xxx 业务时返回的字段 */
+private static final String[] XXX = new String[] {"name", "phone", "info", "info.name"};
+/** yyy 业务时返回的字段 */
+private static final String[] YYY = new String[] {"name", "info"};
+#+END_SRC
