@@ -330,7 +330,7 @@ public class JsonUtil {
         return (obj == null) ? null : toJson(toObjectWithField(obj, fields));
     }
 
-    /** 基于 spring mvc 的设置, 当前方法返回的对象会被 {@link #toJson} 渲染后才会返回到前台 */
+    /** 将传入的对象按指定的字段序列化为字符串, 再将字符串反序列化成指定的对象, 过滤掉的属性值置为 null */
     public static Object toObjectWithField(Object obj, String... fields) {
         if (obj == null) return null;
 
