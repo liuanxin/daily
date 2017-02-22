@@ -2,15 +2,13 @@
 
 
 ** json 的本质
-#+BEGIN_EXAMPLE
 如这世界的构成一样, 由三部分可以说明万物
-1. 原子. 也就是 int double bool null string 这种不可再被拆分的数据(目前还不包括二进制流), 任何一个东西做拆分, 最终的小单位都是由这种不可再拆分的原子
-2. 字典, 又叫对象. 由键值对来表示. 比如人有手、有脚: {"hand": "手的说明", "脚": "脚的说明"}
-3. 数组, 多个同类型的对象, 比如多个人 [{"名字": "张三"}, {"名字": "李四"}]
+1. 原子. 也就是 int double bool null string 这类不可再拆分的项(不包括二进制流), 如这世界一样, 任何一个东西做拆分, 最终的小单位都是由这种不可再拆分的原子构成
+2. 字典, 又叫对象. 由键值对来表示. 比如人有手、有脚: {"hand": "手的说明", "foot": "脚的说明"}
+3. 数组, 多个同类型的对象, 比如多个人 [{"名字": "张三", "hand": ["左手", "右手"], "foot": ["左脚", "右脚"}, {"名字": "李四" ... }]
 
-由上面的三种组合, 再互相嵌套, 可以将整个世界予以说明. json 在解析时最
-重要的一个问题就是它最外面的那层是 数组 还是对象(键值对)
-#+END_EXAMPLE
+由上面的三种组合, 再互相嵌套, 可以将整个世界予以说明. json 在解析时最重要的一个问题就是它最外面的那层是 数组 还是对象(键值对)
+
 
 
 ** 不好的方式
@@ -395,4 +393,4 @@ String[] {"name", "phone", "info", "info.name"}; /** yyy 业务时返回的
 字段 */ private static final String[] YYY = new String[] {"name",
 "info"}; #+END_SRC
 
-PS: 如果 jackson 是用的 2.8.0 版本, 在序列化时偶尔会报一个异常. 这是 jasckson 内部的问题 [[https://github.com/FasterXML/jackson-databind/issues/1302][json-nullpoint]] 导致的, 将 jackson 版本更新即可解决.
+PS: 如果 jackson 是用的 2.8.0 版本, 在序列化时偶尔会报一个异常. 这是 jasckson 内部的问题 [[https://github.com/FasterXML/jackson-databind/issues/1302][json-nullpoint]] 导致的, 将 jackson 版本更新即可.
