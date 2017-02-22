@@ -454,3 +454,5 @@ private static final String[] XXX = new String[] {"name", "phone", "info", "info
 /** yyy 业务时返回的字段 */
 private static final String[] YYY = new String[] {"name", "info"};
 #+END_SRC
+
+PS: 如果 jackson 是用的 2.8.0 版本, 在序列化时偶尔会报一个异常. 这是 jasckson 内容的问题: [[https://github.com/FasterXML/jackson-databind/issues/1302][json-nullpoint]] 将 jackson 更新到 2.8.5 可解决
