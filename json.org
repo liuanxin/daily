@@ -5,15 +5,12 @@ spring 有使用一个 [[https://spring.io/blog/2014/12/02/latest-jackson-integr
 
 
 ** 通常的做法
-通常的做法是建立很多的 vo, 在返回数据之前使用类似 Build 的功能将从数据
-库来的 model 转换成相应的 vo. 但是这样一来, 也容易导致 vo 会有非常多,
-而且扩展起来也蛮难受的, 尤其涉及到级联时.
+通常的做法是建立很多的 vo, 在返回数据之前使用类似 Build 的功能将从数据库来的 model 转换成相应的 vo. 但是这样一来, 也容易导致 vo 会有非常多, 而且扩展起来也蛮难受的, 尤其涉及到级联时.
 
 
 ** 当前做法
 目前用到的这个解决办法是基于 spring core 中的 AntPathMatcher 配合 json
-的一个插件([[https://github.com/Antibrumm/jackson-antpathfilter][json-filter]])来完成, 因为这个 filter 的核心只有一个类, 因此
-做了一些借鉴, 没有再引入这个 jar
+的一个插件([[https://github.com/Antibrumm/jackson-antpathfilter][json-filter]])来完成, 因为这个 filter 的核心只有一个类, 因此做了一些借鉴, 没有再引入这个 jar
 
 具体如下:
 #+BEGIN_SRC java
@@ -271,8 +268,7 @@ public class JsonUtil {
 
     /**
      * <pre>
-     * 只输出传入的属性, 支持级联! 参考:
-     * https://github.com/Antibrumm/jackson-antpathfilter<br>
+     * 只输出传入的属性, 支持级联! 参考: https://github.com/Antibrumm/jackson-antpathfilter<br>
      * 此方法是为了输出 json 字符串, 在 controller 中应该调用 {@link #toObjectWithField}
      *
      * public class User {
