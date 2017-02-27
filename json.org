@@ -424,7 +424,7 @@ public class JsonUtilTest {
         System.out.println("第三层:\t\t\t" + JsonUtil.toJsonWithField(user, LEVEL_THREE));
         System.out.println("所有的层:\t\t" + JsonUtil.toJsonWithField(user, ALL));
         System.out.println("所有的层加排除:\t" + JsonUtil.toJsonWithField(user, ALL_EXCEPT));
-        System.out.println("所有的层加多排除:" + JsonUtil.toJsonWithField(user, ALL_MULTI_EXCEPT));
+        System.out.println("所有的层加多排除:" + JsonUtil.toJsonWithField(user, ALL_MULTI_EXCEPT) + "\n");
 
         List<User> users = Arrays.asList(user, otherUser);
         System.out.println("基于集合加排除:\t" + JsonUtil.toJsonWithField(users, ALL_MULTI_EXCEPT));
@@ -452,9 +452,10 @@ public class JsonUtilTest {
 所有的层:       {"id":123,"name":"ruby","password":"monkey-patch","info":{"id":456,"name":"abc123","some":{"id":789,"name":"some"}}}
 所有的层加排除: {"id":123,"name":"ruby","info":{"id":456,"name":"abc123","some":{"id":789,"name":"some"}}}
 所有的层加多排除:{"id":123,"name":"ruby","info":{"name":"abc123","some":{"id":789,"name":"some"}}}
+
 基于集合加排除: [{"id":123,"name":"ruby","info":{"name":"abc123","some":{"id":789,"name":"some"}}},{"id":999,"name":"python","info":{"name":"xyz456","some":{"id":777,"name":"nice"}}}]
-用户: JsonUtilTest.User(id=123, name=ruby, password=null, info=JsonUtilTest.Msg(id=null, name=abc123, some=JsonUtilTest.Some(id=789, name=some)))
-用户: JsonUtilTest.User(id=999, name=python, password=null, info=JsonUtilTest.Msg(id=null, name=xyz456, some=JsonUtilTest.Some(id=777, name=nice)))
+用户: User(id=123, name=ruby, password=null, info=Msg(id=null, name=abc123, some=Some(id=789, name=some)))
+用户: User(id=999, name=python, password=null, info=Msg(id=null, name=xyz456, some=Some(id=777, name=nice)))
 #+END_EXAMPLE
 
 
