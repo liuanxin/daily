@@ -21,7 +21,7 @@ spring 有使用一个 [[https://spring.io/blog/2014/12/02/latest-jackson-integr
 
 
 ** 当前做法
-目前用到的这个解决办法是基于 spring core 中的 AntPathMatcher 配合 json 的一个插件([[https://github.com/Antibrumm/jackson-antpathfilter][json-filter]])来完成, 因为这个 filter 的核心只有一个类, 因此做了一些借鉴, 没有再引入这个 jar
+目前用到的这个解决办法是基于 spring core 中的 AntPathMatcher 配合 jackson 的一个 [[https://github.com/Antibrumm/jackson-antpathfilter][插件]] 来完成, 因为这个 filter 的核心只有一个类, 因此做了一些借鉴, 没有再引入这个 jar
 
 *** 实现原理
 1. 将要返回的数据和要返回的字段说明使用工具类处理. 最终只将指定的字段给回来, 其他置空
@@ -453,8 +453,8 @@ public class JsonUtilTest {
 所有的层加排除: {"id":123,"name":"ruby","info":{"id":456,"name":"abc123","some":{"id":789,"name":"some"}}}
 所有的层加多排除:{"id":123,"name":"ruby","info":{"name":"abc123","some":{"id":789,"name":"some"}}}
 基于集合加排除: [{"id":123,"name":"ruby","info":{"name":"abc123","some":{"id":789,"name":"some"}}},{"id":999,"name":"python","info":{"name":"xyz456","some":{"id":777,"name":"nice"}}}]
-用户: User(id=123, name=ruby, password=null, info=Msg(id=null, name=abc123, some=Some(id=789, name=some)))
-用户: User(id=999, name=python, password=null, info=Msg(id=null, name=xyz456, some=Some(id=777, name=nice)))
+用户: JsonUtilTest.User(id=123, name=ruby, password=null, info=JsonUtilTest.Msg(id=null, name=abc123, some=JsonUtilTest.Some(id=789, name=some)))
+用户: JsonUtilTest.User(id=999, name=python, password=null, info=JsonUtilTest.Msg(id=null, name=xyz456, some=JsonUtilTest.Some(id=777, name=nice)))
 #+END_EXAMPLE
 
 
