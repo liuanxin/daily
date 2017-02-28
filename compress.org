@@ -1,0 +1,319 @@
+
+```java
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+/**
+ * 将 html 压缩成一行<br><br>
+ * 1. 将页面中的 &lt;!--[if lt IE 7 ]> &lt;html class="no-js ie6"> &lt;![endif]--> 提取出来<br>
+ * 2. 将页面中的 &lt;script> 和「&lt;pre> + &lt;textarea>」标签提取出来<br>
+ * 3. 替换注释 &lt;-- xxx --> 和 / * * / 成一个空格<br>
+ * 4. 把 &lt;!--[if lt IE 7 ]> &lt;html class="no-js ie6"> &lt;![endif]--> 还原回来<br>
+ * 5. 把 换行符 替换成一个空格, 再将多个空格替换成一个<br>
+ * 6. 把 &lt;pre> &lt;textarea> 还原回去<br>
+ * 7. 把 js 代码还原回去(先把字符串里的「//  / *  * /」替换成指定的占位, 再去掉注释(先多行再单行), 再把字符串里面的指定占位还原回去)<br>
+ */
+public final class Compressor {
+
+    private static final String CLAZZ_NAME = Compressor.class.getName();
+
+
+    private static final String SPACE = " ";
+    private static final Pattern LINE_REGEX = compile("\\n|\\r");
+    private static final Pattern MULTI_SPACE_REGEX = compile("\\s{2,}");
+
+
+    /** 页面上的 &lt;!-- ... --&gt; 注释 */
+    private static final Pattern PAGE_REGEX = compile("(?s)<!--.*?-->");
+    /** css 或 js 中的 / * ...  * / 注释 */
+    private static final Pattern CSS_JS_REGEX = compile("(?s)/\\*.*?\\*/");
+    /** js 中的 // 注释 */
+    private static final Pattern SINGLE_JS_REGEX = compile("//.*");
+
+
+    /** 页面中的 &lt;!--[if lt IE 7 ]> &lt;html class="ie ie6"> &lt;![endif]--> 代码 */
+    private static final Pattern IF_REGEX = compile("(?is)<!--\\s*[\\[].*?-->");
+    /** if 标签的占位符 */
+    private static final String IF_PLACE = String.format("___%s-%s===", CLAZZ_NAME, "if");
+    /** if 标签 */
+    private static final Pattern IF_PLACE_REGEX = compile(IF_PLACE);
+
+    /** 页面中的 pre 代码 */
+    private static final Pattern PRE_REGEX = compile("(?is)<pre.*?>(.*?)</pre>");
+    /** pre 标签的占位符 */
+    private static final String PRE_PLACE = String.format("___%s-%s===", CLAZZ_NAME, "pre");
+    /** pre 标签 */
+    private static final Pattern PRE_PLACE_REGEX = compile(PRE_PLACE);
+
+    /** 页面中的 textarea 代码 */
+    private static final Pattern TEXTAREA_REGEX = compile("(?is)<textarea.*?>(.*?)</textarea>");
+    /** textarea 标签的占位符 */
+    private static final String TEXTAREA_PLACE = String.format("___%s-%s===", CLAZZ_NAME, "textarea");
+    /** textarea 标签 */
+    private static final Pattern TEXTAREA_PLACE_REGEX = compile(TEXTAREA_PLACE);
+
+
+    /** 获取页面中 js 的正则. <span style="color:red">必须要有三对「括号()」, 替换时要用到</span> */
+    private static final Pattern SCRIPT_REGEX = compile("(?is)(<script.*?>)(.*?)(</script>)");
+    /** js 标签的占位符 */
+    private static final String SCRIPT_PLACE = String.format("___%s-%s===", CLAZZ_NAME, "script");
+    /** js 标签 */
+    private static final Pattern SCRIPT_PLACE_REGEX = compile(SCRIPT_PLACE);
+
+
+    /** js 中字符串里面可能会出现的单行注释「//」 */
+    private static final String JS_SINGLE = "//";
+    /** js 中字符串里面可能会出现的多行注释开始「/ *」 */
+    private static final String JS_MULTI_START = "/*";
+    /** js 中字符串里面可能会出现的多行注释结束「* /」 */
+    private static final String JS_MULTI_END = "*/";
+
+    /** js 代码中的字符串匹配: "" 中的 // 字符. <span style="color:red">必须要有三对「括号()」, 替换时要用到</span> */
+    private static final Pattern JS_DOUBLE_QUOTES_STR_SINGLE_REGEX = compile("(\".*?)(//)(.*?\")");
+    /** js 代码中的字符串匹配: '' 中的 // 字符. <span style="color:red">必须要有三对「括号()」, 替换时要用到</span> */
+    private static final Pattern JS_APOSTROPHE_STR_SINGLE_REGEX = compile("(\'.*?)(//)(.*?\')");
+    /** js 代码中的字符串匹配: "" 中的 / * 字符. <span style="color:red">必须要有三对「括号()」, 替换时要用到</span> */
+    private static final Pattern JS_DOUBLE_QUOTES_STR_MULTI_START_REGEX = compile("(\".*?)(/\\*)(.*?\")");
+    /** js 代码中的字符串匹配: '' 中的 / * 字符. <span style="color:red">必须要有三对「括号()」, 替换时要用到</span> */
+    private static final Pattern JS_APOSTROPHE_STR_MULTI_START_REGEX = compile("(\'.*?)(/\\*)(.*?\')");
+    /** js 代码中的字符串匹配: "" 中的 * / 字符. <span style="color:red">必须要有三对「括号()」, 替换时要用到</span> */
+    private static final Pattern JS_DOUBLE_QUOTES_STR_MULTI_END_REGEX = compile("(\".*?)(\\*/)(.*?\")");
+    /** js 代码中的字符串匹配: '' 中的 * / 字符. <span style="color:red">必须要有三对「括号()」, 替换时要用到</span> */
+    private static final Pattern JS_APOSTROPHE_STR_MULTI_END_REGEX = compile("(\'.*?)(\\*/)(.*?\')");
+
+
+    /** js 中字符串里面可能会出现的单行注释占位符 */
+    private static final String JS_SINGLE_PLACE = String.format("___%s-%s===", CLAZZ_NAME, "single");
+    /** js 中字符串里面可能会出现的多行注释的开始占位符 */
+    private static final String JS_MULTI_START_PLACE = String.format("___%s-%s===", CLAZZ_NAME, "multiStart");
+    /** js 中字符串里面可能会出现的多行注释的结束占位符 */
+    private static final String JS_MULTI_END_PLACE = String.format("___%s-%s===", CLAZZ_NAME, "multiEnd");
+
+    private static final Pattern JS_SINGLE_PLACE_REGEX = compile(JS_SINGLE_PLACE);
+    private static final Pattern JS_MULTI_START_PLACE_REGEX = compile(JS_MULTI_START_PLACE);
+    private static final Pattern JS_MULTI_END_PLACE_REGEX = compile(JS_MULTI_END_PLACE);
+
+    private static Pattern compile(String regex) {
+        return Pattern.compile(regex);
+    }
+
+
+    /** 压缩 html 代码成一行 */
+    public static String html(String html) {
+        if (U.isBlank(html)) return U.EMPTY;
+
+        // 收集 <script> 标签. 这个特殊的标签里面的内容要单独处理
+        List<String> scriptList = A.lists();
+
+        // 收集 if 标签: <!--[if lt IE 7 ]> <html class="ie ie6"> <![endif]-->
+        List<String> ifList = A.lists();
+        // 收集 <pre> <textarea> 标签, 这些特殊标签里面的内容不需要压缩, 压缩将会导致内容显示错误
+        List<String> preList = A.lists();
+        List<String> textareaList = A.lists();
+
+        // 先收集 js 再收集 if pre textarea 这些
+        html = replaceJs(html, scriptList);
+        html = replace(html, IF_REGEX, ifList, IF_PLACE);
+        html = replace(html, PRE_REGEX, preList, PRE_PLACE);
+        html = replace(html, TEXTAREA_REGEX, textareaList, TEXTAREA_PLACE);
+
+        // 去掉页面中 <!-- xx --> 及 css 中的 /* xx */ 注释
+        html = replacePageAnnotation(html);
+        // 把 if 还原回来
+        html = receive(html, IF_PLACE_REGEX, ifList);
+        // 去掉空白(换行制表空格等)
+        html = replaceBlank(html);
+
+        // 把 <pre> <textarea> 还原回来
+        html = receive(html, PRE_PLACE_REGEX, preList);
+        html = receive(html, TEXTAREA_PLACE_REGEX, textareaList);
+        // 把 js 操作成一行了还原回来
+        html = receiveJs(html, scriptList);
+
+        return html.trim();
+    }
+
+    private static String replace(String html, Pattern pattern, List<String> ignoreList, String place) {
+        Matcher match = pattern.matcher(html);
+        while (match.find()) {
+            ignoreList.add(match.group());
+        }
+        return match.replaceAll(place);
+    }
+    private static String receive(String html, Pattern pattern, List<String> ignoreList) {
+        while (html.contains(pattern.pattern())) {
+            html = replaceFirst(pattern, ignoreList.remove(0), html);
+        }
+        return html;
+    }
+
+    private static String replaceJs(String html, List<String> ignoreList) {
+        Matcher match = SCRIPT_REGEX.matcher(html);
+        // 如果括号小于 3 组将无法替换
+        boolean flag = false;
+        while (match.find()) {
+            if (match.groupCount() > 2) {
+                flag = true;
+                ignoreList.add(match.group(2));
+            }
+        }
+        return flag ? match.replaceAll(group1plus3(SCRIPT_PLACE)) : html;
+    }
+    private static String group1plus3(String group) {
+        return "$1" + Matcher.quoteReplacement(group) + "$3";
+    }
+    private static String receiveJs(String html, List<String> ignoreList) {
+        if (U.isNotBlank(html) && A.isNotEmpty(ignoreList)) {
+            String place;
+            while (html.contains(SCRIPT_PLACE)) {
+                place = ignoreList.remove(0);
+                if (U.isNotBlank(place)) {
+                    // 将 js 字符串中的  //  /*  */  替换成相关的占位符
+                    place = replaceAll(JS_DOUBLE_QUOTES_STR_SINGLE_REGEX, group1plus3(JS_SINGLE_PLACE), place);
+                    place = replaceAll(JS_APOSTROPHE_STR_SINGLE_REGEX, group1plus3(JS_SINGLE_PLACE), place);
+                    place = replaceAll(JS_DOUBLE_QUOTES_STR_MULTI_START_REGEX, group1plus3(JS_MULTI_START_PLACE), place);
+                    place = replaceAll(JS_APOSTROPHE_STR_MULTI_START_REGEX, group1plus3(JS_MULTI_START_PLACE), place);
+                    place = replaceAll(JS_DOUBLE_QUOTES_STR_MULTI_END_REGEX, group1plus3(JS_MULTI_END_PLACE), place);
+                    place = replaceAll(JS_APOSTROPHE_STR_MULTI_END_REGEX, group1plus3(JS_MULTI_END_PLACE), place);
+
+                    // 去掉 js 中的 单行 及 多行 注释
+                    place = replaceJsAnnotation(place);
+                    // 去掉空白(换行制表空格等)
+                    place = replaceBlank(place);
+
+                    // 将字符串中相关的占位符还原成  //  /*  */
+                    place = replaceAll(JS_SINGLE_PLACE_REGEX, JS_SINGLE, place);
+                    place = replaceAll(JS_MULTI_START_PLACE_REGEX, JS_MULTI_START, place);
+                    place = replaceAll(JS_MULTI_END_PLACE_REGEX, JS_MULTI_END, place);
+                }
+                // 把 html 里面的 script 占位还原回去
+                html = replaceFirst(SCRIPT_PLACE_REGEX, place, html);
+            }
+        }
+        return html;
+    }
+
+    private static String replacePageAnnotation(String content) {
+        // 将页面中 /* xx */ 和 <!-- xx --> 替换成 空格
+        content = replaceJsOrCssAnnotation(content);
+        return replaceAll(PAGE_REGEX, SPACE, content);
+    }
+    private static String replaceJsOrCssAnnotation(String content) {
+        // 将 /* xx */ 替换成 空格
+        return replaceAll(CSS_JS_REGEX, SPACE, content);
+    }
+    private static String replaceJsAnnotation(String content) {
+        // 将 js 中的 /* xx */ 和 // xx 替换成空格
+        // 先替换多行(/**/), 避免先替换单行(//)时 把 /* http://abc.com */ 替换成了 /* http: 导致出错
+        content = replaceJsOrCssAnnotation(content);
+        return replaceAll(SINGLE_JS_REGEX, SPACE, content);
+    }
+    private static String replaceBlank(String content) {
+        // 将 换行 替换成一个空格, 再将 多个空白符 替换成一个空格
+        content = replaceAll(LINE_REGEX, SPACE, content);
+        return replaceAll(MULTI_SPACE_REGEX, SPACE, content);
+    }
+    private static String replaceAll(Pattern pattern, String place, String content) {
+        // content.replaceAll(regex, place) ==> Pattern.compile(regex).matcher(content).replaceAll(place);
+        Matcher matcher = pattern.matcher(content);
+        if (matcher.find()) {
+            content = matcher.replaceAll(place);
+        }
+        return content;
+    }
+    private static String replaceFirst(Pattern pattern, String place, String content) {
+        // content.replaceFirst(regex, place) ==> Pattern.compile(regex).matcher(content).replaceFirst(place);
+        Matcher matcher = pattern.matcher(content);
+        if (matcher.find()) {
+            content = matcher.replaceFirst(Matcher.quoteReplacement(place));
+        }
+        return content;
+    }
+}
+```
+
+测试
+```java
+String html = "<!DOCTYPE html>\n" +
+        "<!--[if lt IE 7 ]>  <html class=\"ie ie6\" lang=\"en\"> <![endif]-->\n" +
+        " <!--[if IE 7 ]><html class=\"ie ie7\" lang=\"en\"> <![endif]-->\n" +
+        "<!--[if IE 8 ]><html class=\"ie ie8\" lang=\"en\"> <![endif]-->\n" +
+        "<!--[if (gte IE 9)|!(IE)]><!-->\n" +
+        "<html lang=\"en\">\n" +
+        "<!--<![endif]-->\n" +
+        "<head>\n" +
+        "<style>\n" +
+        "    /* afdere */\n" +
+        "    * {\n" +
+        "        margin: 0;\n" +
+        "        border: 0;\n" +
+        "    }\n" +
+        "    input {\n" +
+        "\n" +
+        "    }\n" +
+        "</style>\n" +
+        "<script>\n" +
+        "    var abc = \"http://abc.com\"; // afrewq\n" +
+        "    var xyz = '//static.fds/*.com*/' + abc + \"//qdsrwq/*rew*/jfew\"; //wqrew\n" +
+        "    /*rewqsd*/\n" +
+        "    var ddd = \"//static.rewq\";\n" +
+        "    document.write(\"alter('ewrew');\");\n" +
+        "</SCRIPT>\n" +
+        "</head>\n" +
+        "<body>\n" +
+        "<pRe>\n" +
+        "1.p\n" +
+        "2.r\n" +
+        "3.e\n" +
+        "    <!-- fdsarewq -->\n" +
+        "</pRE>\n" +
+        "rewq\n" +
+        "<label>\n" +
+        "<TEXTAREA>1 line\n" +
+        "\n" +
+        "2 line</textarea>\n" +
+        "\n" +
+        "\n" +
+        "            <span style=\"margin: 0; text-align: center;\">fuie3</span>\n" +
+        "\n" +
+        "</label>\n" +
+        "rewjqklfdsuirewql\n" +
+        "<p>uiroewjklfdsuiorew</p> <span>fuiwejklfudsia</span>\n" +
+        "<scRIPt src=\"//fdsuirewqlfd.comdsrejwifjds/dsruewifjdsklr/wqfdisjrka///rewuifdsjaruewiofdsa\"></script>\n" +
+        "<script>\n" +
+        "document.write(\"//badere\");\n" +
+        "var fdsrewq = \"http://abc.com\"; // uior32j1\n" +
+        "var re21sfds = '//jkr29.fds/*.com*/' + abc + \"//4321/*4321*/jfew\"; //2u89ufjdslq'\n" +
+        "/*r321gfdas*/\n" +
+        "var fdsr4321 = \"//r321fd.2143\" +\n" +
+        "        \"21\";\n" +
+        "var some = 'abc//xyz';\n" +
+        "var = '<a class=\"red\" href=\"http://abc.com/\"' + some + \"/every\";\n" +
+        "</scRIPt>\n" +
+        "\n" +
+        "\n" +
+        "\n" +
+        "</body>\n" +
+        "</html>\n" +
+        "\n" +
+        "\n" +
+        "\n";
+
+System.out.println(html + "\n\n\n\n\n\n");
+
+String h = Compressor.html(html);
+System.out.println(h + "\n\n\n\n\n\n");
+
+String[] split = h.split("\n");
+for (int i = 0; i < split.length; i++) {
+    System.out.println(i + 1 + " : " + split[i]);
+}
+```
+
+2017-02-28
+线上环境, 使用上面的代码压缩到一行时(现在已经先多行再单行), 替换 js 中的 单行注释 和 多行注释.
+替换 单行注释 在 多行注释 之前. 结果导致 /* http://abc.com */ 被替换成了 /* http:
+导致后面有一段代码被后面的多行注释给替换没了
+
+!!!谨以此做为记录!!!
