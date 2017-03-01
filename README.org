@@ -2,8 +2,8 @@
 记录平时工作中碰到的一些问题
 
 #+BEGIN_QUOTE
-[[version.org][version]]  : api 版本. 基于 spring mvc, 向下做兼容\\
-[[fcitx.org][fcitx]]    : 输入法相关的配置\\
-[[json.org][json]]     : 自定义返回 json 属性\\
-[[compress.org][compress]] : 压缩内容到一行\\
+[[version.org][version]]  : api 版本. 基于 spring mvc, 向下做兼容 \\
+[[fcitx.org][fcitx]]    : 输入法相关的配置 \\
+[[json.org][json]]     : 自定义返回 json 属性 \\
+[[compress.org][compress]] : 压缩内容到一行 \\
 #+END_QUOTE
