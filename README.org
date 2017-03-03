@@ -9,4 +9,6 @@
 [[compress.org][compress]] : 压缩内容到一行
 
 [[fcitx.org][fcitx]]    : 输入法相关的配置
+
+[[gc.org][gc]]    : 对 gc 的一点认识
 #+END_QUOTE
