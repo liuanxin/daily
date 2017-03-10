@@ -1,8 +1,8 @@
-
+参考 : https://wzyboy.im/post/765.html
 
 1. 安装 centos(google-authenticator) debian(libpam-google-authenticator)
 2. 在要登录的用户名中运行 google-authenticator 命令, 会生成一个二维码链接, 还有手动添加的密钥
-3. 在 /etc/pam.d/sshd 中添加 auth required pam_google_authenticator.so
+3. 在 /etc/pam.d/sshd(想要登录时添加, 如果 x 是 lightdm, 则是 /etc/pam.d/lightdm) 中添加 auth required pam_google_authenticator.so
 4. 将 /etc/ssh/sshd_config 中的 ChallengeResponseAuthentication no 改成 yes
 5. 重启 sshd 即可
 
