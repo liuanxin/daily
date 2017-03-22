@@ -667,15 +667,11 @@ public static void main(String[] args) {
     String SOURCE = "password--$%^&*()我中文easy~_+-=/.,";
 
     String encode = BCrypt.encrypt(SOURCE);
-    // LogUtil.ROOT_LOG.debug("bcrypt 加密: " + encode);
     Assert.assertTrue(encode.length() > 0);
 
     String encode2 = BCrypt.encrypt(SOURCE);
-    // LogUtil.ROOT_LOG.debug("bcrypt 加密: " + encode2);
-    // 两次密码的值不同
     Assert.assertNotEquals(encode, encode2);
-
-    // 加一个空格, 密码就不同了
+    
     Assert.assertTrue(BCrypt.notSame(SOURCE + " ", encode));
 
     Assert.assertTrue(BCrypt.same(SOURCE, encode));
