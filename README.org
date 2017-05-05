@@ -14,5 +14,7 @@
 
 [[google_auth.org][使用 google auth 二次验证]]
 
+[[bcrypt.org][加密慢算法]]
+
 [[git_practice.org][git 实践]]
 #+END_QUOTE
