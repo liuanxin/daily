@@ -2,15 +2,17 @@
 记录平时工作中碰到的一些问题
 
 #+BEGIN_QUOTE
-[[version.org][version]] : api 版本
+[[fcitx.org][输入法相关的配置]]
 
-[[json.org][json]] : 自定义返回 json 属性
+[[version.org][api 版本]]
 
-[[compress.org][compress]] : 压缩内容到一行
+[[json.org][自定义返回 json 属性]]
 
-[[fcitx.org][fcitx]] : 输入法相关的配置
+[[compress.org][压缩到一行]]
 
-[[gc.org][gc]] : 对 gc 的一点认识
+[[gc.org][对 gc 的一点认识]]
 
-[[google_auth.org][google auth]] : 使用 google auth 二次验证
+[[google_auth.org][使用 google auth 二次验证]]
+
+[[git_practice.org][git 实践]]
 #+END_QUOTE
