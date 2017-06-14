@@ -39,7 +39,8 @@ spring boot 有两个配置文件, 一个是 bootstrap.yml, 还有一个 applica
 测试时还要输出 sql, 另外, 线上环境时日志写入文件的动作还应该要使用异步方式, 不影响主线程运行.
 
 如果基于 maven, 可以会麻烦一点, 调用 ant 写一点脚本来实现,
-spring boot 里面很容易, 在它的上下文里加一个 logging.config: classpath:log-dev.xml 即可.
+spring boot 里面很容易, 在配置里加这么一句 logging.config: classpath:log-dev.xml 即可(不使用 logback.xml 这个文件名).
+test.yml 和 prod.yml 里面配置成 log-test.xml 和 log-prod.xml 就可以了.
 #+END_QUOTE
 
 + 运行
