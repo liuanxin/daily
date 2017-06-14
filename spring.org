@@ -1,0 +1,161 @@
+
+*** spring boot
+
++ profile
+#+BEGIN_QUOTE
+yml 是一种理解起来非常方便, 而且比 properties 少很多重复内容的配置, 可以多用.
+
+spring boot 有两个配置文件, 一个是 bootstrap.yml, 还有一个 application.yml,
+前者会先被加载, 加载后者时前者会被放到环境的上下文中去,
+这么一来, 一般把全局不变的可以写在 bootstrap 里面, 其他的写到 application 里面.
+
+一般项目在整个开发周期分成多个不同的环境, 如: 开发、测试、线上
+
+要基于 spring boot 来达到 profile 效果很容易, 它的实现跟 maven 类似.
+在项目的 resources 目录下建立多个不同的文件即可.
+如 application.yml、application-test.yml、application-prod.yml 分别表示三个不同环境的配置.
+
+当要分环境启动时, 在 mvn 命令中加一个参数 -Dspring.profiles.active=test|prod 即可.
+
+日志同理, 一般来说, 本地开发时, 日志只要输出到控制台即可, 其他环境输出到文件, 
+测试时还要输出 sql, 另外, 线上环境时日志写入文件的动作还应该要使用异步方式, 不影响主线程运行.
+
+如果基于 maven, 可以会麻烦一点, 调用 ant 写一点脚本来实现,
+spring boot 里面很容易, 在它的上下文里加一个 logging.config: classpath:log-dev.xml 即可.
+#+END_QUOTE
+
++ 运行
+#+BEGIN_QUOTE
+spring boot 可以选择是否发布为一个 web 项目, 如果是(默认就是), 则是使用 spring mvc 来实现的.
+
+它本质上与之前的 web 项目并没有什么不同, 唯一不同的地方就是对 web 容器我状态了,
+它默认是把 web 容器的嵌入式包放到项目中来, 运行时的环境其实还是对应的容器.
+而且, 它也可以选择最终打包 war 包放到 web 容器中去运行. 而且步骤也极其方便.
+#+END_QUOTE
+
+之前是
+#+BEGIN_SRC java
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class Application {
+
+    public static void main(String[] args) {
+        SpringApplication.run(Application.class, args);
+    }
+}
+#+END_SRC
+
+现在只需要改成
+#+BEGIN_SRC java
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.web.support.SpringBootServletInitializer;
+
+@SpringBootApplication
+public class Application extends SpringBootServletInitializer {
+
+    @Override
+    protected SpringApplicationBuilder configure(
+	                SpringApplicationBuilder application) {
+        return application.sources(Application.class);
+    }
+
+    public static void main(String[] args) {
+        SpringApplication.run(Application.class, args);
+    }
+}
+#+END_SRC
+
+并且在 pom.xml 中配置下面的内容, 而后使用 mvn clean package 即可打成 war 包, 放入 tomcat 即可运行
+#+BEGIN_SRC xml
+<packaging>war</packaging>
+
+...
+
+<build>
+  <plugins>
+    <plugin>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-maven-plugin</artifactId>
+      <configuration>
+        <mainClass>xxx.Application</mainClass>
+      </configuration>
+    </plugin>
+  </plugins>
+</build>
+#+END_SRC
+
+如果要基于 tomcat 实现上面的 profile, 只要在 tomcat 的 bin/setenv.sh(没有就新建一个) 中添加下面的配置即可
+#+BEGIN_SRC bash
+#!/bin/sh
+
+export JAVA_OPTS="${JAVA_OPTS} -Dspring.profiles.active=test|prod"
+#+END_SRC
+
+
+
+*** spring cloud
+
+#+BEGIN_QUOTE
+微服务更多的时候只是为了对人做展示显得比较友好, 从性能上来说是不如基于 socket 调用的,  
+因为它们是基于最上面的 http 协议层来操作的.
+
+cloud 就是基于纯 http 来做的调用, 它的使用场景可以想像成是一个陀螺,
+陀螺的边缘都是以中心为核心的.
+
+这个中心也就是注册中心, cloud 有很多的实现, 比如 eureka、consul、zookeeper, 默认是 eureka,
+从 google 上显示的结果来看, eureka 用来做服务发现是比 zookeeper 要好一些的,
+而且 cloud 可以轻易的将几者进行替换.
+
+注册中心是可以集群的, 可以部署在多台不同的机器上, 也可以部署在一台机器但是端口不同.
+可以使用 ~@EnableEurekaServer~ 这个注解来启动一个注册中心, 一般注册中心启动后是不需要频繁变更的.
+
+而后的每一个项目都是围绕着注册中心而来, 每个项目都是一个 spring boot 项目(war 或 jar 不重要).
+如果有一个用户中心的微服务项目, 所有与用户相关的表、controller、service、dao 都在这个项目里面实现.
+项目在基于普通的 spring boot 开发后, 只需要在 Application 上标注一个 ~@EnableEurekaClient~ 注解和下面的配置.
+#+END_QUOTE
+
+#+BEGIN_SRC yml
+spring.application.name: user-center
+eureka.client.serviceUrl.defaultZone: http://127.0.0.1:7070/eureka/
+#+END_SRC
+
+#+BEGIN_QUOTE
+意思一目也然, 告知注册中心自己是一个客户端并说明了自己的服务名.
+通常来说, 这个项目建立之后, 是会部署多个实例的, 如果在同一台机器, 改下 web 端口即可, 不同机器, 代码可以完全一样.  
+#+END_QUOTE
+
+#+BEGIN_QUOTE
+说完了陀螺的中心和边缘, 要再说一下让陀螺转动的鞭子了, 也就是真正的调用方, 这里是相对比较麻烦的.
+
+首先为了通用性更强, 我们需要新建一个专门用来请求 user-center 服务端的客户端调用模块,
+这个不需要打成 web 项目, 只需要提供服务端的 controller 对应的调用接口即可.
+#+END_QUOTE
+
+类似于这样
+#+BEGIN_SRC java
+import org.springframework.cloud.netflix.feign.FeignClient;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+
+@FeignClient("user-center")                       // 第一种
+// @FeignClient(url = "http://127.0.0.1:7071")    // 第二种
+public interface UserClient {
+
+    @RequestMapping(value = "/user/{name}", method = RequestMethod.GET)
+    String instances(@PathVariable("name") String name);
+}
+#+END_SRC
+
+#+BEGIN_QUOTE
+Feign 是一个调用包, 它的底层是基于 httpclient 来实现的(jdk 自带的 urlconnection 太弱), 也可以换成 okhttp 这种包
+使用 Feign 来调用请求有两种方式, 上面的注释代码就是直接调用 url 的另一种.
+
+使用服务名(第一种)是比较好的一种方式, 但是这样就要求使用当前 jar 包的项目, 需要标注 ~@EnableEurekaClient~ 和 配置(服务名和注册中心的地址)
+
+使用 Feign 还有另外一种好处, 它默认就是基于 ribbon(负载器), 也就是如果注册中心里面有两个 user-center 的服务, 第一次会代理到第一台服务器(或进程), 第二次代理到第二. 依此类推
+#+END_QUOTE
