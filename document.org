@@ -3,7 +3,7 @@
 
 *** api basic info
 : api desc ==> author
-+ url: *~GET /api-info~*
++ url: ~GET /api-info~
 + param desc (*!* must have)
 
 | param | type    | example | desc                      |
