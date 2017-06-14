@@ -8,6 +8,8 @@
 
 [[compress.org][压缩到一行]]
 
+[[document.org][文档示例]]
+
 [[fcitx.org][输入法相关的配置]]
 
 [[gc.org][对 gc 的一点认识]]
