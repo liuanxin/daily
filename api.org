@@ -1,0 +1,17 @@
+#+TITLE: Example
+#+AUTHOR: XXX
+
+*** api basic info
+: api desc ==> author
++ url: *~GET /api-info~*
++ param desc (*!* must have)
+
+| param | type    | example | desc                      |
+|-------+---------+---------+---------------------------|
+| id    | int *!* | 123     | param info                |
+| name  | string  | some    | info, default xyz if null |
+
++ return info
+#+BEGIN_SRC json
+{ "code": 1, "msg": "api info" }
+#+END_SRC
