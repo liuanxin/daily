@@ -2,9 +2,27 @@
 *** spring boot
 
 + profile
-#+BEGIN_QUOTE
-yml 是一种理解起来非常方便, 而且比 properties 少很多重复内容的配置, 可以多用.
 
+yml 是一种理解起来非常方便, 而且比 properties 少很多重复内容的配置, 可以多用. 比如之前
+#+BEGIN_SRC properties
+spring.config=aaa
+
+spring.profile.xyz=567
+spring.profile.abc=123
+spring.profile.opq=890
+#+END_SRC
+
+现在只需要写成下面的即可, 少写了很多配置, 而且理解上比上面还更清晰和紧密些
+#+BEGIN_SRC yml
+spring:
+  config: aaa
+  profile:
+    xyz: 567
+    abc: 123
+    opq: 890
+#+END_SRC
+
+#+BEGIN_QUOTE
 spring boot 有两个配置文件, 一个是 bootstrap.yml, 还有一个 application.yml,
 前者会先被加载, 加载后者时前者会被放到环境的上下文中去,
 这么一来, 一般把全局不变的可以写在 bootstrap 里面, 其他的写到 application 里面.
