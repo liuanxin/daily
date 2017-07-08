@@ -8,6 +8,8 @@
 
 [[compress.org][压缩到一行]]
 
+[[concurrent.org][Java 并发]]
+
 [[document.org][文档示例]]
 
 [[fcitx.org][输入法相关的配置]]
