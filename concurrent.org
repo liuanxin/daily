@@ -227,7 +227,7 @@ public class CyclicBarrierTest {
             } catch (InterruptedException | BrokenBarrierException e) {
                 e.printStackTrace();
             }
-            // 让当前线程经过栅栏 结束. 如同指定数量的线程都执行到了上面的方法, 于是这一组线程就都可以往下执行了
+            // 如果指定数量的线程都执行到了这里, 这一组线程就都可以往下执行了
 
             // 业务处理开始. 如 3 个人开始同时起跑
             System.out.println("线程 " + Thread.currentThread().getName() + " 出发");
@@ -465,7 +465,7 @@ public class PhaserReplaceCyclicBarrierTest {
             // 把当前线程放到指定数量的跑道前. 等待所有人全部准备好
             phaser.arriveAndAwaitAdvance();
 
-            // 让当前线程经过栅栏 结束. 如同指定数量的线程都执行到了上面的方法, 于是这一组线程就都可以往下执行了
+            // 如果指定数量的线程都执行到了这里, 这一组线程就都可以往下执行了
 
             // 业务处理开始. 如 3 个人开始同时起跑
             System.out.println("线程 " + Thread.currentThread().getName() + " 出发");
