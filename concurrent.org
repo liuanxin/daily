@@ -51,7 +51,7 @@ public class SemaphoreTest {
 
             // 让信号量释放当前线程的许可
             semaphore.release();
-            System.out.println("线程 " + Thread.currentThread().getName() + " 许可释放完成\n");
+            System.out.println("线程 " + Thread.currentThread().getName() + " 许可释放完成");
         }
     }
 }
@@ -69,18 +69,14 @@ public class SemaphoreTest {
 线程 pool-1-thread-2 开始
 线程 pool-1-thread-1 执行完毕, 开始释放许可
 线程 pool-1-thread-1 许可释放完成
-
 线程 pool-1-thread-5 获得了许可, 开始执行
 线程 pool-1-thread-3 执行完毕, 开始释放许可
 线程 pool-1-thread-3 许可释放完成
-
 线程 pool-1-thread-2 获得了许可, 开始执行
 线程 pool-1-thread-4 执行完毕, 开始释放许可
 线程 pool-1-thread-4 许可释放完成
-
 线程 pool-1-thread-5 执行完毕, 开始释放许可
 线程 pool-1-thread-5 许可释放完成
-
 线程 pool-1-thread-2 执行完毕, 开始释放许可
 线程 pool-1-thread-2 许可释放完成
 #+END_SRC
