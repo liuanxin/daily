@@ -49,7 +49,6 @@ PS: 尽量不要使用 join 来联表, 尽量由应用程序来组装数据并�
 ```java
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
-import com.weiqitong.common.util.U;
 
 /** 用户性别 */
 public enum Gender {
@@ -67,22 +66,33 @@ public enum Gender {
     public String getValue() {
         return value;
     }
-    /** 数据关联用 */
+    /** 存进数据库的实际用 */
     @JsonValue
     public int getCode() {
         return code;
     }
-    /** 数据反序列化时调用 */
+
+    /** 序列化转换时调用 */
     @JsonCreator
     public static Gender deserializer(Object obj) {
-        return U.toEnum(Gender.class, obj);
+        if (obj != null) {
+            String source = obj.toString().trim();
+            if (!"".equals(source)) {
+                for (Gender enumInfo : values()) {
+                    if (source.equalsIgnoreCase(enumInfo.name())
+                            || source.equalsIgnoreCase(String.valueOf(enumInfo.getCode()))
+                            || source.equalsIgnoreCase(String.valueOf(enumInfo.getValue()))) {
+                        return enumInfo;
+                    }
+                }
+            }
+        }
+        return null;
     }
 }
 ```
 其中 code 和 value 都要有, 一个用来存入数据库, 一个用来显示, 两个 jackson 的注解已经说明了序列化和反序列化的规则, 此时, 还需要让 mybatis 也知道, 我在每个模块的 test 中放了 GenerateEnumHandle 这个测试类, 运行后会在当前模块的 handler 包中生成对应的枚举处理类, 就像下面这样
 ```java
-import com.weiqitong.common.util.U;
-import com.weiqitong.user.enums.Gender;
 import org.apache.ibatis.type.BaseTypeHandler;
 import org.apache.ibatis.type.JdbcType;
 
@@ -132,24 +142,27 @@ public class GenderHandler extends BaseTypeHandler {
 
 ***
 ## 如何开启 MyBatis 端的 redis 缓存
-在相应的模块中添加如下的配置(这个 md 插件处理不了尖括号对)
+在相应的模块中添加如下的配置
 ```xml
+<properties>
+    <mybatis-redis-cache.version>1.0.1</mybatis-redis-cache.version>
+</properties>
+
 <dependency>
-    <groupId>com.github.mte</groupId>
+    <groupId>com.github.liuanxin</groupId>
     <artifactId>mybatis-redis-cache</artifactId>
+    <version>${mybatis-redis-cache.version}</version>
     <scope>provided</scope>
 </dependency>
 ```
-并在对应的 mapper.xml 中添加下面的代码(这个 md 插件处理不了尖括号)
+并在对应的 mapper.xml 中添加下面的代码(org.apache.ibatis.builder.xml.XMLMapperBuilder#cacheElement)
 ```xml
-<cache type="com.github.mte.caches.RedisCache" />
+<cache type="com.github.liuanxin.caches.RedisCache" />
 ```
+type : 基础缓存类型
+eviction : 排除算法缓存类型. 默认是 LRU, 还有 FIFO 等
+flushInterval : 缓存自动刷新时间. 默认是 60 * 60 * 1000 = 1 小时
 此 xml 中所有的 sql 都会走缓存, 相关的 redis 配置会先从 applition.yml 中获取, 如果未获取到, 再读 redis.properties
-
-***
-## NeedLogin 注解的使用场景
-当某个方法是需要登录才能请求的, 在此方法上标此注解即可. 用户在调用此方法时如果未登录将会直接返回 code 10
-PS: 在此方法中可以直接使用 ApiSessionUtil.getUserId 进行获取
 
 ***
 ## 一些提升开发效率的插件
