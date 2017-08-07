@@ -161,9 +161,11 @@ public class GenderHandler extends BaseTypeHandler {
 ```
 type : 基础缓存类型
 eviction : 排除算法缓存类型. 默认是 LRU, 还有 FIFO 等
+
     FIFO：First In First Out，先进先出。判断被存储的时间，离目前最远的数据优先被淘汰。
     LRU：Least Recently Used，最近最少使用。判断最近被使用的时间，目前最远的数据优先被淘汰。
     LFU：Least Frequently Used，最不经常使用。在一段时间内，数据被使用次数最少的，优先被淘汰。
+
 flushInterval : 缓存自动刷新时间. 默认是 60 * 60 * 1000 = 1 小时
 此 xml 中所有的 sql 都会走缓存, 相关的 redis 配置会先从 applition.yml 中获取, 如果未获取到, 再读 redis.properties
 
