@@ -1,5 +1,10 @@
 
 Java 的 [[http://java-latte.blogspot.com/2014/04/Semaphore-CountDownLatch-CyclicBarrier-Phaser-Exchanger-in-Java.html][并发包]] 共有下面这 5 种线程操作. 当然, 都是基于 cas 指令来完成的.
++ 信号量(Semaphore)
++ 计数器(CountDownLatch)
++ 栅栏(CyclicBarrier)
++ 数据交换(Exchanger)
++ Phaser(找不到好的中文名称来描述), 有 计数器(CountDownLatch) 和 栅栏(CyclicBarrier) 的功能. 从 1.7 开始才有
 
 ** 信号量(Semaphore)
 
@@ -267,7 +272,7 @@ public class CyclicBarrierTest {
 #+END_SRC
 
 
-** 数据交换
+** 数据交换(Exchanger)
 
 两个线程在运行时, 相互之间交换数据
 #+BEGIN_SRC java
