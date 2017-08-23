@@ -1,5 +1,6 @@
------
+
 *** 通过 Example 简化查询
+
 如果我们想要生成如下的 sql 语句:
 #+BEGIN_SRC sql
 select xxx from `t_user` where user_name = 'sz' and level > 1 and verify in (1, 2, 3)
@@ -10,6 +11,7 @@ UserExample userExample = new UserExample();
 userExample.or().andUserNameEqualTo(phone).andLevelGreaterThan(1).andVerifyIn(Arrays.asList(1, 2, 3));
 userMapper.selectByExample(userExample);
 #+END_SRC
+
 同样的 where 条件也可以用在 update 和 delete 上
 #+BEGIN_SRC java
 UserExample userExample = new UserExample();
@@ -20,6 +22,7 @@ userMapper.updateByExampleSelective(new User().setPassword("abc"), userExample);
 #+BEGIN_SRC sql
 update `t_user` set password='abc' where user_name = 'sz' and level > 1 and verify in (1, 2, 3)
 #+END_SRC
+
 如果要生成 or 语句, 可以像这样
 #+BEGIN_SRC java
 UserExample userExample = new UserExample();
@@ -30,7 +33,9 @@ userMapper.selectByExample(userExample);
 #+END_SRC
 生成的 sql 如下
 #+BEGIN_SRC sql
-select xx from `t_user` where (name = 'xx' and create_time &lt; now) or (email = 'xxx' and `cert` is not null) or (phone = 'xxx' and verify in (1, 2, 3))
+select xx from `t_user` where (name = 'xx' and create_time &lt; now) 
+    or (email = 'xxx' and `cert` is not null) 
+    or (phone = 'xxx' and verify in (1, 2, 3))
 #+END_SRC
 
 如果要生成条件复杂的 or 语句(比如在一个 and 条件里面有好几个 or), exmple 将会无法实现, 此时就需要手写 sql 了
@@ -39,13 +44,11 @@ select xx from `t_user` where (name = 'xx' and create_time &lt; now) or (email =
 *** 何时需要手工写自己的 _customer mapper 文件
 当有一些不得不联表的 sql 语句, 或者基于 example 很难生成的 or 查询, 此时放在 custom.xml 中, 确保自动生成和手写的 sql 分开管理.
 
-PS: 尽量不要使用 join 来联表, 尽量由应用程序来组装数据并每次向数据库发起单一且易维护的 sql 语句, 这样的好处是就算到了大后期, 对于数据库而言, 压力也全在单表的 sql 上, 优化起来很容易, 而且应用程序还可以在这里加上二级缓存, 将大部分的压力由 db 的 io 操作转移到了应用程序的内部运算和网卡的数据库连接上, java 做内部运算本就是强项, 这一块绝对不可能成为瓶颈, 数据库连接可以由 druid 连接池来达到高性能操作.
-
-阿里在 17 年初出的开发手册中也明确说明: 超级三个表禁止 join, 是有其原因的
+PS: 尽量不要使用 join 来联表, 尽量由应用程序来组装数据并每次向数据库发起单一且易维护的 sql 语句. 阿里在 17 年初出的开发手册中也明确说明: 超级三个表禁止 join, 是有其原因的
 
 -----
 *** 如何把枚举类映射成数据库字段
-枚举可以参考 性别 这个类
+比如下面的 性别
 #+BEGIN_SRC java
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
@@ -113,13 +116,7 @@ public class GenderHandler extends BaseTypeHandler {
     @Override
     public void setNonNullParameter(PreparedStatement ps, int i, Gender parameter,
                                     JdbcType jdbcType) throws SQLException {
-        if (jdbcType == null || jdbcType == JdbcType.VARCHAR) {
-            // 如果数据库的字段类型是 varchar, 就使用枚举的 name 来存储
-            ps.setString(i, parameter.name());
-        } else {
-            // 否则使用 getCode 返回的 int 值来存储
-            ps.setInt(i, parameter.getCode());
-        }
+        ps.setInt(i, parameter.getCode());
     }
 
     @Override
@@ -138,9 +135,10 @@ public class GenderHandler extends BaseTypeHandler {
     }
 }
 #+END_SRC
-这个类会被装载到 mybatis 的上下文中去, 这样在整个项目过程中, 任意地方都可以直接使用枚举而不需要基于数值转来转去
+将这个类装载到 mybatis 的上下文中去, 这样在整个项目过程中, 任意地方都可以直接使用枚举而不需要基于数值转来转去
 
 -----
+
 *** 如何开启 MyBatis 端的 redis 缓存
 在相应的模块中添加如下的配置
 #+BEGIN_SRC xml
@@ -155,10 +153,12 @@ public class GenderHandler extends BaseTypeHandler {
     <scope>provided</scope>
 </dependency>
 #+END_SRC
-并在对应的 mapper.xml 中添加下面的代码(org.apache.ibatis.builder.xml.XMLMapperBuilder#cacheElement)
+
+并在对应的 mapper.xml 中添加下面的代码
 #+BEGIN_SRC xml
 <cache type="com.github.liuanxin.caches.RedisCache" />
 #+END_SRC
+
 type : 基础缓存类型
 eviction : 排除算法缓存类型. 默认是 LRU, 还有 FIFO 等
 
@@ -170,6 +170,7 @@ flushInterval : 缓存自动刷新时间. 默认是 60 * 60 * 1000 = 1 小时
 此 xml 中所有的 sql 都会走缓存, 相关的 redis 配置会先从 applition.yml 中获取, 如果未获取到, 再读 redis.properties
 
 -----
+
 *** 一些提升开发效率的插件
 
 lombok plugin: 在类上标注解来自动给实体生成 set get 及构造方法
