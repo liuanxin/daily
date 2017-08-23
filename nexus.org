@@ -1,0 +1,56 @@
+
+去 https://issues.sonatype.org 注册账号并提交一个 issue(以自己的域名为 groupId, 没有可以使用 github 地址). 
+
+#+BEGIN_EXAMPLE
+summary 项目概要
+description 详细说明
+Group Id 最主要的信息, 这个有问题将会无法通过审核
+两个 url 可以用 github 地址, 这个是必需但是并不那么重要
+#+END_EXAMPLE
+
+等待后台人员审核(主要是域名是否归属于你), 通过后将会有, 并可以在 https://oss.sonatype.org 进行登录
+
+在本地生成一个公钥
+#+BEGIN_SRC conf
+gpg --gen-key  # 使用 gpg --list-key 可以查看. 公钥生成在 ~/.gnupg/openpgp-revocs.d/ 目录下
+# 真实姓名(要有五个字符) + 邮箱 + O(大写的 o). 还需要设置一个最少 8 位的密码. 最终会生成一个 pub 公钥(40 位)
+
+# 把生成的公钥发布到公网上去. 这一步好像不操作也是可以的
+# gpg --keyserver hkp://pool.sks-keyservers.net --send-keys 上面生成的公钥
+#+END_SRC
+
+在项目中使用
+#+BEGIN_SRC xml
+<parent>
+    <groupId>org.sonatype.oss</groupId>
+    <artifactId>oss-parent</artifactId>
+    <version>9</version>
+</parent>
+#+END_SRC
+
+在本地 ~/.m2/settings.xml 中添加
+#+BEGIN_SRC xml
+<servers>
+    <server>
+        <id>sonatype-nexus-snapshots</id>
+        <username><![CDATA[上面注册的 nexus 的账号]]></username>
+        <password><![CDATA[上面注册的 nexus 的密码]]></password>
+    </server>
+    <server>
+        <id>sonatype-nexus-staging</id>
+        <username><![CDATA[上面注册的 nexus 的账号]]></username>
+        <password><![CDATA[上面注册的 nexus 的密码]]></password>
+    </server>
+</servers>
+#+END_SRC
+
+发布包到中央仓库
+#+BEGIN_SRC conf
+mvn clean source:jar deploy -P sonatype-oss-release -Dgpg.passphrase=上面生成的公钥
+#+END_SRC
+输入上面设置好的 8 位密码, 将会把项目提交到公网做准备.
+
+登录 https://oss.sonatype.org, 打开 staging repositories 选项卡, 找到自己的项目.\\
+close 再 release(有错误将会无法关闭和发布, 注意看错误信息并处理).
+
+等待一段时间(一般一到两小时), 将会更新到公网. 时不时去 http://search.maven.org 搜索看有没有更新过去就行了
