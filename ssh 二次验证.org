@@ -1,3 +1,4 @@
+
 参考 : https://wzyboy.im/post/765.html
 
 1. 安装 centos(google-authenticator) debian(libpam-google-authenticator)
