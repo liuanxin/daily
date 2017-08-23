@@ -12,8 +12,9 @@ Group Id 最主要的信息, 这个有问题将会无法通过审核
 
 在本地生成一个公钥
 #+BEGIN_SRC conf
-gpg --gen-key  # 使用 gpg --list-key 可以查看. 公钥生成在 ~/.gnupg/openpgp-revocs.d/ 目录下, 命令 <gpg --delete-keys 公钥> 可以删除公钥
+gpg --gen-key
 # 真实姓名(要有五个字符) + 邮箱 + O(大写的 o). 还需要设置一个最少 8 位的密码. 最终会生成一个 pub 公钥(40 位)
+# 使用 gpg --list-key 可以查看(目录 ~/.gnupg/openpgp-revocs.d), 命令 <gpg --delete-keys 公钥> 用来删除公钥
 
 # 把生成的公钥发布到公网上去. 这一步好像不操作也是可以的
 # gpg --keyserver hkp://pool.sks-keyservers.net --send-keys 上面生成的公钥
