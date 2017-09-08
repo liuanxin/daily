@@ -196,7 +196,7 @@ public class CyclicBarrierTest {
     private static CyclicBarrier barrier = new CyclicBarrier(3);
 
     public static void main(String[] args) throws Exception {
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 9; i++) {
             // new Thread(new Worker(barrier)).start();
             executor.submit(new Worker(barrier));        // pool
         }
@@ -241,34 +241,32 @@ public class CyclicBarrierTest {
 测试结果大致如下
 #+BEGIN_SRC text
 线程 pool-1-thread-1 开始
+线程 pool-1-thread-1 准备好了
 线程 pool-1-thread-2 开始
 线程 pool-1-thread-3 开始
 线程 pool-1-thread-4 开始
-线程 pool-1-thread-6 开始
 线程 pool-1-thread-5 开始
+线程 pool-1-thread-6 开始
 线程 pool-1-thread-7 开始
-线程 pool-1-thread-9 开始
-线程 pool-1-thread-10 开始
-线程 pool-1-thread-10 准备好了
 线程 pool-1-thread-8 开始
+线程 pool-1-thread-9 开始
 线程 pool-1-thread-2 准备好了
-线程 pool-1-thread-1 准备好了
-线程 pool-1-thread-1 出发
-线程 pool-1-thread-10 出发
-线程 pool-1-thread-2 出发
-线程 pool-1-thread-9 准备好了
-线程 pool-1-thread-8 准备好了
-线程 pool-1-thread-3 准备好了
-线程 pool-1-thread-4 准备好了
-线程 pool-1-thread-9 出发
-线程 pool-1-thread-3 出发
-线程 pool-1-thread-8 出发
-线程 pool-1-thread-6 准备好了
 线程 pool-1-thread-5 准备好了
-线程 pool-1-thread-7 准备好了
 线程 pool-1-thread-5 出发
+线程 pool-1-thread-1 出发
+线程 pool-1-thread-2 出发
+线程 pool-1-thread-4 准备好了
+线程 pool-1-thread-6 准备好了
+线程 pool-1-thread-8 准备好了
+线程 pool-1-thread-8 出发
 线程 pool-1-thread-4 出发
 线程 pool-1-thread-6 出发
+线程 pool-1-thread-3 准备好了
+线程 pool-1-thread-7 准备好了
+线程 pool-1-thread-9 准备好了
+线程 pool-1-thread-9 出发
+线程 pool-1-thread-3 出发
+线程 pool-1-thread-7 出发
 #+END_SRC
 
 
@@ -437,7 +435,7 @@ public class PhaserReplaceCyclicBarrierTest {
     private static Phaser phaser = new Phaser(3);
 
     public static void main(String[] args) throws Exception {
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 9; i++) {
             // new Thread(new Worker(phaser)).start();
             executor.submit(new Worker(phaser));         // pool
         }
@@ -481,10 +479,28 @@ public class PhaserReplaceCyclicBarrierTest {
 线程 pool-1-thread-1 开始
 线程 pool-1-thread-2 开始
 线程 pool-1-thread-3 开始
+线程 pool-1-thread-4 开始
+线程 pool-1-thread-4 准备好了
+线程 pool-1-thread-6 开始
+线程 pool-1-thread-5 开始
+线程 pool-1-thread-7 开始
+线程 pool-1-thread-8 开始
+线程 pool-1-thread-7 准备好了
+线程 pool-1-thread-8 准备好了
+线程 pool-1-thread-7 出发
+线程 pool-1-thread-8 出发
+线程 pool-1-thread-9 开始
+线程 pool-1-thread-4 出发
 线程 pool-1-thread-1 准备好了
-线程 pool-1-thread-2 准备好了
 线程 pool-1-thread-3 准备好了
+线程 pool-1-thread-9 准备好了
 线程 pool-1-thread-3 出发
 线程 pool-1-thread-1 出发
+线程 pool-1-thread-9 出发
+线程 pool-1-thread-2 准备好了
+线程 pool-1-thread-6 准备好了
+线程 pool-1-thread-5 准备好了
+线程 pool-1-thread-5 出发
+线程 pool-1-thread-6 出发
 线程 pool-1-thread-2 出发
 #+END_SRC
