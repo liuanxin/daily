@@ -3,10 +3,10 @@
 
 *** 读写锁(第 4 页)
 #+BEGIN_EXAMPLE
-处理并发读或者写时, 可以通过 锁系统来解决问题.
-锁系统又分为 共享锁(shared lock) 和 排他锁(exclusive lock), 也叫 读锁(read lock) 和 写锁(write lock).
+处理并发读或者写时, 可以通过锁来解决问题.
+锁又分为 共享锁(shared lock) 和 排他锁(exclusive lock), 也叫 读锁(read lock) 和 写锁(write lock).
 
-这么理解两种锁: 读(read)锁是共享(shared)的, 相互之间不会阻塞. 而写(write)锁是排他(exclusive)的.
+可以这么理解: 读(read)锁是共享(shared)的, 相互之间不会阻塞. 而写(write)锁是排他(exclusive)的.
 #+END_EXAMPLE
 
 
