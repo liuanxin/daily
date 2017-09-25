@@ -8,7 +8,7 @@ Group Id 最主要的信息, 这个有问题将会无法通过审核
 两个 url 可以用 github 地址, 这个是必需但是并不那么重要
 #+END_EXAMPLE
 
-等待后台人员审核(主要是域名是否归属于你), 通过后将会有, 并可以在 https://oss.sonatype.org 进行登录
+等待后台人员审核(主要是域名是否归属于你), 通过后就可以发布项目了. 此时可以去 https://oss.sonatype.org 登录
 
 在本地生成一个公钥
 #+BEGIN_SRC conf
