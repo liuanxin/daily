@@ -18,6 +18,10 @@ gpg --gen-key
 
 # 把生成的公钥发布到公网上去(后面的 close 在操作 Signature Validation 时会验证).
 gpg --keyserver hkp://pool.sks-keyservers.net --send-keys 上面生成的公钥
+
+# http://pgp.mit.edu:11371
+# http://keyserver.ubuntu.com:11371
+# http://pool.sks-keyservers.net:11371
 #+END_SRC
 
 在项目中使用
