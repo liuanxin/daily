@@ -24,7 +24,7 @@ gpg --keyserver hkp://pool.sks-keyservers.net --send-keys 上面生成的公钥
 # http://pool.sks-keyservers.net:11371
 #+END_SRC
 
-在项目中使用
+在项目中使用 oss 做为 parent, 如果不指定, 则需要在 pom 中添加 distributionManagement
 #+BEGIN_SRC xml
 <parent>
     <groupId>org.sonatype.oss</groupId>
