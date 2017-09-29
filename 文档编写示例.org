@@ -2,7 +2,7 @@
 #+AUTHOR: XXX
 
 *** 获取用户信息(api basic info)
-: 当 xxx 发生时(api desc) ==> 接口开发者
+: 当 xxx 发生时(api desc) ==> 接口开发者及联系方式
 + url: ~GET /api-info~
 + 参数说明
 | param | type   | must  | example | desc                     |
