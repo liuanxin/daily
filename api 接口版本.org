@@ -1,41 +1,12 @@
 
-*** api 版本问题
-后端与 app 对接时的接口一般类似于这样:
+接口是会变化的, 比如 v3 开始传入的参数和返回的结果都变了, 但是却无法保证 app 是最新安装. 因此要做 api 上的兼容.
 
------
-
-示例
-: 示例说明
-+ 请求地址: *GET /example*
-+ 请求参数如下( * 表示参数必须传入)
-| 参数   | 示例值  | 类型     | 说明                                                            |
-|--------+---------+----------+---------------------------------------------------------------|
-| param1 | example | string * | 参数 1 说明                                                    |
-| param2 | 1       | int      | 0 表示 xx, 1 表示 yy, 2 表示 zz, 不传则默认是 0                 |
-| param3 | true    | string   | 1/true/y 表示 true, 0/false/n 表示 false, 不传则默认是 false    |
-+ 返回结果如下
-#+BEGIN_SRC json
-{
-  "code": 1,         // 1 表示请求成功, 0 表示请求时有错误, 10 表示请求时需要登录. etc...
-  "msg": "请求说明",
-  "data": {
-    "back1": 123,    // 返回的 1 字段的说明
-    "back2": true,   // 返回的 2 字段的说明
-    "back2": "xxxx"  // 返回的 3 字段的说明
-  }
-}
-#+END_SRC
-
------
-
-接口是经常会变化的, 比如 v3 开始传入的参数和返回的结果都变了, 但是却无法保证 app 是最新安装. 因此要做 api 上的兼容.
-
-通常有这么几种方式
-+ url 上加版本, 如: /v1/example 表示针对 v1 版本的 url, /v2/example 表示针对 v2 版本的 url
-+ 把版本信息附加到 user-agent 中去: 如: example/1.0 (iPhone; iOS 9.1; ...), example/2.0 Mozilla/5.0 Android...
+做为调用方来说, 全局给定一个版本给后端通常有这么几种方式
++ 加在 url 上, 比如: /v1/example 表示针对 v1 版本的 url, /v2/example 表示针对 v2 版本的 url
++ 把版本信息附加到 user-agent 中去: 如: wechat/1.2 (iPhone; iOS 9.1; ...)    wechat/2.0 (Mozilla/5.0 Android...)
 + 与上面的类似, 只是单独抽出来, 把版本信息放到 header 或者 param 中. 如: _v=(1|2)
 
-这几种方式对于 app 来说都可以很轻松的全局配置, 通常后面两种方式是比较好的, 也建议这么弄.
+这几种方式对于 app 来说都可以很轻松的全局配置, 通常后面两种方式是比较好的, 也建议这么弄. 下面以后面两种为例.
 
 -----
 
@@ -51,9 +22,9 @@
 
 -----
 
-基于 spring 强大的条件处理, 可以很轻松的实现这上面的问题, 基本的步骤如下:
+基于 spring mvc 的条件处理, 可以很轻松的实现这上面的问题:
 
-+ 新建一个枚举, 定义相关的版本, 要添加时要保证后加的枚举值的 code 要比前面的大
++ 新建一个枚举, 定义相关的版本, 并保证后加的枚举值的 code 要比前面的大
 #+BEGIN_SRC java
 /** app 访问版本 */
 public enum Version {
@@ -73,7 +44,7 @@ public enum Version {
 }
 #+END_SRC
 
-+ 新建一个注解, 在 controller 中标注, 重点在 spring 的 Mapping 注解, 如果没有这个, 多个 url 及 method 相同将会无法启动
++ 新建一个注解, 在 controller 中标注, *重点在 spring 的 Mapping 注解*, 如果没有这个, 多个 url 及 method 相同将会无法启动
 #+BEGIN_SRC java
 /** 在需要对 url 做多版本的时候标注, 可以在类上, 也可以在方法上. */
 @Target({ElementType.TYPE, ElementType.METHOD})
@@ -105,7 +76,7 @@ public class ApiVersionCondition implements RequestCondition<ApiVersionCondition
     }
 
     public ApiVersionCondition getMatchingCondition(HttpServletRequest request) {
-        // 从请求中获取到的版本. 多个纬度:「user-agent」或「header(param) 中的 app-ver」参数
+        // 从请求中获取到版本. 包容性强一点可以从多个纬度去获取:「user-agent」或「header(param) 中的 app-ver」参数等
         Integer reqVer = ...getVersion(request);
         // 如果请求的是 v3, Controller 中标注的有 v v1 v2 和 v5 四个方法, 则 v1 和 v2 会返回, 而 v5 则不会, v 不会参与对比
         return (reqVer != null && version != null && reqVer >= version.getCode()) ? this : null;
