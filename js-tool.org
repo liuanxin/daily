@@ -1,0 +1,52 @@
+
+js 工具代码
+
+#+BEGIN_SRC js
+if (!String.prototype.trim) {
+    String.prototype.trim = function () {
+        return this.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, '');
+    };
+}
+/* "{0} is bad, use {1}! {0} {2}".format("jsp", "thymeleaf") ==> jsp is bad, use thymeleaf! jsp {2} */
+if (!String.prototype.format) {
+    String.prototype.format = function() {
+        var args = arguments;
+        return this.replace(/{(\d+)}/g, function(match, number) {
+            return typeof args[number] != "undefined" ? args[number] : match;
+        });
+    };
+}
+/* String.format("{0} is bad, use {1}! {0} {2}", "jsp", "thymeleaf") ==> jsp is bad, use thymeleaf! jsp {2} */
+if (!String.format) {
+    String.format = function(format) {
+        var args = Array.prototype.slice.call(arguments, 1);
+        return format.replace(/{(\d+)}/g, function(match, number) {
+            return typeof args[number] != "undefined" ? args[number] : match;
+        });
+    };
+}
+
+function isBlank(str) {
+    return str == null || str === null
+        || str == undefined || str === undefined
+        || "" == str.trim() || "null" == str.trim() || "undefined" == str.trim();
+}
+function isNotBlank(str) {
+    return !isBlank(str);
+}
+
+function addPrefix(str) {
+    if (isBlank(str)) return "/";
+    if (str.startsWith("/")) return str;
+    return "/" + str;
+}
+function addSuffix(str) {
+    if (isBlank(str)) return "/";
+    if (str.endsWith("/")) return str;
+    return str + "/";
+}
+function appendUrl(str) {
+    if (isBlank(str)) return "";
+    return src + (src.contains("?") ? "&" : "?");
+}
+#+END_SRC
