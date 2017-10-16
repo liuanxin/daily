@@ -87,4 +87,4 @@ git push --tags
 PS: 第 12 步操作完之后, 原先基于 develop 的 commit 记录也会被写进 master 的记录里面去.  \\
 这时候可以使用 ~git rebase -i --autosquash~ 只保留最新的那条 commit 记录, 也可以在 第 12 步直接使用 ~git merge --squash develop~
 
-*git 实在是挺复杂的, 多用 git flow*
+*版本控制还是蛮复杂的, 加上了分布式, 复杂度更甚, 多用 git flow*
