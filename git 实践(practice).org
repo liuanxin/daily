@@ -31,7 +31,7 @@ git push -u origin develop
 git checkout -b liujie develop
 #+END_SRC
 
-+ +(可选, 这一步可以不需要)将本地 feature 分支推到远程+ *(6)*
++ +(可选, 这一步可以不需要)将本地 feature 分支推到远程 *(6)*+
 #+BEGIN_SRC bash
 git push -u origin liujie
 #+END_SRC
@@ -51,7 +51,7 @@ git pull origin develop <==> git fetch origin develop & git merge liujie # <==> 
 git push origin develop
 #+END_SRC
 
-+ +(可选, 这一步可以不需要)删除本地和跟本地对应的远程分支+ *(10)*
++ +(可选, 这一步可以不需要)删除本地和跟本地对应的远程分支 *(10)*+
 #+BEGIN_SRC bash
 git branch -d liujie & git push origin --delete liujie
 #+END_SRC
