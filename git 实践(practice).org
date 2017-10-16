@@ -26,32 +26,32 @@ git branch develop <==> git checkout -b develop master # <==> 表示左右两边
 git push -u origin develop
 #+END_SRC
 
-+ 基于本地 develop 建一个本地 feature 分支(用个人命名) ==> _开发人员操作_ *(5)*
++ 基于本地 develop 建一个本地 feature 分支(用个人命名) ==> /开发人员操作/ *(5)*
 #+BEGIN_SRC bash
 git checkout -b liujie develop
 #+END_SRC
 
-+ (可选, 这一步可以不需要)将本地 feature 分支推到远程 *(6)*
++ +(可选, 这一步可以不需要)将本地 feature 分支推到远程+ *(6)*
 #+BEGIN_SRC bash
 git push -u origin liujie
 #+END_SRC
 
-+ 本地开发 & 提交代码 ==> _开发人员操作_  *(7)*
++ 本地开发 & 提交代码 ==> /开发人员操作/  *(7)*
 #+BEGIN_SRC bash
 git commit -a -m "xxx" <==> git add . & git commit -m "xxx" # <==> 表示左右两边的意思等同
 #+END_SRC
 
-+ 从远程 develop 分支拉取代码(pull 等同于先 fetch, 再与当前分支合并) ==> _开发人员操作_ *(8)*
++ 从远程 develop 分支拉取代码(pull 等同于先 fetch, 再与当前分支合并) ==> /开发人员操作/ *(8)*
 #+BEGIN_SRC bash
 git pull origin develop <==> git fetch origin develop & git merge liujie # <==> 表示左右两边的意思等同
 #+END_SRC
 
-+ 基于当前本地 feature 分支向远程的 develop 分支推送代码 ==> _开发人员操作_ *(9)*
++ 基于当前本地 feature 分支向远程的 develop 分支推送代码 ==> /开发人员操作/ *(9)*
 #+BEGIN_SRC bash
 git push origin develop
 #+END_SRC
 
-+ (可选, 这一步可以不需要)删除本地和跟本地对应的远程分支 *(10)*
++ +(可选, 这一步可以不需要)删除本地和跟本地对应的远程分支+ *(10)*
 #+BEGIN_SRC bash
 git branch -d liujie & git push origin --delete liujie
 #+END_SRC
@@ -82,7 +82,7 @@ git push --tags
 
 
 *其中, 第 2 ~ 4、11 ~ 14 步由仓库的负责人来操作(2 和 4 只需要做一次, 11 ~ 14 是要发布时需要做的).  \\
-第 2、5、7 ~ 9 步由具体的开发人员操作(2 和 5 只需要做一次, 7 ~ 9 是日常的开发).*
+第 2、5、7 ~ 9 步由具体的开发人员操作(2 和 5 只需要做一次, 7 ~ 9 是日常的开发), 第 6、10 步不需要操作.*
 
 PS: 第 12 步操作完之后, 原先基于 develop 的 commit 记录也会被写进 master 的记录里面去.  \\
 这时候可以使用 ~git rebase -i --autosquash~ 只保留最新的那条 commit 记录, 也可以在 第 12 步直接使用 ~git merge --squash develop~
