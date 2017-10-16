@@ -65,7 +65,8 @@ git pull
 + 切换回本地 master 分支, 并将本地 develop 分支合并到本地 master 分支 ==> *仓库负责人操作* *(12)*
 #+BEGIN_SRC bash
 git checkout master
-git merge --no-ff develop
+git merge --no-ff develop     # --no-ff 是指不使用 fast-forward 方式合并, 保留分支的 commit 历史
+# git merge --squash develop  # 使用 squash 方式合并，把多次分支 commit 历史压缩为一次
 #+END_SRC
 
 + 基于本地 master 分支打一个 tag 并给一个说明 ==> *仓库负责人操作* *(13)*
@@ -84,6 +85,6 @@ git push --tags
 第 2、5、7 ~ 9 步由具体的开发人员操作(2 和 5 只需要做一次, 7 ~ 9 是日常的开发).*
 
 PS: 第 12 步操作完之后, 原先基于 develop 的 commit 记录也会被写进 master 的记录里面去.  \\
-这时候可以使用 ~git rebase -i --autosquash~ 只保留最新的那条 commit 记录(其他的被合并了)
+这时候可以使用 ~git rebase -i --autosquash~ 只保留最新的那条 commit 记录, 也可以在 第 12 步直接使用 ~git merge --squash develop~
 
 *git 实在是挺复杂的, 多用 git flow*
