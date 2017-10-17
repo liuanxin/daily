@@ -130,7 +130,7 @@ public class CountDownLatchTest {
         Waiter(CountDownLatch latch) {
             this.latch = latch;
         }
-
+        @Override
         public void run() {
             System.out.println("非计数器线程 " + Thread.currentThread().getName() + " 开始");
 
@@ -151,7 +151,7 @@ public class CountDownLatchTest {
         Decrement(CountDownLatch latch) {
             this.latch = latch;
         }
-
+        @Override
         public void run() {
             System.out.println("计数器线程 " + Thread.currentThread().getName() + " 开始");
 
@@ -310,7 +310,7 @@ public class ExchangerTest {
 
             info = new ArrayList<>(Arrays.asList(RANDOM.nextInt(10), RANDOM.nextInt(100), RANDOM.nextInt(1000)));
         }
-
+        @Override
         public void run() {
             System.out.println("线程 " + Thread.currentThread().getName() + " 开始");
             try {
@@ -372,7 +372,7 @@ public class PhaserReplaceCountDownLatchTest {
         Waiter(Phaser phaser) {
             this.phaser = phaser;
         }
-
+        @Override
         public void run() {
             System.out.println("非计数器线程 " + Thread.currentThread().getName() + " 开始");
 
@@ -389,7 +389,7 @@ public class PhaserReplaceCountDownLatchTest {
         Decrement(Phaser phaser) {
             this.phaser = phaser;
         }
-
+        @Override
         public void run() {
             System.out.println("计数器线程 " + Thread.currentThread().getName() + " 开始");
 
