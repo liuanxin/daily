@@ -58,7 +58,7 @@ commit;
 上面的两个事务如果按执行时间运行(其中 5 和 6 可以互换), 将会产生死锁.
 
 如果 t1 表是 InnoDB 存储引擎(其处理死锁的方法是 将持有最少行级排他锁的事务进行回滚):
-第 3 步运行会导致 事务二 阻塞
+第 3 步运行会导致 事务一 阻塞
 第 4 步运行会错误: 1213, deadlock found when trying to get lock;try restarting transation
      此时 3 的阻塞会释放并提示修改了一条记录
 事务二的提交动作将不会对任何数据有影响
@@ -70,7 +70,7 @@ commit;
 
 *** 多版本并发控制(mvcc)
 #+BEGIN_EXAMPLE
-mvcc 是行级锁的一个变种, 它避免了加锁操作开销更低.
+mvcc 是行级锁的一个变种, 它避免了加锁操作, 因此开销更低.
 
 它是通过保存数据在某个时间点的快照来实现的. 其只在 rr 和 rc 两个隔离级别下工作, 其他两个不兼容. ru 总是读最新行, s 会对读到的行加锁.
 #+END_EXAMPLE
@@ -78,7 +78,7 @@ mvcc 是行级锁的一个变种, 它避免了加锁操作开销更低.
 *** innodb 存储引擎
 #+BEGIN_EXAMPLE
 其采用 mvcc 来支持高并发, 其默认隔离级别是 rr, 并通过 间隙锁(next-key locking)策略 防止幻读.
-间隙锁使得 innodb 不仅锁定查询涉及的行, 还会对索引中的间隙进行锁定, 以防幻影行的插入.
+间隙锁使得 innodb 不仅锁定查询涉及的行, 还会对索引中的间隙进行锁定, 以防止幻影行的插入.
 #+END_EXAMPLE
 
 
@@ -99,7 +99,7 @@ mvcc 是行级锁的一个变种, 它避免了加锁操作开销更低.
 select xxx from t1 where c1 = 1 or c2 = 2;
 #+END_SRC
 
-在 5.0 以前, mysql 会对这个查询使用全表扫描. 除非改成下面的两个查询
+在 5.0 以前, mysql 会对这个查询使用全表扫描. 除非改成下面的方式查询
 #+BEGIN_SRC sql
 select xxx from t1 where c1 = 1
 union all
