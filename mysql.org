@@ -57,14 +57,14 @@ commit;
 #+BEGIN_EXAMPLE
 上面的两个事务如果按执行时间运行(其中 5 和 6 可以互换), 将会产生死锁.
 
-如果 t1 表是 InnoDB 存储引擎(其处理死锁的方法是 *将持有最少行级排他锁的事务进行回滚*):
+如果 t1 表是 InnoDB 存储引擎(其处理死锁的方法是 将持有最少行级排他锁的事务进行回滚):
 第 3 步运行会导致 事务二 阻塞
-第 4 步运行会错误: *1213, deadlock found when trying to get lock;try restarting transation*
+第 4 步运行会错误: 1213, deadlock found when trying to get lock;try restarting transation
      此时 3 的阻塞会释放并提示修改了一条记录
 事务二的提交动作将不会对任何数据有影响
 事务一的提交动作将会影响两条数据
 
-*也就是说 导致生效的数据 来自于 出现竞争时先操作的那个事务*
+也就是说 导致生效的数据 来自于 出现竞争时先操作的那个事务
 #+END_EXAMPLE
 
 
