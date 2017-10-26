@@ -20,14 +20,16 @@ import java.util.concurrent.TimeUnit;
 /** 信号量(可以重复使用) */
 public class SemaphoreTest {
 
-    private static ExecutorService executor = Executors.newCachedThreadPool();
+    // 如果不想使用线程池, 将 // pool 去掉, 将 // no pool 解开即可
+
+    private static ExecutorService executor = Executors.newCachedThreadPool();  // pool
     private static Semaphore semaphore = new Semaphore(3);
 
     public static void main(String[] args) throws Exception {
         for (int i = 0; i < 10; i++) {
             executor.submit(new Worker());              // pool
-            //new Thread(new Worker()).start();
-        }
+            // new Thread(new Worker()).start();        // no pool
+        }
         executor.awaitTermination(3, TimeUnit.SECONDS); // pool
         System.exit(0);                                 // pool
     }
@@ -101,14 +103,16 @@ import java.util.concurrent.TimeUnit;
 /** 计数器(不能重复使用) */
 public class CountDownLatchTest {
 
-    private static ExecutorService executor = Executors.newCachedThreadPool();
+    // 如果不想使用线程池, 将 // pool 去掉, 将下面的 // 整段代码解开即可
+
+    private static ExecutorService executor = Executors.newCachedThreadPool();  // pool
     private static CountDownLatch latch = new CountDownLatch(3);
 
     public static void main(String[] args) throws Exception {
         executor.submit(new Waiter(latch));
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 3; i++) {                    // pool
             executor.submit(new Decrement(latch));       // pool
-        }
+        }                                                // pool
         executor.awaitTermination(3, TimeUnit.SECONDS);  // pool
         System.exit(0);                                  // pool
 
@@ -193,13 +197,15 @@ import java.util.concurrent.*;
 /** 栅栏(可以重复使用) */
 public class CyclicBarrierTest {
 
-    private static ExecutorService executor = Executors.newCachedThreadPool();
-    private static CyclicBarrier barrier = new CyclicBarrier(3);
+    // 如果不想使用线程池, 将 // pool 去掉, 将 // no pool 解开即可
+
+    private static ExecutorService executor = Executors.newCachedThreadPool();  // pool
+    private static CyclicBarrier barrier = new CyclicBarrier(3);
 
     public static void main(String[] args) throws Exception {
         for (int i = 0; i < 9; i++) {
-            // new Thread(new Worker(barrier)).start();
-            executor.submit(new Worker(barrier));        // pool
+            // new Thread(new Worker(barrier)).start();  // no pool
+            executor.submit(new Worker(barrier));        // pool
         }
         executor.awaitTermination(3, TimeUnit.SECONDS);  // pool
         System.exit(0);                                  // pool
@@ -287,12 +293,14 @@ import java.util.concurrent.TimeUnit;
 /** 数据交换 */
 public class ExchangerTest {
 
-    private static ExecutorService executor = Executors.newCachedThreadPool();
+    // 如果不想使用线程池, 将 // pool 去掉, 将 // no pool 解开即可
+
+    private static ExecutorService executor = Executors.newCachedThreadPool();  // pool
     private static Exchanger<List<Integer>> exchanger = new Exchanger<>();
 
     public static void main(String[] args) throws Exception {
-        // new Thread(new Worker(exchanger)).start();
-        // new Thread(new Worker(exchanger)).start();
+        // new Thread(new Worker(exchanger)).start();    // no pool
+        // new Thread(new Worker(exchanger)).start();    // no pool
 
         executor.submit(new Worker(exchanger));          // pool
         executor.submit(new Worker(exchanger));          // pool
@@ -348,14 +356,16 @@ import java.util.concurrent.*;
 /** 1.7 之后新增加的功能, 可替代 计数器(CountDownLatch) 和 栅栏(CyclicBarrier). 当前示例可以替换 计数器(CountDownLatch) -> 不能重复使用 */
 public class PhaserReplaceCountDownLatchTest {
 
+    // 如果不想使用线程池, 将 // pool 去掉, 将下面的 // 整段代码解开即可
+
     private static ExecutorService executor = Executors.newCachedThreadPool();
     private static Phaser phaser = new Phaser(3);
 
     public static void main(String[] args) throws Exception {
-        executor.submit(new Waiter(phaser));
-        for (int i = 0; i < 3; i++) {
+        executor.submit(new Waiter(phaser));             // pool
+        for (int i = 0; i < 3; i++) {                    // pool
             executor.submit(new Decrement(phaser));      // pool
-        }
+        }                                                // pool
         executor.awaitTermination(3, TimeUnit.SECONDS);  // pool
         System.exit(0);                                  // pool
 
@@ -432,12 +442,14 @@ import java.util.concurrent.TimeUnit;
 /** 1.7 之后新增加的功能, 可替代 计数器(CountDownLatch) 和 栅栏(CyclicBarrier). 当前示例可以替换 栅栏(CyclicBarrier) -> 可以重复使用 */
 public class PhaserReplaceCyclicBarrierTest {
 
-    private static ExecutorService executor = Executors.newCachedThreadPool();
+    // 如果不想使用线程池, 将 // pool 去掉, 将 // no pool 解开即可
+
+    private static ExecutorService executor = Executors.newCachedThreadPool();  // pool
     private static Phaser phaser = new Phaser(3);
 
     public static void main(String[] args) throws Exception {
         for (int i = 0; i < 9; i++) {
-            // new Thread(new Worker(phaser)).start();
+            // new Thread(new Worker(phaser)).start();   // no pool
             executor.submit(new Worker(phaser));         // pool
         }
         executor.awaitTermination(3, TimeUnit.SECONDS);  // pool
