@@ -345,7 +345,7 @@ public class ExchangerTest {
 import java.util.Random;
 import java.util.concurrent.*;
 
-/** 1.7 之后新增加的功能, 可替代 栅栏 和 计数器外. 当前示例可以替换 CountDownLatch */
+/** 1.7 之后新增加的功能, 可替代 计数器(CountDownLatch) 和 栅栏(CyclicBarrier). 当前示例可以替换 计数器(CountDownLatch) */
 public class PhaserReplaceCountDownLatchTest {
 
     private static ExecutorService executor = Executors.newCachedThreadPool();
@@ -429,7 +429,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.TimeUnit;
 
-/** 1.7 之后新增加的功能, 可替代 栅栏 和 计数器外. 当前示例可以替换 CyclicBarrier */
+/** 1.7 之后新增加的功能, 可替代 计数器(CountDownLatch) 和 栅栏(CyclicBarrier). 当前示例可以替换 栅栏(CyclicBarrier) */
 public class PhaserReplaceCyclicBarrierTest {
 
     private static ExecutorService executor = Executors.newCachedThreadPool();
