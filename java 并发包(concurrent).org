@@ -22,10 +22,10 @@ public class SemaphoreTest {
 
     // 如果不想使用线程池, 将 // pool 所在的行去掉, 将 // no pool 解开即可
 
-    private static ExecutorService executor = Executors.newCachedThreadPool();  // pool --> for example
+    private static final ExecutorService executor = Executors.newCachedThreadPool();  // pool --> for example
 
     public static void main(String[] args) {
-        Semaphore semaphore = new Semaphore(3);
+        final Semaphore semaphore = new Semaphore(3);
         
         for (int i = 0; i < 10; i++) {
             executor.submit(new Worker(semaphore)); // pool
@@ -36,7 +36,7 @@ public class SemaphoreTest {
 }
 
 class Worker implements Runnable {
-    private Semaphore semaphore;
+    private final Semaphore semaphore;
     Worker(Semaphore semaphore) {
         this.semaphore = semaphore;
     }
@@ -130,11 +130,11 @@ public class CountDownLatchTest {
 
     // 如果不想使用线程池, 将 // pool 所在的行去掉, 将下面的 // 整段代码解开即可
 
-    private static ExecutorService executor = Executors.newCachedThreadPool();  // pool --> for example
+    private static final ExecutorService executor = Executors.newCachedThreadPool();  // pool --> for example
     private static final int COUNT = 3;
 
     public static void main(String[] args) throws Exception {
-        CountDownLatch latch = new CountDownLatch(COUNT);
+        final CountDownLatch latch = new CountDownLatch(COUNT);
         
         // 下面的 多线程 运行完之后才会运行此 Waiter
         executor.submit(new Waiter(latch));          // pool
@@ -160,7 +160,7 @@ public class CountDownLatchTest {
 }
 
 class Waiter implements Runnable {
-    private CountDownLatch latch;
+    private final CountDownLatch latch;
     Waiter(CountDownLatch latch) {
         this.latch = latch;
     }
@@ -182,7 +182,7 @@ class Waiter implements Runnable {
     }
 }
 class Decrement implements Runnable {
-    private CountDownLatch latch;
+    private final CountDownLatch latch;
     Decrement(CountDownLatch latch) {
         this.latch = latch;
     }
@@ -235,10 +235,10 @@ public class CyclicBarrierTest {
 
     // 如果不想使用线程池, 将 // pool 所在的行去掉, 将 // no pool 解开即可
 
-    private static ExecutorService executor = Executors.newCachedThreadPool();  // pool --> for example
+    private static final ExecutorService executor = Executors.newCachedThreadPool();  // pool --> for example
 
     public static void main(String[] args) throws Exception {
-        CyclicBarrier barrier = new CyclicBarrier(3);
+        final CyclicBarrier barrier = new CyclicBarrier(3);
 
         for (int i = 0; i < 9; i++) {
             // new Thread(new Worker(barrier)).start();  // no pool
@@ -249,7 +249,7 @@ public class CyclicBarrierTest {
 }
 
 class Worker implements Runnable {
-    private CyclicBarrier barrier;
+    private final CyclicBarrier barrier;
     Worker(CyclicBarrier barrier) {
         this.barrier = barrier;
     }
@@ -331,10 +331,10 @@ public class ExchangerTest {
 
     // 如果不想使用线程池, 将 // pool 所在的行去掉, 将 // no pool 解开即可
 
-    private static ExecutorService executor = Executors.newCachedThreadPool();  // pool --> for example
+    private static final ExecutorService executor = Executors.newCachedThreadPool();  // pool --> for example
 
     public static void main(String[] args) throws Exception {
-        Exchanger<List<Integer>> exchanger = new Exchanger<>();
+        final Exchanger<List<Integer>> exchanger = new Exchanger<>();
 
         // new Thread(new Worker(exchanger)).start();  // no pool
         // new Thread(new Worker(exchanger)).start();  // no pool
@@ -346,7 +346,7 @@ public class ExchangerTest {
 }
 
 class Worker implements Runnable {
-    private Exchanger<List<Integer>> exchanger;
+    private final Exchanger<List<Integer>> exchanger;
     Worker(Exchanger<List<Integer>> exchanger) {
         this.exchanger = exchanger;
     }
@@ -393,11 +393,11 @@ public class PhaserReplaceCountDownLatchTest {
 
     // 如果不想使用线程池, 将 // pool 所在的行去掉, 将下面的 // 整段代码解开即可
 
-    private static ExecutorService executor = Executors.newCachedThreadPool();  // pool --> for example
+    private static final ExecutorService executor = Executors.newCachedThreadPool();  // pool --> for example
     private static final int COUNT = 3;
 
     public static void main(String[] args) throws Exception {
-        Phaser phaser = new Phaser(COUNT);
+        final Phaser phaser = new Phaser(COUNT);
 
         // 下面的 多线程 运行完之后才会运行此 Waiter
         executor.submit(new Waiter(phaser));         // pool
@@ -419,7 +419,7 @@ public class PhaserReplaceCountDownLatchTest {
 }
 
 class Waiter implements Runnable {
-    private Phaser phaser;
+    private final Phaser phaser;
     Waiter(Phaser phaser) {
         this.phaser = phaser;
     }
@@ -437,7 +437,7 @@ class Waiter implements Runnable {
     }
 }
 class Decrement implements Runnable {
-    private Phaser phaser;
+    private final Phaser phaser;
     Decrement(Phaser phaser) {
         this.phaser = phaser;
     }
@@ -486,10 +486,10 @@ public class PhaserReplaceCyclicBarrierTest {
 
     // 如果不想使用线程池, 将 // pool 所在的行去掉, 将 // no pool 解开即可
 
-    private static ExecutorService executor = Executors.newCachedThreadPool();  // pool --> for example
+    private static final ExecutorService executor = Executors.newCachedThreadPool();  // pool --> for example
 
     public static void main(String[] args) throws Exception {
-        Phaser phaser = new Phaser(3);
+        final haser phaser = new Phaser(3);
 
         for (int i = 0; i < 9; i++) {
             // new Thread(new Worker(phaser)).start();  // no pool
@@ -500,7 +500,7 @@ public class PhaserReplaceCyclicBarrierTest {
 }
 
 class Worker implements Runnable {
-    private Phaser phaser;
+    private final Phaser phaser;
     Worker(Phaser phaser) {
         this.phaser = phaser;
     }
