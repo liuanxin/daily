@@ -158,6 +158,7 @@ public class CountDownLatchTest {
         System.out.println("已达到指定数量, 主线程 " + Thread.currentThread().getName() + " 可以运行了");
     }
 }
+
 class Waiter implements Runnable {
     private CountDownLatch latch;
     Waiter(CountDownLatch latch) {
@@ -180,7 +181,6 @@ class Waiter implements Runnable {
         // 业务处理开始.
     }
 }
-
 class Decrement implements Runnable {
     private CountDownLatch latch;
     Decrement(CountDownLatch latch) {
@@ -341,10 +341,10 @@ public class ExchangerTest {
 
         executor.submit(new Worker(exchanger));        // pool
         executor.submit(new Worker(exchanger));        // pool
-
         executor.shutdown();                           // pool
     }
 }
+
 class Worker implements Runnable {
     private Exchanger<List<Integer>> exchanger;
     Worker(Exchanger<List<Integer>> exchanger) {
