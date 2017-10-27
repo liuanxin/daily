@@ -99,7 +99,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-/** 计数器(不能重复使用) */
+/** 计数器(CountDownLatch -> 不能重复使用) */
 public class CountDownLatchTest {
 
     // 如果不想使用线程池, 将 // pool 所在的行去掉, 将下面的 // 整段代码解开即可
@@ -197,7 +197,7 @@ public class CountDownLatchTest {
 import java.util.Random;
 import java.util.concurrent.*;
 
-/** 栅栏(可以重复使用) */
+/** 栅栏(CyclicBarrier -> 可以重复使用) */
 public class CyclicBarrierTest {
 
     // 如果不想使用线程池, 将 // pool 所在的行去掉, 将 // no pool 解开即可
@@ -349,7 +349,7 @@ public class ExchangerTest {
 
 ** 移相器(Phaser)
 
-它拥有 计数器(CountDownLatch) 和 栅栏(CyclicBarrier) 的功能, 还提供了更丰富的操作. 从 1.7 开始才有
+它除了拥有 计数器(CountDownLatch) 和 栅栏(CyclicBarrier) 的功能, 还提供了更丰富的操作. 从 1.7 开始才有, 下面的示例仅说明替代两者的代码
 
 *** 替代 计数器(CountDownLatch)
 #+BEGIN_SRC java
