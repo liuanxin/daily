@@ -1,3 +1,33 @@
+接口文档示例
+
+#+TITLE: Example
+#+AUTHOR: XXX
+
+*** 获取用户信息(api basic info)
+: 当 xxx 发生时(api desc) ==> 接口开发者及联系方式
++ url: ~GET /api-info~
++ 参数说明
+| param | type   | must  | example | desc                     |
+|-------+--------+-------+---------+--------------------------|
+| id    | int    | *Yes* | 123     | 用户 id                  |
+| name  | string |       | x       | 用户名, 不传则默认是 xxx |
++ 返回示例
+#+BEGIN_SRC json
+{
+  "code": 1,
+  "msg": "api info",
+  "data" : {
+    "gender": 1,
+    "nick": "xxxx"
+  }
+}
+#+END_SRC
++ 返回值说明
+| field  | type   | desc                     |
+| gender | int    | 性别(1 男, 2 女, 3 未知) |
+| nick   | string | 昵称                     |
+
+
 
 接口是会变化的, 比如 v3 开始传入的参数和返回的结果都变了, 但是却无法保证 app 是最新安装. 因此要做 api 上的兼容.
 
