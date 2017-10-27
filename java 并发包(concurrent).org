@@ -22,7 +22,7 @@ public class SemaphoreTest {
 
     // 如果不想使用线程池, 将 // pool 所在的行去掉, 将 // no pool 解开即可
 
-    private static ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());  // pool
+    private static ExecutorService executor = Executors.newCachedThreadPool();  // pool --> for example
     private static Semaphore semaphore = new Semaphore(3);
 
     public static void main(String[] args) throws Exception {
@@ -104,7 +104,7 @@ public class CountDownLatchTest {
 
     // 如果不想使用线程池, 将 // pool 所在的行去掉, 将下面的 // 整段代码解开即可
 
-    private static ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());  // pool
+    private static ExecutorService executor = Executors.newCachedThreadPool();  // pool --> for example
     private static final int COUNT = 3;
     private static CountDownLatch latch = new CountDownLatch(COUNT);
 
@@ -202,7 +202,7 @@ public class CyclicBarrierTest {
 
     // 如果不想使用线程池, 将 // pool 所在的行去掉, 将 // no pool 解开即可
 
-    private static ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());  // pool
+    private static ExecutorService executor = Executors.newCachedThreadPool();  // pool --> for example
     private static CyclicBarrier barrier = new CyclicBarrier(3);
 
     public static void main(String[] args) throws Exception {
@@ -298,7 +298,7 @@ public class ExchangerTest {
 
     // 如果不想使用线程池, 将 // pool 所在的行去掉, 将 // no pool 解开即可
 
-    private static ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());  // pool
+    private static ExecutorService executor = Executors.newCachedThreadPool();  // pool --> for example
     private static Exchanger<List<Integer>> exchanger = new Exchanger<>();
 
     public static void main(String[] args) throws Exception {
@@ -361,7 +361,7 @@ public class PhaserReplaceCountDownLatchTest {
 
     // 如果不想使用线程池, 将 // pool 所在的行去掉, 将下面的 // 整段代码解开即可
 
-    private static ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());  // pool
+    private static ExecutorService executor = Executors.newCachedThreadPool();  // pool --> for example
     private static final int COUNT = 3;
     private static Phaser phaser = new Phaser(COUNT);
 
@@ -452,7 +452,7 @@ public class PhaserReplaceCyclicBarrierTest {
 
     // 如果不想使用线程池, 将 // pool 所在的行去掉, 将 // no pool 解开即可
 
-    private static ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());  // pool
+    private static ExecutorService executor = Executors.newCachedThreadPool();  // pool --> for example
     private static Phaser phaser = new Phaser(3);
 
     public static void main(String[] args) throws Exception {
