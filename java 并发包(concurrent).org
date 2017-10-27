@@ -1,65 +1,71 @@
 
 Java 的 [[http://java-latte.blogspot.com/2014/04/Semaphore-CountDownLatch-CyclicBarrier-Phaser-Exchanger-in-Java.html][并发包]] 共提供了下面 5 种线程操作.
-+ 信号量(Semaphore) ==> 控制某一时刻只允许指定数据的线程执行, 可以重复使用.
-+ 计数器(CountDownLatch) ==> 运行完指定数量的线程后, 运行某个单线程(也可以在主线程中处理), /不能重复使用/.
-+ 栅栏(CyclicBarrier) ==> 所有的线程都准备好了, 才能再各自继续往下执行, 可以重复使用.
-+ 数据交换(Exchanger) ==> 两个线程在运行时, 相互之间交换数据.
-+ 移相器(Phaser) ==> 有 计数器(CountDownLatch) 和 栅栏(CyclicBarrier) 的功能. 从 1.7 开始才有.
++ [[[Semaphore][信号量(Semaphore)]] ==> 控制某一时刻只允许指定数据的线程执行, 可以重复使用.
++ [[CountDownLatch][计数器(CountDownLatch)]] ==> 运行完指定数量的线程后, 运行某个单线程(也可以在主线程中处理), /不能重复使用/.
++ [[CyclicBarrier][栅栏(CyclicBarrier)]] ==> 所有的线程都准备好了, 才能再各自继续往下执行, 可以重复使用.
++ [[Exchanger][数据交换(Exchanger)]] ==> 两个线程在运行时, 相互之间交换数据.
++ [[Phaser][移相器(Phaser)]] ==> 有 计数器(CountDownLatch) 和 栅栏(CyclicBarrier) 的功能. 从 1.7 开始才有.
 
 
-** 信号量(Semaphore), 可以重复使用
+** Semaphore
 
-同一时间只允许指定数量的线程执行.
+*信号量(Semaphore), 可以重复使用. 同一时间只允许指定数量的线程执行.*
+
 #+BEGIN_SRC java
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
 
 /** 信号量(可以重复使用) */
 public class SemaphoreTest {
 
-    // 如果不想使用线程池, 将 // pool 所在的行去掉, 将 // no pool 解开即可
+    // 如果不想使用线程池, 将 // pool 所在的行去掉, 将 // no pool 解开即可
 
     private static ExecutorService executor = Executors.newCachedThreadPool();  // pool --> for example
-    private static Semaphore semaphore = new Semaphore(3);
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
+        Semaphore semaphore = new Semaphore(3);
+        
         for (int i = 0; i < 10; i++) {
-            executor.submit(new Worker());        // pool
-            // new Thread(new Worker()).start();  // no pool
+            executor.submit(new Worker(semaphore)); // pool
+            // new Thread(new Worker()).start();    // no pool
         }
-        executor.shutdown();                      // pool
+        executor.shutdown();                        // pool
+    }
+}
+
+class Worker implements Runnable {
+    private Semaphore semaphore;
+    Worker(Semaphore semaphore) {
+        this.semaphore = semaphore;
     }
 
-    static class Worker implements Runnable {
-        @Override
-        public void run() {
-            System.out.println("线程 " + Thread.currentThread().getName() + " 开始");
+    @Override
+    public void run() {
+        System.out.println("线程 " + Thread.currentThread().getName() + " 开始");
 
-            // 向信号量申请许可. 如果信号量中的许可用完了, 当前线程需要等待
-            try {
-                semaphore.acquire();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            // 向信号量申请许可成功
-
-            // 业务处理开始
-            System.out.println("线程 " + Thread.currentThread().getName() + " 获得了许可, 开始执行");
-            try {
-                Thread.sleep(20 * (new Random().nextInt(4)));
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            System.out.println("线程 " + Thread.currentThread().getName() + " 执行完毕, 开始释放许可");
-            // 业务处理结束, 准备释放许可
-
-            // 让信号量释放当前线程的许可
-            semaphore.release();
-            System.out.println("线程 " + Thread.currentThread().getName() + " 许可释放完成");
+        // 向信号量申请许可. 如果信号量中的许可用完了, 当前线程需要等待
+        try {
+            semaphore.acquire();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
+        // 向信号量申请许可成功
+
+        // 业务处理开始
+        System.out.println("线程 " + Thread.currentThread().getName() + " 获得了许可, 开始执行");
+        try {
+            Thread.sleep(20 * (new Random().nextInt(4)));
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        System.out.println("线程 " + Thread.currentThread().getName() + " 执行完毕, 开始释放许可");
+        // 业务处理结束, 准备释放许可
+
+        // 让信号量释放当前线程的许可
+        semaphore.release();
+        System.out.println("线程 " + Thread.currentThread().getName() + " 许可释放完成");
     }
 }
 #+END_SRC
@@ -109,26 +115,27 @@ public class SemaphoreTest {
 #+END_SRC
 
 
-** 计数器(CountDownLatch), 不能重复使用
+** CountDownLatch
 
-当运行完指定数量的线程后, 运行某个单线程(也可以在主线程中处理)
+计数器(CountDownLatch), 不能重复使用. 当运行完指定数量的线程后, 运行某个单线程(也可以在主线程中处理)
+
 #+BEGIN_SRC java
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 /** 计数器(CountDownLatch -> 不能重复使用) */
 public class CountDownLatchTest {
 
-    // 如果不想使用线程池, 将 // pool 所在的行去掉, 将下面的 // 整段代码解开即可
+    // 如果不想使用线程池, 将 // pool 所在的行去掉, 将下面的 // 整段代码解开即可
 
-    private static ExecutorService executor = Executors.newCachedThreadPool();  // pool --> for example
-    private static final int COUNT = 3;
-    private static CountDownLatch latch = new CountDownLatch(COUNT);
+    private static ExecutorService executor = Executors.newCachedThreadPool();  // pool --> for example
+    private static final int COUNT = 3;
 
     public static void main(String[] args) throws Exception {
+        CountDownLatch latch = new CountDownLatch(COUNT);
+        
         // 下面的 多线程 运行完之后才会运行此 Waiter
         executor.submit(new Waiter(latch));          // pool
         for (int i = 0; i < COUNT; i++) {            // pool
@@ -142,56 +149,58 @@ public class CountDownLatchTest {
 //            new Thread(new Decrement(latch)).start();
 //        }
 
-        // 上面的 多线程 运行完之后才会运行下面的块代码
-        try {
-            latch.await();
-        } catch (InterruptedException e) {
+        // 上面的 多线程 运行完之后才会运行下面的块代码
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        System.out.println("计数器已经达到指定数量, 主线程 " + Thread.currentThread().getName() + " 可以运行了");
+        System.out.println("计数器已经达到指定数量, 主线程 " + Thread.currentThread().getName() + " 可以运行了");
+    }
+}
+class Waiter implements Runnable {
+    private CountDownLatch latch;
+    Waiter(CountDownLatch latch) {
+        this.latch = latch;
     }
 
-    static class Waiter implements Runnable {
-        CountDownLatch latch;
-        Waiter(CountDownLatch latch) {
-            this.latch = latch;
+    @Override
+    public void run() {
+        System.out.println("非计数器线程 " + Thread.currentThread().getName() + " 开始");
+
+        // 等待计数器为 0, 当还未减到 0 时, 当前线程将会等待
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
-        @Override
-        public void run() {
-            System.out.println("非计数器线程 " + Thread.currentThread().getName() + " 开始");
 
-            // 等待计数器为 0, 当还未减到 0 时, 当前线程将会等待
-            try {
-                latch.await();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+        System.out.println("计数器已经达到指定数量, 当前非计数器线程 " + Thread.currentThread().getName() + " 可以运行了");
 
-            System.out.println("计数器已经达到指定数量, 当前非计数器线程 " + Thread.currentThread().getName() + " 可以运行了");
-
-            // 业务处理开始.
-        }
+        // 业务处理开始.
     }
-    static class Decrement implements Runnable {
-        CountDownLatch latch;
-        Decrement(CountDownLatch latch) {
-            this.latch = latch;
-        }
-        @Override
-        public void run() {
-            System.out.println("计数器线程 " + Thread.currentThread().getName() + " 开始");
+}
 
-            // 线程开始执行
-            try {
-                Thread.sleep(20 * (new Random().nextInt(4)));
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            System.out.println("计数器线程 " + Thread.currentThread().getName() + " 执行完毕");
+class Decrement implements Runnable {
+    private CountDownLatch latch;
+    Decrement(CountDownLatch latch) {
+        this.latch = latch;
+    }
 
-            // 计数器递减
-            latch.countDown();
+    @Override
+    public void run() {
+        System.out.println("计数器线程 " + Thread.currentThread().getName() + " 开始");
+
+        // 线程开始执行
+        try {
+            Thread.sleep(20 * (new Random().nextInt(4)));
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
+        System.out.println("计数器线程 " + Thread.currentThread().getName() + " 执行完毕");
+
+        // 计数器递减
+        latch.countDown();
     }
 }
 #+END_SRC
@@ -210,12 +219,16 @@ public class CountDownLatchTest {
 #+END_SRC
 
 
-** 栅栏(CyclicBarrier), 可以重复使用
+** CyclicBarrier
 
-所有的线程都准备好了, 才能再各自继续往下执行
+栅栏(CyclicBarrier), 可以重复使用. 所有的线程都准备好了, 才能再各自继续往下执行
+
 #+BEGIN_SRC java
 import java.util.Random;
-import java.util.concurrent.*;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /** 栅栏(CyclicBarrier -> 可以重复使用) */
 public class CyclicBarrierTest {
@@ -223,46 +236,48 @@ public class CyclicBarrierTest {
     // 如果不想使用线程池, 将 // pool 所在的行去掉, 将 // no pool 解开即可
 
     private static ExecutorService executor = Executors.newCachedThreadPool();  // pool --> for example
-    private static CyclicBarrier barrier = new CyclicBarrier(3);
 
     public static void main(String[] args) throws Exception {
+        CyclicBarrier barrier = new CyclicBarrier(3);
+
         for (int i = 0; i < 9; i++) {
-            // new Thread(new Worker(barrier)).start();  // no pool
-            executor.submit(new Worker(barrier));        // pool
+            // new Thread(new Worker(barrier)).start();  // no pool
+            executor.submit(new Worker(barrier));        // pool
         }
         executor.shutdown();                             // pool
     }
+}
 
-    static class Worker implements Runnable {
-        private CyclicBarrier barrier;
-        Worker(CyclicBarrier barrier) {
-            this.barrier = barrier;
+class Worker implements Runnable {
+    private CyclicBarrier barrier;
+    Worker(CyclicBarrier barrier) {
+        this.barrier = barrier;
+    }
+
+    @Override
+    public void run() {
+        System.out.println("线程 " + Thread.currentThread().getName() + " 开始");
+
+        // 做基本的准备工作. 如 3 个人开始跑步前的准备
+        try {
+            Thread.sleep(20 * (new Random().nextInt(4)));
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
-        @Override
-        public void run() {
-            System.out.println("线程 " + Thread.currentThread().getName() + " 开始");
+        System.out.println("线程 " + Thread.currentThread().getName() + " 准备好了");
+        // 做基本的准备工作完成
 
-            // 做基本的准备工作. 如 3 个人开始跑步前的准备
-            try {
-                Thread.sleep(20 * (new Random().nextInt(4)));
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            System.out.println("线程 " + Thread.currentThread().getName() + " 准备好了");
-            // 做基本的准备工作完成
-
-            // 把当前线程放到指定数量的跑道前. 等待所有人全部准备好, 如果数量还没有达到, 当前线程就要一直等待, 不会再往下执行
-            try {
-                barrier.await();
-            } catch (InterruptedException | BrokenBarrierException e) {
-                e.printStackTrace();
-            }
-            // 如果指定数量的线程都执行到了这里, 这一组线程就都可以往下执行了
-
-            // 业务处理开始. 如 3 个人开始同时起跑
-            System.out.println("指定线程都准备好了, 当前线程 " + Thread.currentThread().getName() + " 开始出发");
-            // ...
+        // 把当前线程放到指定数量的跑道前. 等待所有人全部准备好, 如果数量还没有达到, 当前线程就要一直等待, 不会再往下执行
+        try {
+            barrier.await();
+        } catch (InterruptedException | BrokenBarrierException e) {
+            e.printStackTrace();
         }
+        // 如果指定数量的线程都执行到了这里, 这一组线程就都可以往下执行了
+
+        // 业务处理开始. 如 3 个人开始同时起跑
+        System.out.println("指定数量的线程 都准备好了, 当前线程 " + Thread.currentThread().getName() + " 开始出发");
+        // ...
     }
 }
 #+END_SRC
@@ -281,36 +296,35 @@ public class CyclicBarrierTest {
 线程 pool-1-thread-9 开始
 线程 pool-1-thread-9 准备好了
 线程 pool-1-thread-3 准备好了
-指定线程数都准备好了, 当前线程 pool-1-thread-3 开始出发
+指定数量的线程 都准备好了, 当前线程 pool-1-thread-3 开始出发
 线程 pool-1-thread-2 准备好了
-指定线程数都准备好了, 当前线程 pool-1-thread-7 开始出发
-指定线程数都准备好了, 当前线程 pool-1-thread-9 开始出发
+指定数量的线程 都准备好了, 当前线程 pool-1-thread-7 开始出发
+指定数量的线程 都准备好了, 当前线程 pool-1-thread-9 开始出发
 线程 pool-1-thread-6 准备好了
 线程 pool-1-thread-8 准备好了
-指定线程数都准备好了, 当前线程 pool-1-thread-8 开始出发
-指定线程数都准备好了, 当前线程 pool-1-thread-2 开始出发
-指定线程数都准备好了, 当前线程 pool-1-thread-6 开始出发
+指定数量的线程 都准备好了, 当前线程 pool-1-thread-8 开始出发
+指定数量的线程 都准备好了, 当前线程 pool-1-thread-2 开始出发
+指定数量的线程 都准备好了, 当前线程 pool-1-thread-6 开始出发
 线程 pool-1-thread-4 准备好了
 线程 pool-1-thread-1 准备好了
 线程 pool-1-thread-5 准备好了
-指定线程数都准备好了, 当前线程 pool-1-thread-5 开始出发
-指定线程数都准备好了, 当前线程 pool-1-thread-4 开始出发
-指定线程数都准备好了, 当前线程 pool-1-thread-1 开始出发
+指定数量的线程 都准备好了, 当前线程 pool-1-thread-5 开始出发
+指定数量的线程 都准备好了, 当前线程 pool-1-thread-4 开始出发
+指定数量的线程 都准备好了, 当前线程 pool-1-thread-1 开始出发
 #+END_SRC
 
 
-** 数据交换(Exchanger)
+** Exchanger
 
-两个线程在运行时, 相互之间交换数据
+数据交换(Exchanger). 两个线程在运行时, 相互之间交换数据
+
 #+BEGIN_SRC java
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.Exchanger;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 /** 数据交换 */
 public class ExchangerTest {
@@ -318,9 +332,10 @@ public class ExchangerTest {
     // 如果不想使用线程池, 将 // pool 所在的行去掉, 将 // no pool 解开即可
 
     private static ExecutorService executor = Executors.newCachedThreadPool();  // pool --> for example
-    private static Exchanger<List<Integer>> exchanger = new Exchanger<>();
 
     public static void main(String[] args) throws Exception {
+        Exchanger<List<Integer>> exchanger = new Exchanger<>();
+
         // new Thread(new Worker(exchanger)).start();  // no pool
         // new Thread(new Worker(exchanger)).start();  // no pool
 
@@ -329,28 +344,25 @@ public class ExchangerTest {
 
         executor.shutdown();                           // pool
     }
+}
+class Worker implements Runnable {
+    private Exchanger<List<Integer>> exchanger;
+    Worker(Exchanger<List<Integer>> exchanger) {
+        this.exchanger = exchanger;
+    }
 
-    static final Random RANDOM = new Random();
-    static class Worker implements Runnable {
-        Exchanger<List<Integer>> exchanger;
-        List<Integer> info;
-        Worker(Exchanger<List<Integer>> exchanger) {
-            this.exchanger = exchanger;
+    @Override
+    public void run() {
+        System.out.println("线程 " + Thread.currentThread().getName() + " 开始");
+        try {
+            List<Integer> info = Arrays.asList(new Random().nextInt(10), new Random().nextInt(100), new Random().nextInt(1000));
+            // 开始交换数据
+            List<Integer> exchangeInfo = exchanger.exchange(info);
 
-            info = new ArrayList<>(Arrays.asList(RANDOM.nextInt(10), RANDOM.nextInt(100), RANDOM.nextInt(1000)));
-        }
-        @Override
-        public void run() {
-            System.out.println("线程 " + Thread.currentThread().getName() + " 开始");
-            try {
-                // 开始交换数据
-                List<Integer> exchangeInfo = exchanger.exchange(info);
-
-                System.out.println("当前线程 " + Thread.currentThread().getName() + " 持有的数据是: " + info
-                        + ", 交换过来的数据是 " + exchangeInfo);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            System.out.printf("当前线程 %s 持有的数据是: %s, 交换过来的数据是 %s\n",
+                    Thread.currentThread().getName(), info, exchangeInfo);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 }
@@ -365,25 +377,28 @@ public class ExchangerTest {
 #+END_SRC
 
 
-** 移相器(Phaser)
+** Phaser
 
-它除了拥有 计数器(CountDownLatch) 和 栅栏(CyclicBarrier) 的功能, 还提供了更丰富的操作. 从 1.7 开始才有, 下面的示例仅说明替代两者的代码
+移相器(Phaser) 除了拥有 计数器(CountDownLatch) 和 栅栏(CyclicBarrier) 的功能, 还提供了更丰富的操作. 从 1.7 开始才有, 下面的示例仅说明替代两者的代码
 
 *** 替代 计数器(CountDownLatch)
 #+BEGIN_SRC java
 import java.util.Random;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Phaser;
 
 /** 移相器(Phaser). 当前示例主要用来替换 计数器(CountDownLatch -> 不能重复使用) */
 public class PhaserReplaceCountDownLatchTest {
 
-    // 如果不想使用线程池, 将 // pool 所在的行去掉, 将下面的 // 整段代码解开即可
+    // 如果不想使用线程池, 将 // pool 所在的行去掉, 将下面的 // 整段代码解开即可
 
     private static ExecutorService executor = Executors.newCachedThreadPool();  // pool --> for example
     private static final int COUNT = 3;
-    private static Phaser phaser = new Phaser(COUNT);
 
     public static void main(String[] args) throws Exception {
+        Phaser phaser = new Phaser(COUNT);
+
         // 下面的 多线程 运行完之后才会运行此 Waiter
         executor.submit(new Waiter(phaser));         // pool
         for (int i = 0; i < COUNT; i++) {            // pool
@@ -401,44 +416,46 @@ public class PhaserReplaceCountDownLatchTest {
         phaser.awaitAdvance(phaser.getPhase());
         System.out.println("计数器已经达到指定数量, 主线程 " + Thread.currentThread().getName() + " 可以运行了");
     }
+}
 
-    static class Waiter implements Runnable {
-        Phaser phaser;
-        Waiter(Phaser phaser) {
-            this.phaser = phaser;
-        }
-        @Override
-        public void run() {
-            System.out.println("非计数器线程 " + Thread.currentThread().getName() + " 开始");
-
-            // 等待计数器为 0, 当还未减到 0 时, 当前线程将会等待
-            phaser.awaitAdvance(phaser.getPhase());
-
-            System.out.println("计数器已经达到指定数量, 当前非计数器线程 " + Thread.currentThread().getName() + " 可以运行了");
-
-            // 业务处理开始.
-        }
+class Waiter implements Runnable {
+    private Phaser phaser;
+    Waiter(Phaser phaser) {
+        this.phaser = phaser;
     }
-    static class Decrement implements Runnable {
-        Phaser phaser;
-        Decrement(Phaser phaser) {
-            this.phaser = phaser;
-        }
-        @Override
-        public void run() {
-            System.out.println("计数器线程 " + Thread.currentThread().getName() + " 开始");
 
-            // 线程开始执行
-            try {
-                Thread.sleep(20 * (new Random().nextInt(4)));
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            System.out.println("计数器线程 " + Thread.currentThread().getName() + " 执行完毕");
+    @Override
+    public void run() {
+        System.out.println("非计数器线程 " + Thread.currentThread().getName() + " 开始");
 
-            // 计数器递减
-            phaser.arrive();
+        // 等待计数器为 0, 当还未减到 0 时, 当前线程将会等待
+        phaser.awaitAdvance(phaser.getPhase());
+
+        System.out.println("计数器已经达到指定数量, 当前非计数器线程 " + Thread.currentThread().getName() + " 可以运行了");
+
+        // 业务处理开始.
+    }
+}
+class Decrement implements Runnable {
+    private Phaser phaser;
+    Decrement(Phaser phaser) {
+        this.phaser = phaser;
+    }
+
+    @Override
+    public void run() {
+        System.out.println("计数器线程 " + Thread.currentThread().getName() + " 开始");
+
+        // 线程开始执行
+        try {
+            Thread.sleep(20 * (new Random().nextInt(4)));
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
+        System.out.println("计数器线程 " + Thread.currentThread().getName() + " 执行完毕");
+
+        // 计数器递减
+        phaser.arrive();
     }
 }
 #+END_SRC
@@ -463,7 +480,6 @@ import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Phaser;
-import java.util.concurrent.TimeUnit;
 
 /** 移相器(Phaser). 当前示例主要用来替换 栅栏(CyclicBarrier -> 可以重复使用) */
 public class PhaserReplaceCyclicBarrierTest {
@@ -471,42 +487,43 @@ public class PhaserReplaceCyclicBarrierTest {
     // 如果不想使用线程池, 将 // pool 所在的行去掉, 将 // no pool 解开即可
 
     private static ExecutorService executor = Executors.newCachedThreadPool();  // pool --> for example
-    private static Phaser phaser = new Phaser(3);
 
     public static void main(String[] args) throws Exception {
+        Phaser phaser = new Phaser(3);
+
         for (int i = 0; i < 9; i++) {
             // new Thread(new Worker(phaser)).start();  // no pool
             executor.submit(new Worker(phaser));        // pool
         }
         executor.shutdown();                            // pool
     }
+}
 
-    static class Worker implements Runnable {
-        private Phaser phaser;
-        Worker(Phaser phaser) {
-            this.phaser = phaser;
+class Worker implements Runnable {
+    private Phaser phaser;
+    Worker(Phaser phaser) {
+        this.phaser = phaser;
+    }
+    @Override
+    public void run() {
+        System.out.println("线程 " + Thread.currentThread().getName() + " 开始");
+
+        // 做基本的准备工作
+        try {
+            Thread.sleep(20 * (new Random().nextInt(4)));
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
-        @Override
-        public void run() {
-            System.out.println("线程 " + Thread.currentThread().getName() + " 开始");
+        System.out.println("线程 " + Thread.currentThread().getName() + " 准备好了");
 
-            // 做基本的准备工作
-            try {
-                Thread.sleep(20 * (new Random().nextInt(4)));
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            System.out.println("线程 " + Thread.currentThread().getName() + " 准备好了");
+        // 把当前线程放到指定数量的跑道前. 等待所有人全部准备好
+        phaser.arriveAndAwaitAdvance();
 
-            // 把当前线程放到指定数量的跑道前. 等待所有人全部准备好
-            phaser.arriveAndAwaitAdvance();
+        // 如果指定数量的线程都执行到了这里, 这一组线程就都可以往下执行了
 
-            // 如果指定数量的线程都执行到了这里, 这一组线程就都可以往下执行了
-
-            // 业务处理开始. 如 3 个人开始同时起跑
-            System.out.println("线程 " + Thread.currentThread().getName() + " 出发");
-            // ...
-        }
+        // 业务处理开始. 如 3 个人开始同时起跑
+        System.out.println("线程 " + Thread.currentThread().getName() + " 出发");
+        // ...
     }
 }
 #+END_SRC
