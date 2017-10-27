@@ -4,7 +4,7 @@ Java 的 [[http://java-latte.blogspot.com/2014/04/Semaphore-CountDownLatch-Cycli
 + 计数器(CountDownLatch) ==> 运行完指定数量的线程后, 运行某个单线程(也可以在主线程中处理), /不能重复使用/.
 + 栅栏(CyclicBarrier) ==> 所有的线程都准备好了, 才能再各自继续往下执行, 可以重复使用.
 + 数据交换(Exchanger) ==> 两个线程在运行时, 相互之间交换数据.
-+ Phaser(找不到好的中文名称来描述) ==> 有 计数器(CountDownLatch) 和 栅栏(CyclicBarrier) 的功能. 从 1.7 开始才有.
++ 移相器(Phaser) ==> 有 计数器(CountDownLatch) 和 栅栏(CyclicBarrier) 的功能. 从 1.7 开始才有.
 
 
 ** 信号量(Semaphore), 可以重复使用
@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 /** 信号量(可以重复使用) */
 public class SemaphoreTest {
 
-    // 如果不想使用线程池, 将 // pool 去掉, 将 // no pool 解开即可
+    // 如果不想使用线程池, 将 // pool 所在的行去掉, 将 // no pool 解开即可
 
     private static ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());  // pool
     private static Semaphore semaphore = new Semaphore(3);
@@ -31,7 +31,6 @@ public class SemaphoreTest {
             // new Thread(new Worker()).start();        // no pool
         }
         executor.awaitTermination(3, TimeUnit.SECONDS); // pool
-        System.exit(0);                                 // pool
     }
 
     static class Worker implements Runnable {
@@ -103,30 +102,33 @@ import java.util.concurrent.TimeUnit;
 /** 计数器(不能重复使用) */
 public class CountDownLatchTest {
 
-    // 如果不想使用线程池, 将 // pool 去掉, 将下面的 // 整段代码解开即可
+    // 如果不想使用线程池, 将 // pool 所在的行去掉, 将下面的 // 整段代码解开即可
 
     private static ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());  // pool
-    private static CountDownLatch latch = new CountDownLatch(3);
+    private static final int COUNT = 3;
+    private static CountDownLatch latch = new CountDownLatch(COUNT);
 
     public static void main(String[] args) throws Exception {
-        executor.submit(new Waiter(latch));
-        for (int i = 0; i < 3; i++) {                    // pool
+        // 下面的 多线程 运行完之后才会运行此 Waiter
+        executor.submit(new Waiter(latch));              // pool
+        for (int i = 0; i < COUNT; i++) {                // pool
             executor.submit(new Decrement(latch));       // pool
         }                                                // pool
         executor.awaitTermination(3, TimeUnit.SECONDS);  // pool
-        System.exit(0);                                  // pool
 
-
-//        for (int i = 0; i < 3; i++) {
+//        // 下面的 多线程 运行完之后才会运行此 Waiter
+//        new Thread(new Waiter(latch)).start();
+//        for (int i = 0; i < COUNT; i++) {
 //            new Thread(new Decrement(latch)).start();
 //        }
-//
-//        try {
-//            latch.await();
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
-//        System.out.println("计数器已经达到指定数量, 当前线程 " + Thread.currentThread().getName() + " 可以运行");
+
+        // 上面的 多线程 运行完之后才会运行下面的块代码
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        System.out.println("计数器已经达到指定数量, 主线程 " + Thread.currentThread().getName() + " 可以运行了");
     }
 
     static class Waiter implements Runnable {
@@ -184,6 +186,7 @@ public class CountDownLatchTest {
 计数器线程 pool-1-thread-2 执行完毕
 计数器线程 pool-1-thread-3 执行完毕
 计数器已经达到指定数量, 当前非计数器线程 pool-1-thread-1 可以运行了
+计数器已经达到指定数量, 主线程 main 可以运行了
 #+END_SRC
 
 
@@ -197,7 +200,7 @@ import java.util.concurrent.*;
 /** 栅栏(可以重复使用) */
 public class CyclicBarrierTest {
 
-    // 如果不想使用线程池, 将 // pool 去掉, 将 // no pool 解开即可
+    // 如果不想使用线程池, 将 // pool 所在的行去掉, 将 // no pool 解开即可
 
     private static ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());  // pool
     private static CyclicBarrier barrier = new CyclicBarrier(3);
@@ -293,7 +296,7 @@ import java.util.concurrent.TimeUnit;
 /** 数据交换 */
 public class ExchangerTest {
 
-    // 如果不想使用线程池, 将 // pool 去掉, 将 // no pool 解开即可
+    // 如果不想使用线程池, 将 // pool 所在的行去掉, 将 // no pool 解开即可
 
     private static ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());  // pool
     private static Exchanger<List<Integer>> exchanger = new Exchanger<>();
@@ -344,7 +347,7 @@ public class ExchangerTest {
 #+END_SRC
 
 
-** Phaser(找不到好的中文名称来描述)
+** 移相器(Phaser)
 
 它拥有 计数器(CountDownLatch) 和 栅栏(CyclicBarrier) 的功能, 还提供了更丰富的操作. 从 1.7 开始才有
 
@@ -353,28 +356,32 @@ public class ExchangerTest {
 import java.util.Random;
 import java.util.concurrent.*;
 
-/** 1.7 之后新增加的功能, 可替代 计数器(CountDownLatch) 和 栅栏(CyclicBarrier). 当前示例可以替换 计数器(CountDownLatch) -> 不能重复使用 */
+/** 移相器(Phaser) 可替代 计数器(CountDownLatch) 和 栅栏(CyclicBarrier). 当前示例可以替换 计数器(CountDownLatch -> 不能重复使用) */
 public class PhaserReplaceCountDownLatchTest {
 
-    // 如果不想使用线程池, 将 // pool 去掉, 将下面的 // 整段代码解开即可
+    // 如果不想使用线程池, 将 // pool 所在的行去掉, 将下面的 // 整段代码解开即可
 
-    private static ExecutorService executor = Executors.newCachedThreadPool();
-    private static Phaser phaser = new Phaser(3);
+    private static ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());  // pool
+    private static final int COUNT = 3;
+    private static Phaser phaser = new Phaser(COUNT);
 
     public static void main(String[] args) throws Exception {
+        // 下面的 多线程 运行完之后才会运行此 Waiter
         executor.submit(new Waiter(phaser));             // pool
-        for (int i = 0; i < 3; i++) {                    // pool
+        for (int i = 0; i < COUNT; i++) {                // pool
             executor.submit(new Decrement(phaser));      // pool
         }                                                // pool
         executor.awaitTermination(3, TimeUnit.SECONDS);  // pool
-        System.exit(0);                                  // pool
 
-
-//        for (int i = 0; i < 3; i++) {
+//        // 下面的 多线程 运行完之后才会运行此 Waiter
+//        new Thread(new Waiter(phaser)).start();
+//        for (int i = 0; i < COUNT; i++) {
 //            new Thread(new Decrement(phaser)).start();
 //        }
-//        phaser.awaitAdvance(phaser.getPhase());
-//        System.out.println("计数器已经达到指定数量, 当前线程 " + Thread.currentThread().getName() + " 可以运行");
+
+        // 上面的 多线程 运行完之后才会运行下面的块代码
+        phaser.awaitAdvance(phaser.getPhase());
+        System.out.println("计数器已经达到指定数量, 主线程 " + Thread.currentThread().getName() + " 可以运行了");
     }
 
     static class Waiter implements Runnable {
@@ -428,6 +435,7 @@ public class PhaserReplaceCountDownLatchTest {
 计数器线程 pool-1-thread-2 执行完毕
 计数器线程 pool-1-thread-3 执行完毕
 计数器已经达到指定数量, 当前非计数器线程 pool-1-thread-1 可以运行了
+计数器已经达到指定数量, 主线程 main 可以运行了
 #+END_SRC
 
 
@@ -442,7 +450,7 @@ import java.util.concurrent.TimeUnit;
 /** 1.7 之后新增加的功能, 可替代 计数器(CountDownLatch) 和 栅栏(CyclicBarrier). 当前示例可以替换 栅栏(CyclicBarrier) -> 可以重复使用 */
 public class PhaserReplaceCyclicBarrierTest {
 
-    // 如果不想使用线程池, 将 // pool 去掉, 将 // no pool 解开即可
+    // 如果不想使用线程池, 将 // pool 所在的行去掉, 将 // no pool 解开即可
 
     private static ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());  // pool
     private static Phaser phaser = new Phaser(3);
@@ -453,14 +461,12 @@ public class PhaserReplaceCyclicBarrierTest {
             executor.submit(new Worker(phaser));         // pool
         }
         executor.awaitTermination(3, TimeUnit.SECONDS);  // pool
-        System.exit(0);                                  // pool
     }
 
     static class Worker implements Runnable {
         private Phaser phaser;
         Worker(Phaser phaser) {
             this.phaser = phaser;
-            //phaser.register();
         }
         @Override
         public void run() {
