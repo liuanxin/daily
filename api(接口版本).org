@@ -1,4 +1,3 @@
-接口文档示例
 
 #+TITLE: Example
 #+AUTHOR: XXX
