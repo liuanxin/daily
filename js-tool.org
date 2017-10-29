@@ -1,6 +1,4 @@
 
-js 工具代码
-
 #+BEGIN_SRC js
 if (!String.prototype.trim) {
     String.prototype.trim = function () {
