@@ -1,0 +1,252 @@
+
+** ConcurrentHashMap
+
+*** 1.7 版本
+使用分段(Segment)锁, 默认是 16 个. 每个分段都拥有一个独占锁.
+
+每个段都是一个类似于 HashMap 的结构, 它由一个 HashEntry 数组构成, 数组的每一项又是一个链表.
+
+定位到 Segment(HashEntry 数组)是通过 hash(key.hashCode()) 和 segmentFor(hash) 来得到, 采用 Wang/Jenkins hash
+#+BEGIN_SRC java
+private static int hash(int h) {
+    // Spread bits to regularize both segment and index locations,
+    // using variant of single-word Wang/Jenkins hash.
+    h += (h << 15) ^ 0xffffcd7d;
+    h ^= (h >>> 10);
+    h += (h << 3);
+    h ^= (h >>> 6);
+    h += (h << 2) + (h << 14);
+    return h ^ (h >>> 16);
+}
+final Segment<K,V> segmentFor(int hash) {
+    return segments[(hash >>> segmentShift) & segmentMask];
+}
+#+END_SRC
+有了 Segment(HashEntry 数组) 后的操作与 HashMap 一样. 定位数组下标的取模运算使用与运算实现
+#+BEGIN_SRC java
+hash & (len - 1)  // 等同于 hash % len, 但是 len 必须得是 2 的次方, 这样的话 len - 1 的二进制值是全是 1
+len - (len >>> 2) // 扩容值计算. 等同于 len * 0.75 = len - len * 1/4, 这样同样要求 len 必须能被 4 整除
+#+END_SRC
+
+为了避免出现 ConcurrentModificationException HashEntry 中的每个项里的 key,hash,next 都是 final 类型.
+
+#+BEGIN_SRC java
+V get(Object key, int hash) {
+    if (count != 0) { // read-volatile
+        HashEntry<K,V> e = getFirst(hash);
+        while (e != null) {
+            if (e.hash == hash && key.equals(e.key)) {
+                V v = e.value;
+                if (v != null)
+                    return v;
+                return readValueUnderLock(e); // recheck
+            }
+            e = e.next;
+        }
+    }
+    return null;
+}
+HashEntry<K,V> getFirst(int hash) {
+    HashEntry<K,V>[] tab = table;
+    return tab[hash & (tab.length - 1)];
+}
+V readValueUnderLock(HashEntry<K,V> e) {
+    lock();
+    try {
+        return e.value;
+    } finally {
+        unlock();
+    }
+}
+#+END_SRC
+读是没有加锁的. value 为空时加锁再读一次是基于 线程可见线 的考虑(HashEntry 还没有完全构造完却已经赋值了)
+
+#+BEGIN_SRC java -n
+V put(K key, int hash, V value, boolean onlyIfAbsent) {
+    lock();
+    try {
+        int c = count;
+        if (c++ > threshold) // ensure capacity
+            rehash();
+        HashEntry<K,V>[] tab = table;
+        int index = hash & (tab.length - 1);
+        HashEntry<K,V> first = tab[index];
+        HashEntry<K,V> e = first;
+        while (e != null && (e.hash != hash || !key.equals(e.key)))
+            e = e.next;
+        V oldValue;
+        if (e != null) {
+            oldValue = e.value;
+            if (!onlyIfAbsent)
+                e.value = value;
+        } else {
+            oldValue = null;
+            ++modCount;
+            tab[index] = new HashEntry<K,V>(key, hash, first, value);
+            count = c; // write-volatile
+        }
+        return oldValue;
+    } finally {
+        unlock();
+    }
+}
+#+END_SRC
+需要注意这么几点:
++ 每次添加新值到链表时都是放在头部, 因为 HashEntry 的 next 是 final 类型的
++ 只有在添加新值的时候才需要 count + 1, count 本身是 volatile, 读是没有加锁的
++ 构建链表是基于构造函数来设置, 这里会导致指令重排序. 所以在上面的读操作为空时再加锁取一次
++ Segment(HashEntry 数组)是 volatile 类型, 使用方法变量指向, 效率比直接操作要高, jvm 也能进行优化
+
+remove 也需要加锁. 删除节点后的所有条目都可以保留在列表中, 但是前面所有条目都需要克隆(HashEntry 的 next 是 final).
+如一开始的链表是 1 -> 2 -> 3 -> 4 -> 5, 现在要删除 3.
++ 先要找到 3 的位置
++ 循环 1 ~ 5(直到 3 就结束), 构建 1 成一个 HashEntry, 1 的 next 指向 3 的 next(也就是 4)
++ 构建 2 成一个 HashEntry, 2 的 next 指向上面的 1, 依此类推
++ 将离 3 最近的 HashEntry(这个示例中是 2)标识为 HashEntry 在 segment 中的下标位(可以理解成就是头位)
+最终原来的 1 -> 2 -> 3 -> 4 -> 5 就成了 2 -> 1 -> 4 -> 5, 原来的 123 还在, 但是已经没有指向, 将会被 gc 处理掉
+#+BEGIN_SRC java
+V remove(Object key, int hash, Object value) {
+    lock();
+    try {
+        int c = count - 1;
+        HashEntry<K,V>[] tab = table;
+        int index = hash & (tab.length - 1);
+        HashEntry<K,V> first = tab[index];
+        HashEntry<K,V> e = first;
+        while (e != null && (e.hash != hash || !key.equals(e.key)))
+            e = e.next;
+        V oldValue = null;
+        if (e != null) {
+            V v = e.value;
+            if (value == null || value.equals(v)) {
+                oldValue = v;
+                // All entries following removed node can stay in list,
+                // but all preceding ones need to be cloned.
+                ++modCount;
+                HashEntry<K,V> newFirst = e.next;
+                for (HashEntry<K,V> p = first; p != e; p = p.next)
+                    newFirst = new HashEntry<K,V>(p.key, p.hash, newFirst, p.value);
+                tab[index] = newFirst;
+                count = c; // write-volatile
+            }
+        }
+        return oldValue;
+    } finally {
+        unlock();
+    }
+}
+#+END_SRC
+
+size 操作需要便利所有的 segment(HashEntry 数组), 为了少加锁, 基于 modCount(操作数, 增加删除清空都会进行 +1 动作)比较来少进行加锁动作.
+
+
+*** 1.8 版本
+抛弃了 segment 分段锁机制, 底层使用 数组 + 链表 + 红黑树 的存储结构(当链表数 >= TREEIFY_THRESHOLD 时转成红黑树)
+1. table : 默认为 null, 初始动作发生在第一次插入时
+1. nextTable : 默认为 null, 只在扩容时不为空
+1. sizeCtl : 控制 table 的初始化和扩容操作
+  + -1 表示 table 正在初始化
+  + -N 表示有 N - 1 个线程正在进行扩容操作
+  + 其他时间
+    1. 如果 table 未初始化, 表示 table 需要初始化的大小
+    1. 如果初始化完成, 表示 table 的容量, 默认是 table 的 0.75 倍(使用 len - (len >>> 2) 计算得出)
+1. node : 只有 hash 和 key 是 final, next 不再是 final
+
+构造函数中只会初始化 sizeCtl 的值, 并不会初始化 table, 第一次 put 时才会初始化 table.
+初始化时使用 cas 指令将 sizeCtl 改成 -1, 其他线程通过 Thread.yield() 让出 cpu 时间来等待 table 初始化完成.
+
+#+BEGIN_SRC java
+final V putVal(K key, V value, boolean onlyIfAbsent) {
+    if (key == null || value == null) throw new NullPointerException();
+    int hash = spread(key.hashCode());
+    int binCount = 0;
+    for (Node<K,V>[] tab = table;;) {
+        Node<K,V> f; int n, i, fh;
+        if (tab == null || (n = tab.length) == 0)
+            tab = initTable();
+        else if ((f = tabAt(tab, i = (n - 1) & hash)) == null) {
+            if (casTabAt(tab, i, null,
+                    new Node<K,V>(hash, key, value, null)))
+                break;                   // no lock when adding to empty bin
+        }
+        else if ((fh = f.hash) == MOVED)
+            tab = helpTransfer(tab, f);
+        else {
+            V oldVal = null;
+            synchronized (f) {
+                if (tabAt(tab, i) == f) {
+                    if (fh >= 0) {
+                        binCount = 1;
+                        for (Node<K,V> e = f;; ++binCount) {
+                            K ek;
+                            if (e.hash == hash &&
+                                    ((ek = e.key) == key ||
+                                            (ek != null && key.equals(ek)))) {
+                                oldVal = e.val;
+                                if (!onlyIfAbsent)
+                                    e.val = value;
+                                break;
+                            }
+                            Node<K,V> pred = e;
+                            if ((e = e.next) == null) {
+                                pred.next = new Node<K,V>(hash, key,
+                                        value, null);
+                                break;
+                            }
+                        }
+                    }
+                    else if (f instanceof ConcurrentHashMap.TreeBin) {
+                        Node<K,V> p;
+                        binCount = 2;
+                        if ((p = ((ConcurrentHashMap.TreeBin<K,V>)f).putTreeVal(hash, key,
+                                value)) != null) {
+                            oldVal = p.val;
+                            if (!onlyIfAbsent)
+                                p.val = value;
+                        }
+                    }
+                }
+            }
+            if (binCount != 0) {
+                if (binCount >= TREEIFY_THRESHOLD)
+                    treeifyBin(tab, i);
+                if (oldVal != null)
+                    return oldVal;
+                break;
+            }
+        }
+    }
+    addCount(1L, binCount);
+    return null;
+}
+#+END_SRC
+put 采用 cas + synchronized 实现并发插入, 使用 unsafe.getObjectVolatile 操作,
+而不使用 tab[index] 是为了保证每次拿到的都是最新的内存数据(尽管 table 使用了 volatile).
+
+如果节点为空, 则使用 cas 插入, 失败则表示其他线程先一步插入了节点, 自旋尝试.
+如果节点的 hash 为 -1, 表示有其他线程正在扩容, 则一起进行扩容.
+其他情况下, 把节点按鍡或红黑树的方式插入到合适的位置(使用同步内置锁实现并发), 链表节点数 >= 8 则转换成红黑树结构
+
+#+BEGIN_SRC java
+public V get(Object key) {
+    Node<K,V>[] tab; Node<K,V> e, p; int n, eh; K ek;
+    int h = spread(key.hashCode());
+    if ((tab = table) != null && (n = tab.length) > 0 &&
+            (e = tabAt(tab, (n - 1) & h)) != null) {
+        if ((eh = e.hash) == h) {
+            if ((ek = e.key) == key || (ek != null && key.equals(ek)))
+                return e.val;
+        }
+        else if (eh < 0)
+            return (p = e.find(h, key)) != null ? p.val : null;
+        while ((e = e.next) != null) {
+            if (e.hash == h &&
+                    ((ek = e.key) == key || (ek != null && key.equals(ek))))
+                return e.val;
+        }
+    }
+    return null;
+}
+#+END_SRC
+
+get 同样不需要加锁
