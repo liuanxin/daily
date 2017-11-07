@@ -1,0 +1,149 @@
+
+#+BEGIN_EXAMPLE
+ArrayBlockingQueue 基于数组结构实现的阻塞队列, 实现自 BlockingQueue(线程安全)
+LinkedBlockingQueue 基于链表结构实现的阻塞队列, 实现自 BlockingQueue(线程安全)
+
+PriorityQueue 基于数组结构实现的优先级(排序)单向队列
+PriorityBlockingQueue 基于数组结构实现的阻塞优先级(排序)单向队列, 实现自 BlockingQueue(线程安全)
+
+ConcurrentLinkedQueue 基于链表结构实现的线程安全却非阻塞的单向 fifo 队列(线程安全)
+SynchronousQueue 双向等待的队列模型, 出等待入, 入等待出, 实现自 BlockingQueue(线程安全)
+DelayQueue 带有延时时间的队列, 实现自 BlockingQueue(线程安全)
+
+BlockingQueue 使用 Lock 及 Condition 实现阻塞(实现上也基于 cas, 但毕竟是间接操作且会导致线程挂起)
+ConcurrentLinkedQueue 使用 cas + 循环尝试(自旋)操作来实现非阻塞算法来取得最大的吞吐量
+#+END_EXAMPLE
+
+*** Queue
+|        | 抛出异常                        | 返回值                                    | 描述               |
+|--------+---------------------------------+-------------------------------------------+--------------------|
+| 入队列 | boolean add(E) 队列满时抛出异常 | boolean offer(E) 提供. 队列满时返回 false | 将元素加到队列尾部 |
+| 出队列 | E remove()     队列空时抛出异常 | E poll()         轮询. 队列空时返回 null  | 检查并返回队列头   |
+| 检查   | E element()    队列空时抛出异常 | E peek()         窥视. 队列空时返回 null  | 返回头元素但不移除 |
+
+*** BlockingQueue 
+可阻塞的线程安全版本(允许出入队列不满足条件时挂起线程并直到成功), 相对于 Queue 而言增加了两个操作.
+|        | 抛出异常 | 返回值 | 阻塞                       | 超时                         | 描述               |
+|--------+----------+--------+----------------------------+------------------------------+--------------------|
+| 入队列 | add      | offer  | void put(E) 队列满时将等待 | boolean offer(E, time, unit) | 将元素加到队列尾部 |
+| 出队列 | remove   | poll   | E take()    队列空时将等待 | E poll(time, unit)           | 移除队列头部元素   |
+
+#+BEGIN_EXAMPLE
+PriorityBlockingQueue 是一个支持排序的队列, 基于数组而且是无界的, 只有 take 才会阻塞, put 不会(除非达到 Integer.MAX).
+总的来说它并不是一个 fifo 队列, 而是一个有序的队列, 入队列不阻塞出队列阻塞, 所有操作都是线程安全的.
+
+
+同步队列 SynchronousQueue 没有 peek 操作(也就没有 element), 因为没有内部容量, 只有在移除时该元素才存在.
+这种设计中, 一个在线程中运行的对象要将某些信息、事件或任务传递给另一个线程中的对象时, 必须与该对象同步. 
+这是一种快速传递元素的方式, 在这种情况下元素总是以最快的方式从生产者传递给消费者. 多任务队列中这是最快处理任务的方式
+
+延时队列 DelayQueue 每次获取最先到达延时的元素, 使用场景像计划任务.
+#+END_EXAMPLE
+
+常见的 BlockingQueue 对比如下, 加上了 ConcurrentLinkedQueue 这个非阻塞队列
+| 队列                  | 场景                                                        | 优点                                                        | 缺点                                                                                     |
+|-----------------------+-------------------------------------------------------------+-------------------------------------------------------------+------------------------------------------------------------------------------------------|
+| ConcurrentLinkedQueue | 队列的最佳线程安全版本, 在不适用阻塞功能时是最有效的        | 使用原子操作, 效率最高, 也是一种无界队列                    | 不能阻塞线程, 因此无法获取队列大小,也无法控制队列容量                                    |
+| LinkedBlockingQueue   | 基于链表实现的可阻塞线程安全队列                            | 阻塞, 出入队列锁分离, 效率高,支持容量限制, 也能作为无界队列 | 存在锁机制, 且定位元素需要遍历, 因此效率上有一定影响                                     |
+| ArrayBlockingQueue    | 基于数组实现的可阻塞线程安全队列, 容量固定时不错的阻塞实现  | 阻塞, 出入队列效率更高, 同时还省内存                        | 容量固定, 不能扩容, 出入队列不能同时进行                                                 |
+| PriorityBlockingQueue | 按照自然排序实现的阻塞队列,元素需要排序(优先级)时的唯一选择 | 阻塞, 元素有序, 能自动扩容                                  | 出入队列比较慢, 效率较低, 基于数组实现, 扩容需要数组复制, 容量不能减小, 入队列不能被阻塞 |
+| SynchronousQueue      | 直接交换元素的实现, 快速处理任务队列时最有效的方式          | 阻塞, 快速交换队列                                          | 内部没有容量                                                                             |
+| DelayQueue            | 延时处理队列, 每个元素都有一个延时时间, 时间过期才能出队列  | 阻塞, 可延时                                                | 基于 PriorityQueue 实现(排序), 效率很低, 入队列不能被阻塞                                |
+
+#+BEGIN_EXAMPLE
+如果不需要阻塞队列则选择 ConcurrentLinkedQueue.
+如果需要阻塞队列
+    队列大小固定选择 ArrayBlockingQueue, 不固定则选择 LinkedBlockingQueue
+    需要对队列排序(优先级)选择 PriorityBlockingQueue
+    需要一个快速交换的队列选择 SynchronousQueue
+    需要对队列中的元素进行延时操作选择 DelayQueue
+#+END_EXAMPLE
+
+
+*** Deque(double ended queue 双端队列)
+#+BEGIN_EXAMPLE
+允许在头尾进行 入队出队 操作, 还可以实现堆栈, 功能上比 Queue 更复杂.
+
+Linkedlist 基于链表结构实现的双向队列
+ArrayDeque 基于数组结构实现的双向队列
+LinkedBlockingDeque 基于链表结构实现的阻塞双端队列(线程安全), lock + condition 类似于 ArrayBlockingQueue
+#+END_EXAMPLE
+
+
+*** 线程池
+
+合理使用线程池能带来 3 个很明显的好处:
+1. 降低资源消耗: 通过重用已创建的线程来降低线程创建和销毁的消耗
+1. 提高响应速度: 任务到达时不需要等待就可以立即执行
+1. 提高线程的可管理性: 线程池可以统一管理、分配、调优和监控
+
+任务的执行策略包括 4W3H 部分:
++ 任务在什么(What)线程中执行
++ 任务以什么(What)顺序执行(FIFO/LIFO/优先级等)
++ 同时有多少个(How Many)任务在并发执行
++ 允许有多少个(How Many)任务进入执行队列
++ 系统过载时放弃哪个(Which)任务, 怎么(How)通知应用程序这个动作
++ 任务执行的开始、结束应该什么什么(What)处理
+
+线程池的基本策略大致是下面这些
+1. 可以供使用者调用的启动线程类是 Thread. 像 Runnable/Timer/TimerTask  都是信赖 Thread 来启动的, 在线程池里也同样
+1. Runnable 执行完毕后是不能拿到执行结果的, 新定义了一个 Callable 接口来处理执行结果
+1. 为了异步阻塞获取结果, Future 可以帮忙调用线程获取执行结果
+1. Executor 解决了向线程池提交任务的入口问题, ScheduledExecutorService 解决了进行重复调用任务的问题
+1. CompletionService 解决了如何按照执行完毕的顺序获取结果的问题
+1. 线程数量通常是有限的而且不宜过多, 因此合适的任务队列就必不可少了, BlockingQueue 的容量可以解决此问题
+1. 固定任务容量意味着容量满后需要一定的策略来处理过多的任务, RejectedExecutionHandler 用来解决此问题
+1. 一定时间内阻塞意味着有超时, TimeoutException 就为了描述此现象
+1. 上述问题意味着配置一个合适的线程池是很复杂的, 因此 Executors 默认的一些线程池配置可以减少这个操作
+
+要配置一个线程池是比较复杂的, Executors 提供了一些静态工厂, 生成一些常用的线程池
++ newSingleThreadExecutor 创建一个单线程的线程池. 串行执行所有任务. 这个唯一的线程因为异常结束线程池会生成一个新线程来替代
++ newFixedThreadPool 创建固定大小的线程池. 每提交一个任务就创建一个线程, 直到达到最大, 一旦达到就会保持不变, 如果某个线程因为异常结束线程池将会补充一个新线程
++ newCachedThreadPool 创建一个可缓存的线程池. 线程池大小超出任务数就会回收部分空闲(60 秒不执行任务)线程. 任务数增加时线程池会智能添加线程来处理任务, 线程池大小无限制
++ newScheduledThreadPool 创建一个大小无限的线程池. 支持定时及周期性执行任务的需求
++ newSingleThreadScheduleExecutor 创建一个单线程的线程池, 支持定时及周期性执行任务的需求
+
+线程池的基本原理和执行方法
+1. 有运行、关闭、停止、结束四种状态, 结束后就会释放所有资源
+1. 平缓关闭线程池使用 shutdown()
+1. 立即关闭线程池使用 shutdownNow(), 同时得到未执行的任务列表
+1. 检测线程池是否正处于关闭中使用 isShutdown()
+1. 检测线程池是否已经关闭使用 isTerminated()
+1. 定时或者永久等待线程池关闭结束使用 awaitTermination()
+
+各参数说明
++ corePoolSize 核心数大小
++ maxmumPoolSize 最大容量大小
++ keepAliveTime 空闲时线程存活的时间
++ ThreadFactory 生成线程的线程工厂
++ blockingQueue 任务队列
++ rejectedExecutionHandler 拒绝策略
+
+RejectedExecutionHandler 提供了四种方式来处理任务拒绝策略
+1. 不用线程池中的线程执行: CallerRunsPolicy
+1. 抛出异常: AbortPolicy
+1. 丢弃要加入到队列的任务: DiscardPolicy
+1. 丢弃队列中旧的任务: DiscardOldestPolicy
+
+其工作原理如下
++ 调用 execute 添加任务时, 线程池将如下操作
+  1. 如果正在运行的线程数量小于 corePoolSize, 则马上创建线程运行此任务
+  1. 如果大于或等于 corePoolSize 则将任务放入队列
+  1. 如果队列满了, 且正在运行的线程数量小于 maximumPoolSize 则还是创建线程运行此任务
+  1. 如果队列满了, 且正在运行的线程数量大于或等于 maximumPoolSize 则执行拒绝策略
++ 当线程执行完之后会从队列中取下一任务来执行
++ 当线程已经空闲了 keepAliveTime 时, 线程池判断如果当前运行的线程数大于 corePoolSize 则停掉此线程, 最终会收缩到 corePoolSize 的大小说明
+
+实例说明
+#+BEGIN_EXAMPLE
+假设 corePoolSize 是 2, maximumPoolSize 是 6, 队列大小是 4, 当加入 15 个线程时, 执行顺序类似于这样:
+执行 1、2 线程, 线程 3 ~ 6 放入队列, 7 ~ 10 会被马上执行(因为队列满了), 假定此时每个线程都还没有执行完.
+此时 core 达到了, max 也到达了, 队列也满了而后 11 ~ 15 将会执行拒绝策略. 最终会执行的线程是: 1、2、7、8、9、10、3、4、5、6
+
+上面的过程主要针对指定大小的 BlockingQueue 来说, 如果使用的是无界队列(比如默认的 LinkedBlockingQueue)不会存在上述问题
+#+END_EXAMPLE
+
+ScheduleExecutorService 基于 ExecutorService 的两个方式不同点(下面 cost 为执行时间)
+1. scheduleAtFixedRate(R, init, per, TU) 加入后 init 开始执行, 而后每过 max(cost, per) 执行一次
+1. scheduleWithFixedDelay(R, init, delay, TU) 加入后 init 开始执行, 而后每过 (delay + cost) 再执行一次
+
