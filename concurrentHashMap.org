@@ -137,7 +137,7 @@ V remove(Object key, int hash, Object value) {
 }
 #+END_SRC
 
-size 操作需要便利所有的 segment(HashEntry 数组), 为了少加锁, 基于 modCount(操作数, 增加删除清空都会进行 +1 动作)比较来少进行加锁动作.
+size 操作需要遍历所有的 segment(HashEntry 数组), 为了少加锁, 基于 modCount(操作数, 增加删除清空都会进行 +1 动作)比较来少进行加锁动作.
 
 
 *** 1.8 版本
@@ -220,12 +220,11 @@ final V putVal(K key, V value, boolean onlyIfAbsent) {
     return null;
 }
 #+END_SRC
-put 采用 cas + synchronized 实现并发插入, 使用 unsafe.getObjectVolatile 操作,
-而不使用 tab[index] 是为了保证每次拿到的都是最新的内存数据(尽管 table 使用了 volatile).
+put 采用 cas + synchronized 实现并发插入, 使用 unsafe.getObjectVolatile 操作, 而不使用 tab[index] 是为了保证每次拿到的都是最新的内存数据(尽管 table 使用了 volatile).
 
-如果节点为空, 则使用 cas 插入, 失败则表示其他线程先一步插入了节点, 自旋尝试.
+如果节点为空, 则使用 cas 插入, 失败则表示其他线程先一步插入了节点, 则自旋再次尝试插入.
 如果节点的 hash 为 -1, 表示有其他线程正在扩容, 则一起进行扩容.
-其他情况下, 把节点按鍡或红黑树的方式插入到合适的位置(使用同步内置锁实现并发), 链表节点数 >= 8 则转换成红黑树结构
+其他情况下, 把节点按链表或红黑树的方式插入到合适的位置(使用同步内置锁实现并发), 链表节点数 >= 8 则转换成红黑树结构
 
 #+BEGIN_SRC java
 public V get(Object key) {
