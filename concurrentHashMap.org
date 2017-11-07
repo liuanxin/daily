@@ -25,7 +25,7 @@ final Segment<K,V> segmentFor(int hash) {
 有了 Segment(HashEntry 数组) 后的操作与 HashMap 一样. 定位数组下标的取模运算使用与运算实现
 #+BEGIN_SRC java
 hash & (len - 1)  // 等同于 hash % len, 但是 len 必须得是 2 的次方, 这样的话 len - 1 的二进制值是全是 1
-len - (len >>> 2) // 扩容值计算. 等同于 len * 0.75 = len - len * 1/4, 这样同样要求 len 必须能被 4 整除
+len - (len >>> 2) // 扩容值计算. 等同于 len * 0.75 = len - (len / 4), 这样同样要求 len 必须能被 4 整除
 #+END_SRC
 
 为了避免出现 ConcurrentModificationException HashEntry 中的每个项里的 key,hash,next 都是 final 类型.
