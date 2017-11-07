@@ -94,15 +94,15 @@ V put(K key, int hash, V value, boolean onlyIfAbsent) {
 需要注意这么几点:
 + 每次添加新值到链表时都是放在头部, 因为 HashEntry 的 next 是 final 类型的
 + 只有在添加新值的时候才需要 count + 1, count 本身是 volatile, 读是没有加锁的
-+ 构建链表是基于构造函数来设置, 这里会导致指令重排序. 所以在上面的读操作为空时再加锁取一次
-+ Segment(HashEntry 数组)是 volatile 类型, 使用方法变量指向, 效率比直接操作要高, jvm 也能进行优化
++ 构建链表是基于构造函数(new HashEntry)来设置, 这里会导致指令重排序. 所以在上面的读操作为空时再加锁取一次
++ Segment(HashEntry 数组)是 volatile 类型, 使用局部变量指向, 效率比直接操作要高, jvm 也能进行优化
 
 remove 也需要加锁. 删除节点后的所有条目都可以保留在列表中, 但是前面所有条目都需要克隆(HashEntry 的 next 是 final).
 如一开始的链表是 1 -> 2 -> 3 -> 4 -> 5, 现在要删除 3.
-+ 先要找到 3 的位置
-+ 循环 1 ~ 5(直到 3 就结束), 构建 1 成一个 HashEntry, 1 的 next 指向 3 的 next(也就是 4)
-+ 构建 2 成一个 HashEntry, 2 的 next 指向上面的 1, 依此类推
-+ 将离 3 最近的 HashEntry(这个示例中是 2)标识为 HashEntry 在 segment 中的下标位(可以理解成就是头位)
+1. 先要找到 3 的位置
+1. 循环 1 ~ 5(直到 3 就结束), 构建 1 成一个 HashEntry, 1 的 next 指向 3 的 next(也就是 4)
+1. 构建 2 成一个 HashEntry, 2 的 next 指向上面的 1, 依此类推
+1. 将离 3 最近的 HashEntry(这个示例中是 2)标识为 HashEntry 在 segment 中的下标位(可以理解成就是头位)
 最终原来的 1 -> 2 -> 3 -> 4 -> 5 就成了 2 -> 1 -> 4 -> 5, 原来的 123 还在, 但是已经没有指向, 将会被 gc 处理掉
 #+BEGIN_SRC java
 V remove(Object key, int hash, Object value) {
