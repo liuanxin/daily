@@ -46,13 +46,13 @@ Queue 接口的 api 总结如下
 | 出(remove)    | E remove()  空时抛出异常 | E poll()      空时返回 null  | 检查并返回队列头   |
 | 检查(examine) | E element() 空时抛出异常 | E peek()      空时返回 null  | 返回头元素但不移除 |
 
-Deque 抽象出一个双端队列(first & last), 它的 api 也是围绕这个特性构建, 总结如下
+Deque(double ended queue 双端队列) 抽象出一个双端队列(first & last), 它的 api 也是围绕这个特性构建
 | 操作          | 第一个元素                   | 最后一个元素               |
 | 入(insert)    | addFirst(E)    offerFirst(E) | addLast(E)    offerLast(E) |
 | 出(remove)    | removeFirst()  pollFirst()   | removeLast()  pollLast()   |
 | 检查(examine) | getFirst()     peekFirst()   | getLast()     peekLast()   |
 
-BlockingQueue 在入队列时已满则等待, 出队列时已空则等待, 另外还提供插入和删除元素时可以等待指定的持续时间, 总结如下
+BlockingQueue 入队列时满则等待, 出队列时空则等待, 另外还提供插入和删除元素时等待指定的时间
 |               | 抛出异常 | 返回值 | 阻塞                       | 超时                         |
 |---------------+----------+--------+----------------------------+------------------------------|
 | 入(insert)    | add      | offer  | void put(E) 队列满时将等待 | boolean offer(E, time, unit) |
@@ -92,15 +92,6 @@ BlockingDeque 的 api 总结如下
     需要对队列中的元素进行延时操作选择 DelayQueue
 #+END_EXAMPLE
 
-
-*** Deque(double ended queue 双端队列)
-#+BEGIN_EXAMPLE
-允许在头尾进行 入队出队 操作, 还可以实现堆栈, 功能上比 Queue 更复杂.
-
-Linkedlist 基于链表结构实现的双向队列
-ArrayDeque 基于数组结构实现的双向队列
-LinkedBlockingDeque 基于链表结构实现的阻塞双端队列(线程安全), lock + condition 类似于 ArrayBlockingQueue
-#+END_EXAMPLE
 
 
 *** 线程池
