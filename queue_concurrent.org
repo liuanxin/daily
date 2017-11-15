@@ -93,11 +93,11 @@ BlockingDeque 的 api 总结如下
 #+END_EXAMPLE
 
 最后来重点说一下 jdk 7 新增加的 LinkedTransferQueue([[http://www.cs.rochester.edu/u/scott/papers/2009_Scherer_CACM_SSQ.pdf][queue]]).
-它是 ConcurrentLinkedQueue、SynchronousQueue(公平模式下)、无界的 LinkedBlockingQueue 等的超集
 
 之前的 BlockingQueue 是对 读或写 锁定整个队列, 在竞争多的时候, 锁会比较耗时.
 而 SynchronousQueue 只能放一个物件, 要么有元素在等人拿, 要么有一个空的在等人放.
-基于上面的w的呼出来了 LinkedTransferQueue, 利用 compareAndSwap 操作, 针对每一个操作进行处理
+新的 LinkedTransferQueue 利用 compareAndSwap 操作, 针对每一个操作进行处理.
+它是 ConcurrentLinkedQueue、SynchronousQueue(公平模式下)、无界的 LinkedBlockingQueue 等的超集.
 
 其新提供的 api 如下
 #+BEGIN_SRC java
@@ -146,6 +146,7 @@ private static final int SYNC  = 2; // for transfer, take
 private static final int TIMED = 3; // for timed poll, tryTransfer
 #+END_SRC
 
+所有的操作都是基于 xfer 方法来实现的
 #+BEGIN_SRC java
 private E xfer(E e, boolean haveData, int how, long nanos) {
     if (haveData && (e == null))
@@ -312,14 +313,14 @@ private E awaitMatch(Node s, Node pred, E e, boolean timed, long nanos) {
 }
 #+END_SRC
 
+总体上来说, LinkedTransferQueue 通过 CAS 放入数据(data) 或 预约(reservation), 其消耗小于把整个队列锁住.
+
 入队列:
 + put() 或 add() 将元素放入队列(队列是无界的)
 + transfer() 如果队列中有线程在等待就直接给过去, 如果没有就放进队列
 出队列:
 + poll() 立即返回. 如果没有元素就返回空
 + take() 如果没有元素就等待
-
-总体上来说, LinkedTransferQueue 通过 CAS 放入数据(data) 或 预约(reservation), 其消耗小于把整个队列锁住.
 
 
 
