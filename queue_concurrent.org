@@ -156,12 +156,12 @@ and Executors.newSingleThreadExecutor (single background thread),
 that preconfigure settings for the most common usage scenarios
 #+END_QUOTE
 
-#+BEGIN_QUOTE
-意思说说推荐使用较为方便的 Executors 工厂方法, 它们均为大多数使用场景预定义了设置.
+#+BEGIN_EXAMPLE
+意思是说推荐使用较为方便的 Executors 工厂方法, 它们均为大多数使用场景预定义了设置.
   newCachedThreadPool() (无界线程池, 可以自动线程回收),
   newFixedThreadPool(int) (固定大小线程池),
   newSingleThreadExecutor() (单个后台线程)
-#+END_QUOTE
+#+END_EXAMPLE
 
 
 Executors 中的静态方法主要有
