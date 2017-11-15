@@ -92,12 +92,9 @@ BlockingDeque 的 api 总结如下
     需要对队列排序(优先级)选择 PriorityBlockingQueue
     需要一个快速交换的队列选择 SynchronousQueue
     需要对队列中的元素进行延时操作选择 DelayQueue
-#+END_EXAMPLE
 
 
-*** Deque(double ended queue 双端队列)
-#+BEGIN_EXAMPLE
-允许在头尾进行 入队出队 操作, 还可以实现堆栈, 功能上比 Queue 更复杂.
+Deque(double ended queue 双端队列)允许在头尾进行 入队出队 操作, 还可以实现堆栈, 功能上比 Queue 更复杂.
 
 Linkedlist 基于链表结构实现的双向队列
 ArrayDeque 基于数组结构实现的双向队列
