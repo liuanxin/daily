@@ -12,28 +12,26 @@ Queue 是 Java Collection Framework 中队列分支的超级接口, 在它下面
 通用队列实现有:
 + ArrayDeque 基于 Deque 的简单实现, 当想利用双端队列的特性而不使用链表时, 可以考虑使用(比 LinkedList 简单)
 + LinkedList 实现了 List 和 Deque 接口, 具有链表和队列的混合特性行为, 当想快速添加和移除两端的元素时可以考虑使用
-+ PriorityQueue 根据元素的自然顺序或构造时提供的比较器来排列元素
++ PriorityQueue 根据元素的自然顺序或构造时提供的比较器来排列元素, 也就是可以设置优先级
 
 并发队列实现有:
-+ ConcurrentLinkedQueue 基于链表结构实现的线程安全却非阻塞的单向 fifo 队列
-+ ArrayBlockingQueue 基于数组结构实现的阻塞队列, impl BlockingQueue
-+ LinkedBlockingQueue 基于链表结构实现的阻塞队列, impl BlockingQueue
++ ConcurrentLinkedQueue 基于链表实现的线程安全却非阻塞的单向 fifo 队列
++ ArrayBlockingQueue 基于数组实现的有界阻塞队列.
++ LinkedBlockingQueue 基于链表实现的有界(也可以无界)阻塞队列.
 + PriorityBlockingQueue 想利用 PriorityQueue 和 BlockingQueue 时使用此类
-+ DelayQueue 基于时间的调度阻塞队列, 添加到此队列的元素必须实现 Delayed 接口. 元素只能在延迟到期时才能取出, impl BlockingQueue
-+ SynchronousQueue 双向等待的队列模型, 出等待入, 入等待出, impl BlockingQueue
++ DelayQueue 时间调度阻塞队列, 添加到此队列的元素必须实现 Delayed 接口. 元素只能在延迟到期时才能取出. 基于 PriorityQueue 实现
++ SynchronousQueue 双向等待的阻塞队列(同步队列, 不存储元素), 出等待入, 入等待出, 不存储元素.
++ LinkedTransferQueue 基于链表实现的无界阻塞队列, 1.7 新增加
+
+Deque(double ended queue 双端队列)允许在头尾进行 入队出队 操作, 还可以实现堆栈, 功能上比 Queue 更复杂.
++ Linkedlist 基于链表结构实现的双向队列
++ ArrayDeque 基于数组结构实现的双向队列
++ LinkedBlockingDeque 基于链表结构实现的阻塞双端队列(线程安全), lock + condition 类似于 ArrayBlockingQueue
+
 
 #+BEGIN_EXAMPLE
 BlockingQueue 使用 Lock 及 Condition 实现阻塞(lock 本质上也是基于 cas, 但毕竟是间接操作且会导致线程挂起)
 ConcurrentLinkedQueue 使用 cas + 循环尝试(自旋)操作来实现非阻塞算法来取得最大的吞吐量
-
-PriorityBlockingQueue 是一个支持排序的队列, 基于数组而且是无界的, 只有 take 才会阻塞, put 不会(除非达到 Integer.MAX).
-总的来说它并不是一个 fifo 队列, 而是一个有序的队列, 入队列不阻塞出队列阻塞, 所有操作都是线程安全的.
-
-同步队列 SynchronousQueue 没有 peek 操作(也就没有 element), 因为没有内部容量, 只有在移除时该元素才存在.
-这种设计中, 一个在线程中运行的对象要将某些信息、事件或任务传递给另一个线程中的对象时, 必须与该对象同步. 
-这是一种快速传递元素的方式, 在这种情况下元素总是以最快的方式从生产者传递给消费者. 多任务队列中这是最快处理任务的方式
-
-延时队列 DelayQueue 每次获取最先到达延时的元素, 使用场景像计划任务.
 #+END_EXAMPLE
 
 
@@ -92,14 +90,237 @@ BlockingDeque 的 api 总结如下
     需要对队列排序(优先级)选择 PriorityBlockingQueue
     需要一个快速交换的队列选择 SynchronousQueue
     需要对队列中的元素进行延时操作选择 DelayQueue
-
-
-Deque(double ended queue 双端队列)允许在头尾进行 入队出队 操作, 还可以实现堆栈, 功能上比 Queue 更复杂.
-
-Linkedlist 基于链表结构实现的双向队列
-ArrayDeque 基于数组结构实现的双向队列
-LinkedBlockingDeque 基于链表结构实现的阻塞双端队列(线程安全), lock + condition 类似于 ArrayBlockingQueue
 #+END_EXAMPLE
+
+最后来重点说一下 jdk 7 新增加的 LinkedTransferQueue([[http://www.cs.rochester.edu/u/scott/papers/2009_Scherer_CACM_SSQ.pdf][queue]]).
+它是 ConcurrentLinkedQueue、SynchronousQueue(公平模式下)、无界的 LinkedBlockingQueue 等的超集
+
+之前的 BlockingQueue 是对 读或写 锁定整个队列, 在竞争多的时候, 锁会比较耗时.
+而 SynchronousQueue 只能放一个物件, 要么有元素在等人拿, 要么有一个空的在等人放.
+基于上面的w的呼出来了 LinkedTransferQueue, 利用 compareAndSwap 操作, 针对每一个操作进行处理
+
+其新提供的 api 如下
+#+BEGIN_SRC java
+public interface TransferQueue<E> extends BlockingQueue<E> {
+
+    /**
+     * 若当前存在一个正在等待获取的消费者线程(使用 take() 或者 poll() 函数), 使用该方法会即刻转移/传输对象元素 e.
+     * 若不存在, 则返回 false, 并且不进入队列.
+     * 这是一个不阻塞的操作
+     */
+    boolean tryTransfer(E e);
+
+    /**
+     * 若当前存在一个正在等待获取的消费者线程, 即立刻移交之.
+     * 否则将 e 插入到队列尾部, 并且等待进入阻塞状态, 到有消费者线程取走该元素
+     */
+    void transfer(E e) throws InterruptedException;
+
+    /**
+     * 若当前存在一个正在等待获取的消费者线程, 会立即传输给它.
+     * 否则将 e 插入到队列尾部, 并且等待被消费者线程获取消费掉.
+     * 若在指定的时间内 e 无法被消费者线程获取, 则返回false, 同时移除该元素.
+     */
+    boolean tryTransfer(E e, long timeout, TimeUnit unit)
+            throws InterruptedException;
+
+    /** 判断是否存在消费者线程 */
+    boolean hasWaitingConsumer();
+
+    /** 获取所有等待获取元素的消费线程数量 */
+    int getWaitingConsumerCount();
+}
+#+END_SRC
+
+LinkedTransferQueue 内部的结构保持着一个栈, 基本单位是 Node, 由四个部分构成
++ isData 是不是数据, 是的话 item 放具体的东西
++ item 不是数据则为 null
++ next 下一个节点
++ waiter 如果不是数据则是 预定(reservation), 是这个线程在等待
+
+操作节点的四种状态
+#+BEGIN_SRC java
+private static final int NOW   = 0; // for untimed poll, tryTransfer
+private static final int ASYNC = 1; // for offer, put, add
+private static final int SYNC  = 2; // for transfer, take
+private static final int TIMED = 3; // for timed poll, tryTransfer
+#+END_SRC
+
+#+BEGIN_SRC java
+private E xfer(E e, boolean haveData, int how, long nanos) {
+    if (haveData && (e == null))
+        throw new NullPointerException();
+    Node s = null;
+
+    retry:
+    for (;;) {
+        // 从首节点开始匹配, p == null 队列为空
+        for (Node h = head, p = h; p != null;) {
+
+            // 模型，request or data
+            boolean isData = p.isData;
+            // item 域
+            Object item = p.item;
+
+            // 找到一个没有匹配的节点
+            // item != p 也就是自身, 则表示没有匹配过
+            // (item != null) == isData, 表示模型符合
+            if (item != p && (item != null) == isData) {
+                // 节点类型和待处理类型一致, 这样肯定是不能匹配的
+                if (isData == haveData)   // can't match
+                    break;
+                // 匹配, 将 E 加入到 item 域中
+                // 如果 p 的 item 为 data, 那么 e 为 null, 如果 p 的 item 为 null, 那么 e 为 data
+                if (p.casItem(item, e)) { // match
+                    for (Node q = p; q != h;) {
+                        Node n = q.next;  // update by 2 unless singleton
+                        if (head == h && casHead(h, n == null ? q : n)) {
+                            h.forgetNext();
+                            break;
+                        }                 // advance and retry
+                        if ((h = head)   == null ||
+                                (q = h.next) == null || !q.isMatched())
+                            break;        // unless slack < 2
+                    }
+
+                    // 匹配后唤醒 p 的 waiter 线程: reservation 则叫人收货, data 则叫 null 收货
+                    LockSupport.unpark(p.waiter);
+                    return LinkedTransferQueue.<E>cast(item);
+                }
+            }
+            // 如果已经匹配了则向前推进
+            Node n = p.next;
+            // 如果 p 的 next 指向 p 本身，说明 p 节点已经有其他线程处理过了, 只能从 head 重新开始
+            p = (p != n) ? n : (h = head); // Use head if p offlist
+        }
+
+        // 如果没有找到匹配的节点, 则进行处理
+        // NOW 为 untimed poll, tryTransfer, 不需要入队
+        if (how != NOW) {                 // No matches available
+            // s == null, 新建一个节点
+            if (s == null)
+                s = new Node(e, haveData);
+            // 入队, 返回前驱节点
+            Node pred = tryAppend(s, haveData);
+            // 返回的前驱节点为 null, 那就是有 race, 被其他的抢了, 那就 continue 整个 for
+            if (pred == null)
+                continue retry;
+
+            // ASYNC 不需要阻塞等待
+            if (how != ASYNC)
+                return awaitMatch(s, pred, e, (how == TIMED), nanos);
+        }
+        return e;
+    }
+}
+#+END_SRC
+整个算法的核心就是寻找匹配节点, 找到了就返回, 否则就入队(NOW 则直接返回)
++ matched 匹配后就 casItem, 然后 unpark 匹配节点的 waiter 线程.
++ unmatched 根据传入的 how 来处理, now 直接返回, 其他入队, 入队后如果是 ASYNC 则返回, SYNC 和 TIMED 则阻塞等待匹配
+
+入队是调用 tryAppend 方法
+#+BEGIN_SRC java
+private Node tryAppend(Node s, boolean haveData) {
+    // 从尾节点tail开始
+    for (Node t = tail, p = t;;) {
+        Node n, u;
+
+        // 队列为空则将节点S设置为head
+        if (p == null && (p = head) == null) {
+            if (casHead(null, s))
+                return s;
+        }
+        // 如果为data
+        else if (p.cannotPrecede(haveData))
+            return null;
+        // 不是最后一个节点
+        else if ((n = p.next) != null)
+            p = p != t && t != (u = tail) ? (t = u) : (p != n) ? n : null;
+        // CAS失败，一般来说失败的原因在于p.next != null，可能有其他增加了tail，向前推荐
+        else if (!p.casNext(null, s))
+            p = p.next;                   // re-read on CAS failure
+        else {
+            if (p != t) {                 // update if slack now >= 2
+                while ((tail != t || !casTail(t, s)) &&
+                        (t = tail)   != null &&
+                        (s = t.next) != null && // advance and retry
+                        (s = s.next) != null && s != t);
+            }
+            return p;
+        }
+    }
+}
+#+END_SRC
+
+加入队列后, 如果 how 不是 ASYNC 则调用 awaitMatch() 阻塞等待
+#+BEGIN_SRC java
+private E awaitMatch(Node s, Node pred, E e, boolean timed, long nanos) {
+    // 超时控制
+    final long deadline = timed ? System.nanoTime() + nanos : 0L;
+    // 当前线程
+    Thread w = Thread.currentThread();
+
+    // 自旋次数
+    int spins = -1; // initialized after first item and cancel checks
+    // 随机数
+    ThreadLocalRandom randomYields = null; // bound if needed
+    
+    for (;;) {
+        Object item = s.item;
+        //匹配了，可能有其他线程匹配了线程
+        if (item != e) {
+            // 撤销该节点
+            s.forgetContents();
+            return LinkedTransferQueue.<E>cast(item);
+        }
+
+        // 线程中断或者超时了。则调用将s节点item设置为e，等待取消
+        if ((w.isInterrupted() || (timed && nanos <= 0)) && s.casItem(e, s)) {
+            // 断开节点
+            unsplice(pred, s);
+            return e;
+        }
+        // 自旋
+        if (spins < 0) {
+            // 计算自旋次数
+            if ((spins = spinsFor(pred, s.isData)) > 0)
+                randomYields = ThreadLocalRandom.current();
+        }
+        // 自旋
+        else if (spins > 0) {
+            --spins;
+            // 一定的机率放出 cpu 时钟
+            if (randomYields.nextInt(CHAINED_SPINS) == 0)
+                Thread.yield();
+        }
+        // 将当前线程设置到节点的waiter域
+        // 一开始s.waiter == null 肯定是会成立的，
+        else if (s.waiter == null) {
+            s.waiter = w;                 // request unpark then recheck
+        }
+        // 超时阻塞
+        else if (timed) {
+            nanos = deadline - System.nanoTime();
+            if (nanos > 0L)
+                LockSupport.parkNanos(this, nanos);
+        }
+        else {
+            // 不是超时阻塞
+            LockSupport.park(this);
+        }
+    }
+}
+#+END_SRC
+
+入队列:
++ put() 或 add() 将元素放入队列(队列是无界的)
++ transfer() 如果队列中有线程在等待就直接给过去, 如果没有就放进队列
+出队列:
++ poll() 立即返回. 如果没有元素就返回空
++ take() 如果没有元素就等待
+
+总体上来说, LinkedTransferQueue 通过 CAS 放入数据(data) 或 预约(reservation), 其消耗小于把整个队列锁住.
+
 
 
 *** 线程池
