@@ -1,4 +1,6 @@
 
+*** Queue
+
 Queue 是 Java Collection Framework 中队列分支的超级接口, 在它下面有这些子接口:
 + BlockingQueue 阻塞队列(出入队列时如果不满足条件将挂起线程并直到成功)
 + Deque 双端队列. 允许在两端添加或删除元素
@@ -93,6 +95,15 @@ BlockingDeque 的 api 总结如下
 #+END_EXAMPLE
 
 
+*** Deque(double ended queue 双端队列)
+#+BEGIN_EXAMPLE
+允许在头尾进行 入队出队 操作, 还可以实现堆栈, 功能上比 Queue 更复杂.
+
+Linkedlist 基于链表结构实现的双向队列
+ArrayDeque 基于数组结构实现的双向队列
+LinkedBlockingDeque 基于链表结构实现的阻塞双端队列(线程安全), lock + condition 类似于 ArrayBlockingQueue
+#+END_EXAMPLE
+
 
 *** 线程池
 
@@ -108,24 +119,6 @@ BlockingDeque 的 api 总结如下
 + 允许有多少个(How Many)任务进入执行队列
 + 系统过载时放弃哪个(Which)任务, 怎么(How)通知应用程序这个动作
 + 任务执行的开始、结束应该什么什么(What)处理
-
-线程池的基本策略大致是下面这些
-1. 可以供使用者调用的启动线程类是 Thread. 像 Runnable/Timer/TimerTask  都是信赖 Thread 来启动的, 在线程池里也同样
-1. Runnable 执行完毕后是不能拿到执行结果的, 新定义了一个 Callable 接口来处理执行结果
-1. 为了异步阻塞获取结果, Future 可以帮忙调用线程获取执行结果
-1. Executor 解决了向线程池提交任务的入口问题, ScheduledExecutorService 解决了进行重复调用任务的问题
-1. CompletionService 解决了如何按照执行完毕的顺序获取结果的问题
-1. 线程数量通常是有限的而且不宜过多, 因此合适的任务队列就必不可少了, BlockingQueue 的容量可以解决此问题
-1. 固定任务容量意味着容量满后需要一定的策略来处理过多的任务, RejectedExecutionHandler 用来解决此问题
-1. 一定时间内阻塞意味着有超时, TimeoutException 就为了描述此现象
-1. 上述问题意味着配置一个合适的线程池是很复杂的, 因此 Executors 默认的一些线程池配置可以减少这个操作
-
-要配置一个线程池是比较复杂的, Executors 提供了一些静态工厂, 生成一些常用的线程池
-+ newSingleThreadExecutor 创建一个单线程的线程池. 串行执行所有任务. 这个唯一的线程因为异常结束线程池会生成一个新线程来替代
-+ newFixedThreadPool 创建固定大小的线程池. 每提交一个任务就创建一个线程, 直到达到最大, 一旦达到就会保持不变, 如果某个线程因为异常结束线程池将会补充一个新线程
-+ newCachedThreadPool 创建一个可缓存的线程池. 线程池大小超出任务数就会回收部分空闲(60 秒不执行任务)线程. 任务数增加时线程池会智能添加线程来处理任务, 线程池大小无限制
-+ newScheduledThreadPool 创建一个大小无限的线程池. 支持定时及周期性执行任务的需求
-+ newSingleThreadScheduleExecutor 创建一个单线程的线程池, 支持定时及周期性执行任务的需求
 
 线程池的基本原理和执行方法
 1. 有运行、关闭、停止、结束四种状态, 结束后就会释放所有资源
@@ -149,24 +142,137 @@ RejectedExecutionHandler 提供了四种方式来处理任务拒绝策略
 1. 丢弃要加入到队列的任务: DiscardPolicy
 1. 丢弃队列中旧的任务: DiscardOldestPolicy
 
-其工作原理如下
-+ 调用 execute 添加任务时, 线程池将如下操作
-  1. 如果正在运行的线程数量小于 corePoolSize, 则马上创建线程运行此任务
-  1. 如果大于或等于 corePoolSize 则将任务放入队列
-  1. 如果队列满了, 且正在运行的线程数量小于 maximumPoolSize 则还是创建线程运行此任务
-  1. 如果队列满了, 且正在运行的线程数量大于或等于 maximumPoolSize 则执行拒绝策略
-+ 当线程执行完之后会从队列中取下一任务来执行
-+ 当线程已经空闲了 keepAliveTime 时, 线程池判断如果当前运行的线程数大于 corePoolSize 则停掉此线程, 最终会收缩到 corePoolSize 的大小说明
+ScheduleExecutorService 基于 ExecutorService 的两个方式不同点(下面 cost 为执行时间)
++ scheduleAtFixedRate(R, init, per, TU) 加入后 init 开始执行, 而后每过 max(cost, per) 执行一次
++ scheduleWithFixedDelay(R, init, delay, TU) 加入后 init 开始执行, 而后每过 (delay + cost) 再执行一次
 
-实例说明
+
+在 ~ThreadPoolExecutor~ 中有这样一段说明
+#+BEGIN_QUOTE
+programmers are urged to use the more convenient Executors factory methods 
+Executors.newCachedThreadPool (unbounded thread pool, with automatic thread reclamation), 
+Executors.newFixedThreadPool (fixed size thread pool) 
+and Executors.newSingleThreadExecutor (single background thread),
+that preconfigure settings for the most common usage scenarios
+#+END_QUOTE
+
+#+BEGIN_QUOTE
+意思说说推荐使用较为方便的 Executors 工厂方法, 它们均为大多数使用场景预定义了设置.
+  newCachedThreadPool() (无界线程池, 可以自动线程回收),
+  newFixedThreadPool(int) (固定大小线程池),
+  newSingleThreadExecutor() (单个后台线程)
+#+END_QUOTE
+
+
+Executors 中的静态方法主要有
+1. newSingleThreadExecutor 创建一个单线程的线程池. 串行执行所有任务. 这个唯一的线程因为异常结束线程池会生成一个新线程来替代
+1. newFixedThreadPool 创建固定大小的线程池. 每提交一个任务就创建一个线程, 直到达到最大, 一旦达到就会保持不变, 如果某个线程因为异常结束线程池将会补充一个新线程
+1. newCachedThreadPool 创建一个可缓存的线程池. 线程池大小超出任务数就会回收部分空闲(60 秒不执行任务)线程. 任务数增加时线程池会智能添加线程来处理任务, 线程池大小无限制
+1. newScheduledThreadPool 创建一个大小无限的线程池. 支持定时及周期性执行任务的需求
+1. newSingleThreadScheduleExecutor 创建一个单线程的线程池, 支持定时及周期性执行任务的需求
+
+
+整体的交互如下
++ 调用 execute 添加任务时, 线程池将如下操作
+  1. 如果正在运行的线程数量小于 corePoolSize, 则马上创建线程运行此任务 而不进行排队
+  1. 如果大于或等于 corePoolSize 则将任务放入队列 而不添加新线程
+  1. 如果无法将请求加入队列(队列满了)
+    + 如果正在运行的线程数量小于 maximumPoolSize 则创建线程运行
+    + 如果大于或等于 maximumPoolSize 则执行拒绝策略
++ 当线程执行完之后会从队列中取下一任务来执行
++ 当有线程空闲了 keepAliveTime 且运行的线程数大于 corePoolSize 则停掉此线程, 最终会收缩到 corePoolSize 的大小说明
+
+
+队列的排队有三种通用策略
+1. 直接提交. 此种策略的默认选项是 SynchronousQueue, 它将任务直接提交给线程而不保持它们. 
+   如果不存在可用于立即运行任务的线程, 则试图把任务加入队列将失败, 因此会构造一个新的线程.
+   此策略可以避免在处理可能具有内部依赖性的请求集时出现锁.
+   直接提交通常要求无界 maximumPoolSizes 以避免拒绝新提交的任务.
+   当命令以超过队列所能处理的平均数连续到达时, 此策略允许无界线程具有增长的可能性.
+1. 无界队列(例如不具有预定义容量的 LinkedBlockingQueue)将导致队列永远可以加入(除非到达 int.max)
+   因此设置的有限 maximumPoolSize 的值也就无效了,
+   当每个任务完全独立于其他任务时(即任务执行互不影响), 适合于使用无界队列.
+   例如在 Web 页服务器中. 这种排队可用于处理瞬态突发请求
+1. 有界队列. 当使用有限的 maximumPoolSizes 时, 有界队列(如 ArrayBlockingQueue)有助于防止资源耗尽,
+   但是可能较难调整和控制. 队列大小和最大池大小需要相互折衷: 
+   使用大型队列和小型池可以最大限度地降低 CPU 使用率、操作系统资源和上下文切换开销,
+   但是可能导致人工降低吞吐量. 如果任务频繁阻塞(例如, 如果它们是 I/O 边界), 则系统可能为超过您许可的更多线程安排时间.
+   使用小型队列通常要求较大的池大小, CPU 使用率较高, 但是可能遇到不可接受的调度开销, 这样也会降低吞吐量.
+
++ 直接提交, 也就是像 SynchronousQueue 这种
+#+BEGIN_SRC java
+new ThreadPoolExecutor(1, 2,
+        30, TimeUnit.SECONDS,
+        new SynchronousQueue<Runnable>(),
+        Executors.defaultThreadFactory(),
+        new ThreadPoolExecutor.AbortPolicy()
+);
+#+END_SRC
+假定每个任务都永远不会执行完, 第一个任务将会正常执行,
+第二个任务将试图放入队列, SynchronousQueue 尽管其是无界的但是也无法加入, 此时还未超出 maximumPoolSize 所以会建一个线程来运行,
+此时再来第三个任务, 将会执行拒绝策略.
+
+在使用 SynchronousQueue 时通常要求 maximumPoolSize 是无界的, 这样可以避免上面的问题. 关于 SychronousQueue 见下面的代码
+#+BEGIN_SRC java
+SynchronousQueue<String> queue = new SynchronousQueue<>();
+for (int i = 0; i < 5; i++) {
+    new Thread(new Runnable() {
+        @Override
+        public void run() {
+            try {
+                System.out.println(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss SSS").format(new Date()) + " 线程名: " +
+                        Thread.currentThread().getName() + ", 从队列中取出值 " + queue.poll(5, TimeUnit.SECONDS));
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }).start();
+}
+for (int i = 0; i < 6; i++) {
+    new Thread(new Runnable() {
+        @Override
+        public void run() {
+            String random = String.valueOf(new Random().nextInt(1000));
+            try {
+                if (queue.offer(random, 6, TimeUnit.SECONDS)) {
+                    System.out.println(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss SSS").format(new Date()) + " 线程名: " +
+                            Thread.currentThread().getName() + ", 在队列中放入值 " + random);
+                } else {
+                    System.out.println(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss SSS").format(new Date()) + " 线程名: " +
+                            Thread.currentThread().getName() + ", 在队列中放入值 " + random + " 失败");
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }).start();
+}
+#+END_SRC
+
++ 使用无界队列策略, 也就是像默认构造的 LinkedBlockingQueue 这种
+使用此种队列策略时, 当运行线程数达到 corePoolSize 后, 将会放入队列, 因为队列是无界的, 所以总是可以加入.
+这样一来, 将永远不会触发产生新的线程, 所以在这种情况下, maximumPoolSize 的设置是无意义的.
+这种方式通常来说是比较常见的, 如果添加任务的速度远远超过任务的处理时间, 而且还不断增加, 很容易消耗资源
+
++ 有界队列, 比如使用固定大小的 LinkedBlockingQueue 或 ArrayBlockingQueue 这种
+#+BEGIN_SRC java
+new ThreadPoolExecutor(1, 2,
+        30, TimeUnit.SECONDS,
+        new LinkedBlockingQueue<Runnable>(5), //new ArrayBlockingQueue<Runnable>(5)
+        Executors.defaultThreadFactory(),
+        new ThreadPoolExecutor.AbortPolicy()
+);
+#+END_SRC
 #+BEGIN_EXAMPLE
+这是最为复杂的使用, 所以 Executors 中也没有相关的静态方法, 跟上面的相比, 最大的特点是可以防止资源被耗尽.
+
 假设 corePoolSize 是 2, maximumPoolSize 是 6, 队列大小是 4, 当加入 15 个线程时, 执行顺序类似于这样:
 执行 1、2 线程, 线程 3 ~ 6 放入队列, 7 ~ 10 会被马上执行(因为队列满了), 假定此时每个线程都还没有执行完.
-此时 core 达到了, max 也到达了, 队列也满了而后 11 ~ 15 将会执行拒绝策略. 最终会执行的线程是: 1、2、7、8、9、10、3、4、5、6
+此时 core 达到了, max 也到达了, 队列也满了而后 11 ~ 15 将会执行拒绝策略.
 
-上面的过程主要针对指定大小的 BlockingQueue 来说, 如果使用的是无界队列(比如默认的 LinkedBlockingQueue)不会存在上述问题
+最终会执行的线程是: 1、2、7、8、9、10、3、4、5、6
 #+END_EXAMPLE
 
-ScheduleExecutorService 基于 ExecutorService 的两个方式不同点(下面 cost 为执行时间)
-1. scheduleAtFixedRate(R, init, per, TU) 加入后 init 开始执行, 而后每过 max(cost, per) 执行一次
-1. scheduleWithFixedDelay(R, init, delay, TU) 加入后 init 开始执行, 而后每过 (delay + cost) 再执行一次
+总的来说, 使用 ThreadPoolExecutor 还是很需要技巧的
++ 无界 queue 可能会耗尽系统资源
++ 有界 queue 可能不能很好的满足性能, 需要调节线程数和 queue 的大小
