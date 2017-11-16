@@ -5,21 +5,21 @@ Queue 是 Java Collection Framework 中队列分支的超级接口, 在它下面
 + BlockingQueue 阻塞队列(出入队列时如果不满足条件将挂起线程并直到成功)
 + Deque 双端队列. 允许在两端添加或删除元素
 + BlockingDeque 类似于 BlockingQueue 的双端队列, 它是 BlockingQueue 的子接口
-从 java 7 开始, BlockingQueue 有一个 TransferQueue 的新子接口, 它等待另一个线程检索队列中的元素
++ TransferQueue 等待另一个线程检索队列中的元素, java 7 新增加
 
 队列实现主要分为两组: 通用(general-purpose) 和 并发实现(concurrent implementations)
 
-通用队列实现有:
+通用队列实现(general-purpose)有:
 + ArrayDeque 基于 Deque 的简单实现, 当想利用双端队列的特性而不使用链表时, 可以考虑使用(比 LinkedList 简单)
 + LinkedList 实现了 List 和 Deque 接口, 具有链表和队列的混合特性行为, 当想快速添加和移除两端的元素时可以考虑使用
-+ PriorityQueue 根据元素的自然顺序或构造时提供的比较器来排列元素, 也就是可以设置优先级
++ PriorityQueue 根据元素的自然顺序或构造时提供的比较器来排列元素(优先级)
 
-并发队列实现有:
+并发队列实现(concurrent implementations)有:
 + ConcurrentLinkedQueue 基于链表实现的线程安全却非阻塞的单向 fifo 队列
-+ ArrayBlockingQueue 基于数组实现的有界阻塞队列.
-+ LinkedBlockingQueue 基于链表实现的有界(也可以无界)阻塞队列.
-+ PriorityBlockingQueue 想利用 PriorityQueue 和 BlockingQueue 时使用此类
-+ DelayQueue 时间调度阻塞队列, 添加到此队列的元素必须实现 Delayed 接口. 元素只能在延迟到期时才能取出. 基于 PriorityQueue 实现
++ ArrayBlockingQueue 基于数组实现的阻塞队列.
++ LinkedBlockingQueue 基于链表实现的阻塞队列.
++ PriorityBlockingQueue 相当于 PriorityQueue 和 BlockingQueue 的结合体
++ DelayQueue 时间调度阻塞队列, 添加到此队列的元素必须实现 Delayed 接口. 元素只能在延迟到期时才能取出
 + SynchronousQueue 双向等待的阻塞队列(*同步队列, 不存储元素*), 出等待入, 入等待出
 + LinkedTransferQueue 基于链表实现的无界阻塞队列, 1.7 新增加
 
@@ -28,20 +28,20 @@ BlockingQueue 使用 Lock 及 Condition 实现阻塞(lock 本质上也是基于 
 ConcurrentLinkedQueue 使用 cas + 循环尝试(自旋)操作来实现非阻塞算法来取得最大的吞吐量
 #+END_EXAMPLE
 
-
 由于 Queue 扩展了 Collection 接口, 所以 Queue 实现都有集合的基本操作
 + 单操作: bool add(E), bool contains(Obj), iter, void clear(), bool isEmpty(), int size(), [] toArray()
 + 批量操作: bool addAll(Coll), bool containsAll(Coll), bool removeAll(Coll), bool retainAll(Coll)
 
 Queue 接口的 api 总结如下
 | 操作          | 抛出异常                 | 返回值                       | 描述               |
-|---------------+--------------------------+------------------------------+--------------------|
+|--------------+--------------------------+-----------------------------+--------------------|
 | 入(insert)    | bool add(E) 满时抛出异常 | bool offer(E) 满时返回 false | 将元素加到队列尾部 |
 | 出(remove)    | E remove()  空时抛出异常 | E poll()      空时返回 null  | 检查并返回队列头   |
 | 检查(examine) | E element() 空时抛出异常 | E peek()      空时返回 null  | 返回头元素但不移除 |
 
 Deque 抽象出一个双端队列(first & last), 它的 api 也是围绕这个特性构建, 总结如下
 | 操作          | 第一个元素                   | 最后一个元素               |
+|--------------+------------------------------+---------------------------|
 | 入(insert)    | addFirst(E)    offerFirst(E) | addLast(E)    offerLast(E) |
 | 出(remove)    | removeFirst()  pollFirst()   | removeLast()  pollLast()   |
 | 检查(examine) | getFirst()     peekFirst()   | getLast()     peekLast()   |
@@ -84,14 +84,17 @@ BlockingDeque 的 api 总结如下
     需要对队列排序(优先级)选择 PriorityBlockingQueue
     需要一个快速交换的队列选择 SynchronousQueue
     需要对队列中的元素进行延时操作选择 DelayQueue
+
+java 7 以后, ConcurrentLinkedQueue、公平模式的 SynchronousQueue(默认构造)、无界的 LinkedBlockingQueue 可以用 LinkedTransferQueue 替代
 #+END_EXAMPLE
 
 最后来重点说一下 jdk 7 新增加的 [[http://www.cs.rochester.edu/u/scott/papers/2009_Scherer_CACM_SSQ.pdf][LinkedTransferQueue]].
-
+#+BEGIN_EXAMPLE
 之前的 BlockingQueue 是对 读或写 锁定整个队列, 在竞争多的时候, 锁会比较耗时.
 而 SynchronousQueue 完全没有容量的概念, 要么有元素在等人拿, 要么有一个空的在等人放.
 新的 LinkedTransferQueue 利用 compareAndSwap 操作, 针对每一个操作进行处理.
 它是 ConcurrentLinkedQueue、SynchronousQueue(公平模式下)、无界的 LinkedBlockingQueue 等的超集.
+#+END_EXAMPLE
 
 其新提供的 api 如下
 #+BEGIN_SRC java
@@ -130,7 +133,7 @@ LinkedTransferQueue 内部的结构保持着一个栈, 基本单位是 Node, 由
 + next 下一个节点
 + waiter 如果不是数据则是 预定(reservation), 是这个线程在等待
 
-操作节点的四种状态
+操作节点共有四种状态
 #+BEGIN_SRC java
 private static final int NOW   = 0; // for untimed poll, tryTransfer 直接返回
 private static final int ASYNC = 1; // for offer, put, add           先入队列, 后直接返回
@@ -214,23 +217,23 @@ private E xfer(E e, boolean haveData, int how, long nanos) {
 入队是调用 tryAppend 方法
 #+BEGIN_SRC java
 private Node tryAppend(Node s, boolean haveData) {
-    // 从尾节点tail开始
+    // 从尾节点 tail 开始
     for (Node t = tail, p = t;;) {
         Node n, u;
 
-        // 队列为空则将节点S设置为head
+        // 队列为空则将节点 S 设置为 head
         if (p == null && (p = head) == null) {
             if (casHead(null, s))
                 return s;
         }
-        // 如果为data
+        // 如果为 data
         else if (p.cannotPrecede(haveData))
             return null;
         // 不是最后一个节点
         else if ((n = p.next) != null)
             p = p != t && t != (u = tail) ? (t = u) : (p != n) ? n : null;
-        // CAS失败，一般来说失败的原因在于p.next != null，可能有其他增加了tail，向前推荐
-        else if (!p.casNext(null, s))
+        // CAS 失败, 一般来说失败的原因在于 p.next != null, 可能有其他增加了 tail, 向前推进
+        else if (!p.casNext(null, s))
             p = p.next;                   // re-read on CAS failure
         else {
             if (p != t) {                 // update if slack now >= 2
@@ -260,14 +263,14 @@ private E awaitMatch(Node s, Node pred, E e, boolean timed, long nanos) {
     
     for (;;) {
         Object item = s.item;
-        //匹配了，可能有其他线程匹配了线程
+        // 匹配了, 可能有其他线程匹配了线程
         if (item != e) {
             // 撤销该节点
             s.forgetContents();
             return LinkedTransferQueue.<E>cast(item);
         }
 
-        // 线程中断或者超时了。则调用将s节点item设置为e，等待取消
+        // 线程中断或者超时了. 则调用将 s 节点 item 设置为 e, 等待取消
         if ((w.isInterrupted() || (timed && nanos <= 0)) && s.casItem(e, s)) {
             // 断开节点
             unsplice(pred, s);
@@ -286,7 +289,7 @@ private E awaitMatch(Node s, Node pred, E e, boolean timed, long nanos) {
             if (randomYields.nextInt(CHAINED_SPINS) == 0)
                 Thread.yield();
         }
-        // 将当前线程设置到节点的waiter域
+        // 将当前线程设置到节点的 waiter 域
         // 一开始s.waiter == null 肯定是会成立的，
         else if (s.waiter == null) {
             s.waiter = w;                 // request unpark then recheck
@@ -305,7 +308,7 @@ private E awaitMatch(Node s, Node pred, E e, boolean timed, long nanos) {
 }
 #+END_SRC
 
-总体上来说, LinkedTransferQueue 通过 CAS 放入数据(data) 或 预约(reservation), 其消耗小于把整个队列锁住.
+总的来说, LinkedTransferQueue 通过 CAS 放入数据(data) 或 预约(reservation), 其消耗小于把整个队列锁住.
 
 入队列:
 + put() 或 add() 或 offer() 将元素放入队列(队列是无界的). 使用这个可以达到 ConcurrentLinkedQueue 或 无界的 LinkedBlockingQueue 的功能
@@ -357,7 +360,6 @@ ScheduleExecutorService 基于 ExecutorService 的两个方式不同点(下面 c
 + scheduleAtFixedRate(R, init, per, TU) 加入后 init 开始执行, 而后每过 max(cost, per) 执行一次
 + scheduleWithFixedDelay(R, init, delay, TU) 加入后 init 开始执行, 而后每过 (delay + cost) 再执行一次
 
-
 在 ~ThreadPoolExecutor~ 中有这样一段说明
 #+BEGIN_QUOTE
 programmers are urged to use the more convenient Executors factory methods 
@@ -374,14 +376,12 @@ that preconfigure settings for the most common usage scenarios
     newSingleThreadExecutor() (单个后台线程)
 #+END_EXAMPLE
 
-
 Executors 中的静态方法主要有
 1. newSingleThreadExecutor 创建一个单线程的线程池. 串行执行所有任务. 这个唯一的线程因为异常结束线程池会生成一个新线程来替代
 1. newFixedThreadPool 创建固定大小的线程池. 每提交一个任务就创建一个线程, 直到达到最大, 一旦达到就会保持不变, 如果某个线程因为异常结束线程池将会补充一个新线程
 1. newCachedThreadPool 创建一个可缓存的线程池. 线程池大小超出任务数就会回收部分空闲(60 秒不执行任务)线程. 任务数增加时线程池会智能添加线程来处理任务, 线程池大小无限制
 1. newScheduledThreadPool 创建一个大小无限的线程池. 支持定时及周期性执行任务的需求
 1. newSingleThreadScheduleExecutor 创建一个单线程的线程池, 支持定时及周期性执行任务的需求
-
 
 整体的交互如下
 + 调用 execute 添加任务时, 线程池将如下操作
