@@ -20,14 +20,8 @@ Queue 是 Java Collection Framework 中队列分支的超级接口, 在它下面
 + LinkedBlockingQueue 基于链表实现的有界(也可以无界)阻塞队列.
 + PriorityBlockingQueue 想利用 PriorityQueue 和 BlockingQueue 时使用此类
 + DelayQueue 时间调度阻塞队列, 添加到此队列的元素必须实现 Delayed 接口. 元素只能在延迟到期时才能取出. 基于 PriorityQueue 实现
-+ SynchronousQueue 双向等待的阻塞队列(同步队列, *不存储元素*), 出等待入, 入等待出, 不存储元素.
++ SynchronousQueue 双向等待的阻塞队列(*同步队列, 不存储元素*), 出等待入, 入等待出
 + LinkedTransferQueue 基于链表实现的无界阻塞队列, 1.7 新增加
-
-Deque(double ended queue 双端队列)允许在头尾进行 入队出队 操作, 还可以实现堆栈, 功能上比 Queue 更复杂.
-+ Linkedlist 基于链表结构实现的双向队列
-+ ArrayDeque 基于数组结构实现的双向队列
-+ LinkedBlockingDeque 基于链表结构实现的阻塞双端队列(线程安全), lock + condition 类似于 ArrayBlockingQueue
-
 
 #+BEGIN_EXAMPLE
 BlockingQueue 使用 Lock 及 Condition 实现阻塞(lock 本质上也是基于 cas, 但毕竟是间接操作且会导致线程挂起)
