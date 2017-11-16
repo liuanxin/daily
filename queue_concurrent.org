@@ -20,7 +20,7 @@ Queue 是 Java Collection Framework 中队列分支的超级接口, 在它下面
 + LinkedBlockingQueue 基于链表实现的有界(也可以无界)阻塞队列.
 + PriorityBlockingQueue 想利用 PriorityQueue 和 BlockingQueue 时使用此类
 + DelayQueue 时间调度阻塞队列, 添加到此队列的元素必须实现 Delayed 接口. 元素只能在延迟到期时才能取出. 基于 PriorityQueue 实现
-+ SynchronousQueue 双向等待的阻塞队列(同步队列, 不存储元素), 出等待入, 入等待出, 不存储元素.
++ SynchronousQueue 双向等待的阻塞队列(同步队列, *不存储元素*), 出等待入, 入等待出, 不存储元素.
 + LinkedTransferQueue 基于链表实现的无界阻塞队列, 1.7 新增加
 
 Deque(double ended queue 双端队列)允许在头尾进行 入队出队 操作, 还可以实现堆栈, 功能上比 Queue 更复杂.
@@ -74,14 +74,14 @@ BlockingDeque 的 api 总结如下
 
 
 常见的 BlockingQueue 对比如下, 加上了 ConcurrentLinkedQueue 这个非阻塞队列
-| 队列                  | 场景                                                        | 优点                                                        | 缺点                                                                                     |
-|-----------------------+-------------------------------------------------------------+-------------------------------------------------------------+------------------------------------------------------------------------------------------|
-| ConcurrentLinkedQueue | 队列的最佳线程安全版本, 在不适用阻塞功能时是最有效的        | 使用原子操作, 效率最高, 也是一种无界队列                    | 不能阻塞线程, 因此无法获取队列大小,也无法控制队列容量                                    |
-| LinkedBlockingQueue   | 基于链表实现的可阻塞线程安全队列                            | 阻塞, 出入队列锁分离, 效率高,支持容量限制, 也能作为无界队列 | 存在锁机制, 且定位元素需要遍历, 因此效率上有一定影响                                     |
-| ArrayBlockingQueue    | 基于数组实现的可阻塞线程安全队列, 容量固定时不错的阻塞实现  | 阻塞, 出入队列效率更高, 同时还省内存                        | 容量固定, 不能扩容, 出入队列不能同时进行                                                 |
-| PriorityBlockingQueue | 按照自然排序实现的阻塞队列,元素需要排序(优先级)时的唯一选择 | 阻塞, 元素有序, 能自动扩容                                  | 出入队列比较慢, 效率较低, 基于数组实现, 扩容需要数组复制, 容量不能减小, 入队列不能被阻塞 |
-| SynchronousQueue      | 直接交换元素的实现, 快速处理任务队列时最有效的方式          | 阻塞, 快速交换队列                                          | 内部没有容量                                                                             |
-| DelayQueue            | 延时处理队列, 每个元素都有一个延时时间, 时间过期才能出队列  | 阻塞, 可延时                                                | 基于 PriorityQueue 实现(排序), 效率很低, 入队列不能被阻塞                                |
+| 队列                  | 场景                           | 优点                     | 缺点                                                         |
+|-----------------------+--------------------------------+--------------------------+--------------------------------------------------------------|
+| ConcurrentLinkedQueue | 在不适用阻塞功能时最有效       | 效率最高(原子操作), 无界 | 不能阻塞线程, 因此无法获取队列大小, 也无法控制队列容量       |
+| LinkedBlockingQueue   | 基于链表实现的阻塞队列         | 出入队列锁分离, 效率高   | 定位中间元素需要遍历, 性能上有一定影响                       |
+| ArrayBlockingQueue    | 基于数组实现的阻塞队列         | 省内存                   | 容量固定, 不能扩容, 出入队列不能同时进行                     |
+| PriorityBlockingQueue | 基于排序(优先级)实现的阻塞队列 | 元素有序                 | 出入队列较慢, 扩容需要数组复制, 容量不能减小, 入队列不能阻塞 |
+| SynchronousQueue      | 同步队列                       | 阻塞, 快速交换队列       | 内部没有容量                                                 |
+| DelayQueue            | 延时队列, 时间过期才能出队列   | 阻塞, 延时               | 基于 PriorityQueue(排序)实现, 效率低, 入队列不能阻塞        |
 
 #+BEGIN_EXAMPLE
 如果不需要阻塞队列则选择 ConcurrentLinkedQueue.
@@ -95,7 +95,7 @@ BlockingDeque 的 api 总结如下
 最后来重点说一下 jdk 7 新增加的 [[http://www.cs.rochester.edu/u/scott/papers/2009_Scherer_CACM_SSQ.pdf][LinkedTransferQueue]].
 
 之前的 BlockingQueue 是对 读或写 锁定整个队列, 在竞争多的时候, 锁会比较耗时.
-而 SynchronousQueue 只能放一个物件, 要么有元素在等人拿, 要么有一个空的在等人放.
+而 SynchronousQueue 完全没有容量的概念, 要么有元素在等人拿, 要么有一个空的在等人放.
 新的 LinkedTransferQueue 利用 compareAndSwap 操作, 针对每一个操作进行处理.
 它是 ConcurrentLinkedQueue、SynchronousQueue(公平模式下)、无界的 LinkedBlockingQueue 等的超集.
 
@@ -104,25 +104,23 @@ BlockingDeque 的 api 总结如下
 public interface TransferQueue<E> extends BlockingQueue<E> {
 
     /**
-     * 若当前存在一个正在等待获取的消费者线程(使用 take() 或者 poll() 函数), 使用该方法会即刻转移/传输对象元素 e.
-     * 若不存在, 则返回 false, 并且不进入队列.
-     * 这是一个不阻塞的操作
-     */
-    boolean tryTransfer(E e);
-
-    /**
-     * 若当前存在一个正在等待获取的消费者线程, 即立刻移交之.
-     * 否则将 e 插入到队列尾部, 并且等待进入阻塞状态, 到有消费者线程取走该元素
+     * 若当前存在一个正在等待获取的消费者线程(使用 take() 或者 poll() 函数)就立刻给过去.
+     * 否则将 e 插入到队列尾部并阻塞当前线程, 直到有消费者线程取走该元素.
      */
     void transfer(E e) throws InterruptedException;
 
     /**
+     * 若当前存在一个正在等待获取的消费者线程(使用 take() 或者 poll() 函数), 使用该方法会即刻转移/传输对象元素 e.
+     * 若不存在, 则返回 false, 并且不进入队列. 这是一个不阻塞的操作
+     */
+    boolean tryTransfer(E e);
+
+    /**
      * 若当前存在一个正在等待获取的消费者线程, 会立即传输给它.
-     * 否则将 e 插入到队列尾部, 并且等待被消费者线程获取消费掉.
+     * 否则将 e 插入到队列尾部, 并且等待被消费者线程获取.
      * 若在指定的时间内 e 无法被消费者线程获取, 则返回false, 同时移除该元素.
      */
-    boolean tryTransfer(E e, long timeout, TimeUnit unit)
-            throws InterruptedException;
+    boolean tryTransfer(E e, long timeout, TimeUnit unit) throws InterruptedException;
 
     /** 判断是否存在消费者线程 */
     boolean hasWaitingConsumer();
@@ -140,10 +138,10 @@ LinkedTransferQueue 内部的结构保持着一个栈, 基本单位是 Node, 由
 
 操作节点的四种状态
 #+BEGIN_SRC java
-private static final int NOW   = 0; // for untimed poll, tryTransfer
-private static final int ASYNC = 1; // for offer, put, add
-private static final int SYNC  = 2; // for transfer, take
-private static final int TIMED = 3; // for timed poll, tryTransfer
+private static final int NOW   = 0; // for untimed poll, tryTransfer 直接返回
+private static final int ASYNC = 1; // for offer, put, add           先入队列, 后直接返回
+private static final int SYNC  = 2; // for transfer, take            先入队列, 后一直等待
+private static final int TIMED = 3; // for timed poll, tryTransfer   先入队列, 后等待一段时间
 #+END_SRC
 
 所有的操作都是基于 xfer 方法来实现的
@@ -316,8 +314,8 @@ private E awaitMatch(Node s, Node pred, E e, boolean timed, long nanos) {
 总体上来说, LinkedTransferQueue 通过 CAS 放入数据(data) 或 预约(reservation), 其消耗小于把整个队列锁住.
 
 入队列:
-+ put() 或 add() 将元素放入队列(队列是无界的)
-+ transfer() 如果队列中有线程在等待就直接给过去, 如果没有就放进队列
++ put() 或 add() 或 offer() 将元素放入队列(队列是无界的). 使用这个可以达到 ConcurrentLinkedQueue 或 无界的 LinkedBlockingQueue 的功能
++ transfer() 如果队列中有线程在等待就直接给过去, 如果没有就放进队列. 使用这个就可以达到 SynchronousQueue(公平模式下) 相同的功能
 出队列:
 + poll() 立即返回. 如果没有元素就返回空
 + take() 如果没有元素就等待
@@ -356,8 +354,8 @@ private E awaitMatch(Node s, Node pred, E e, boolean timed, long nanos) {
 + rejectedExecutionHandler 拒绝策略
 
 RejectedExecutionHandler 提供了四种方式来处理任务拒绝策略
-1. 不用线程池中的线程执行: CallerRunsPolicy
-1. 抛出异常: AbortPolicy
+1. 直接执行: CallerRunsPolicy
+1. 抛出异常: AbortPolicy 这是 Executors 中的静态方法上的默认策略
 1. 丢弃要加入到队列的任务: DiscardPolicy
 1. 丢弃队列中旧的任务: DiscardOldestPolicy
 
@@ -377,9 +375,9 @@ that preconfigure settings for the most common usage scenarios
 
 #+BEGIN_EXAMPLE
 意思是说推荐使用较为方便的 Executors 工厂方法, 它们均为大多数使用场景预定义了设置.
-  newCachedThreadPool() (无界线程池, 可以自动线程回收),
-  newFixedThreadPool(int) (固定大小线程池),
-  newSingleThreadExecutor() (单个后台线程)
+    newCachedThreadPool() (无界线程池, 可以自动线程回收),
+    newFixedThreadPool(int) (固定大小线程池),
+    newSingleThreadExecutor() (单个后台线程)
 #+END_EXAMPLE
 
 
@@ -394,11 +392,11 @@ Executors 中的静态方法主要有
 整体的交互如下
 + 调用 execute 添加任务时, 线程池将如下操作
   1. 如果正在运行的线程数量小于 corePoolSize, 则马上创建线程运行此任务 而不进行排队
-  1. 如果大于或等于 corePoolSize 则将任务放入队列 而不添加新线程
+  1. 如果大于或等于 corePoolSize 则将任务放入队列(*调用 offer() 方法*) 而不添加新线程
   1. 如果无法将请求加入队列(队列满了)
     + 如果正在运行的线程数量小于 maximumPoolSize 则创建线程运行
     + 如果大于或等于 maximumPoolSize 则执行拒绝策略
-+ 当线程执行完之后会从队列中取下一任务来执行
++ *当线程执行完之后会从队列中取下一任务来执行. 从队列中取线程: 如果工作线程大于核心数则 poll(等待 keepAlive 的时间)否则使用 take(阻塞住一直等待)*
 + 当有线程空闲了 keepAliveTime 且运行的线程数大于 corePoolSize 则停掉此线程, 最终会收缩到 corePoolSize 的大小说明
 
 
@@ -418,7 +416,8 @@ Executors 中的静态方法主要有
    但是可能导致人工降低吞吐量. 如果任务频繁阻塞(例如, 如果它们是 I/O 边界), 则系统可能为超过您许可的更多线程安排时间.
    使用小型队列通常要求较大的池大小, CPU 使用率较高, 但是可能遇到不可接受的调度开销, 这样也会降低吞吐量.
 
-+ 直接提交, 也就是像 SynchronousQueue 这种
+下面来分别说明一下三种队列策略
++ 直接提交, 也就是像 同步队列(SynchronousQueue) 这种(见 Executors.newCachedThreadPool)
 #+BEGIN_SRC java
 new ThreadPoolExecutor(1, 2,
         30, TimeUnit.SECONDS,
@@ -428,19 +427,28 @@ new ThreadPoolExecutor(1, 2,
 );
 #+END_SRC
 假定每个任务都永远不会执行完, 第一个任务将会正常执行,
-第二个任务将试图放入队列, SynchronousQueue 尽管其是无界的但是也无法加入, 此时还未超出 maximumPoolSize 所以会建一个线程来运行,
+第二个任务将试图放入队列, 由于 同步队列(SynchronousQueue) 的特性, 
+此时入队列的 offer 会因为上面的任务没有执行完所以不会 poll 或 take 将会快速返回 false(也就是无法放入队列),
+而此时运行的线程数还未超出 maximumPoolSize 所以会建一个线程来运行,
 此时再来第三个任务, 将会执行拒绝策略.
 
-在使用 SynchronousQueue 时通常要求 maximumPoolSize 是无界的, 这样可以避免上面的问题. 关于 SychronousQueue 见下面的代码
+在使用 SynchronousQueue 时通常要求 maximumPoolSize 是无界的, 这样可以避免上面的问题. 关于 SychronousQueue 见下面的示例
 #+BEGIN_SRC java
+private static String time() {
+    return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss SSS").format(new Date());
+}
+
 SynchronousQueue<String> queue = new SynchronousQueue<>();
 for (int i = 0; i < 5; i++) {
     new Thread(new Runnable() {
         @Override
         public void run() {
             try {
-                System.out.println(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss SSS").format(new Date()) + " 线程名: " +
-                        Thread.currentThread().getName() + ", 从队列中取出值 " + queue.poll(5, TimeUnit.SECONDS));
+                // 使用 poll(time) 或 take 均可, 前者会阻塞指定时间, 后者会一直阻塞,
+                // 如果直接用 poll() 将检查当时有没有元素, 没有会直接返回
+                System.out.println(time() + " 线程名: " +
+                        Thread.currentThread().getName() +
+                        ", 从队列中取出值 " + queue.poll(5, TimeUnit.SECONDS));
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -454,11 +462,13 @@ for (int i = 0; i < 6; i++) {
             String random = String.valueOf(new Random().nextInt(1000));
             try {
                 if (queue.offer(random, 6, TimeUnit.SECONDS)) {
-                    System.out.println(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss SSS").format(new Date()) + " 线程名: " +
-                            Thread.currentThread().getName() + ", 在队列中放入值 " + random);
+                    System.out.println(time() + " 线程名: " +
+                            Thread.currentThread().getName() +
+                            ", 在队列中放入值 " + random);
                 } else {
-                    System.out.println(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss SSS").format(new Date()) + " 线程名: " +
-                            Thread.currentThread().getName() + ", 在队列中放入值 " + random + " 失败");
+                    System.out.println(time() + " 线程名: " +
+                            Thread.currentThread().getName() +
+                            ", 在队列中放入值 " + random + " 失败");
                 }
             } catch (InterruptedException e) {
                 e.printStackTrace();
