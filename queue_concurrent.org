@@ -397,8 +397,6 @@ Executors 中的静态方法主要有
     + 如果正在运行的线程数量小于 maximumPoolSize 则创建线程运行
     + 如果大于或等于 maximumPoolSize 则执行拒绝策略
 + *当线程执行完之后会从队列中取下一任务来执行. 从队列中取线程: 如果工作线程大于核心数则 poll(等待 keepAlive 的时间)否则使用 take(阻塞住一直等待)*
-+ 当有线程空闲了 keepAliveTime 且运行的线程数大于 corePoolSize 则停掉此线程, 最终会收缩到 corePoolSize 的大小说明
-
 
 队列的排队有三种通用策略
 1. 直接提交. 此种策略的默认选项是 SynchronousQueue, 它将任务直接提交给线程而不保持它们. 
