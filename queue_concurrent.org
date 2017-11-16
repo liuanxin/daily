@@ -85,7 +85,8 @@ BlockingDeque 的 api 总结如下
     需要一个快速交换的队列选择 SynchronousQueue
     需要对队列中的元素进行延时操作选择 DelayQueue
 
-java 7 以后, ConcurrentLinkedQueue、公平模式的 SynchronousQueue(默认构造)、无界的 LinkedBlockingQueue 可以用 LinkedTransferQueue 替代
+java 7 以后, ConcurrentLinkedQueue、公平模式的 SynchronousQueue(默认构造)、
+无界的 LinkedBlockingQueue 可以用 LinkedTransferQueue 替代
 #+END_EXAMPLE
 
 最后来重点说一下 jdk 7 新增加的 [[http://www.cs.rochester.edu/u/scott/papers/2009_Scherer_CACM_SSQ.pdf][LinkedTransferQueue]].
