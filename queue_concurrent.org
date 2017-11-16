@@ -39,13 +39,6 @@ Queue 接口的 api 总结如下
 | 出(remove)    | E remove()  空时抛出异常 | E poll()      空时返回 null  | 检查并返回队列头   |
 | 检查(examine) | E element() 空时抛出异常 | E peek()      空时返回 null  | 返回头元素但不移除 |
 
-Deque 抽象出一个双端队列(first & last), 它的 api 也是围绕这个特性构建, 总结如下
-| 操作          | 第一个元素                   | 最后一个元素               |
-|--------------+------------------------------+---------------------------|
-| 入(insert)    | addFirst(E)    offerFirst(E) | addLast(E)    offerLast(E) |
-| 出(remove)    | removeFirst()  pollFirst()   | removeLast()  pollLast()   |
-| 检查(examine) | getFirst()     peekFirst()   | getLast()     peekLast()   |
-
 BlockingQueue 在入队列时已满则等待, 出队列时已空则等待, 另外还提供插入和删除元素时可以等待指定的持续时间, 总结如下
 | 操作          | 抛出异常 | 返回值 | 阻塞                       | 超时                         |
 |---------------+----------+--------+----------------------------+------------------------------|
@@ -53,18 +46,7 @@ BlockingQueue 在入队列时已满则等待, 出队列时已空则等待, 另�
 | 出(remove)    | remove   | poll   | E take()    队列空时将等待 | E poll(time, unit)           |
 | 检查(examine) | element  | peek   | ?                          | ?                            |
 
-BlockingDeque 的 api 总结如下
-| 第一个元素   (head) |               |               |             |                           |
-| 操作                | 抛出异常      | 返回值        | 阻塞        | 超时                      |
-| 入(insert)          | addFirst(E)   | offerFirst(E) | putFirst(E) | offerFirst(E, time, unit) |
-| 出(remove)          | removeFirst() | pollFirst()   | takeFirst() | pollFirst(time, unit)     |
-| 检查(examine)       | getFirst()    | peekFirst()   | ?           | ?                         |
-|                     |               |               |             |                           |
-| 最后一个元素 (tail) |               |               |             |                           |
-| 操作                | 抛出异常      | 返回值        | 阻塞        | 超时                      |
-| 入(insert)          | addLast(E)    | offerLast(E)  | putLast(E)  | offerLast(E, time, unit   |
-| 出(remove)          | removeLast()  | pollLast()    | takeLast()  | pollLast(time, unit)      |
-| 检查(examine)       | getLast()     | peekLast()    | ?           | ?                         |
+Deque 有头尾两种操作, BlockingDeque 在此基础上还有阻塞操作.
 
 
 常见的 BlockingQueue 对比如下, 加上了 ConcurrentLinkedQueue 这个非阻塞队列
@@ -297,16 +279,12 @@ new ThreadPoolExecutor(1, 2,
 #+END_SRC
 假定每个任务都永远不会执行完, 第一个任务将会正常执行,
 第二个任务将试图放入队列, 由于 同步队列(SynchronousQueue) 的特性, 
-此时入队列的 offer 会因为上面的任务没有执行完所以不会 poll 或 take 将会快速返回 false(也就是无法放入队列),
+因为上面的任务没有执行完(所以不会执行 poll 或 take), 于是入队列的 offer 方法将会快速返回 false(也就是无法放入队列),
 而此时运行的线程数还未超出 maximumPoolSize 所以会建一个线程来运行,
 此时再来第三个任务, 将会执行拒绝策略.
 
 在使用 SynchronousQueue 时通常要求 maximumPoolSize 是无界的, 这样可以避免上面的问题. 关于 SychronousQueue 见下面的示例
 #+BEGIN_SRC java
-private static String time() {
-    return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss SSS").format(new Date());
-}
-
 SynchronousQueue<String> queue = new SynchronousQueue<>();
 for (int i = 0; i < 5; i++) {
     new Thread(new Runnable() {
@@ -315,7 +293,7 @@ for (int i = 0; i < 5; i++) {
             try {
                 // 使用 poll(time) 或 take 均可, 前者会阻塞指定时间, 后者会一直阻塞,
                 // 如果直接用 poll() 将检查当时有没有元素, 没有会直接返回
-                System.out.println(time() + " 线程名: " +
+                System.out.println(System.nanoTime() + " 线程名: " +
                         Thread.currentThread().getName() +
                         ", 从队列中取出值 " + queue.poll(5, TimeUnit.SECONDS));
             } catch (InterruptedException e) {
@@ -331,11 +309,11 @@ for (int i = 0; i < 6; i++) {
             String random = String.valueOf(new Random().nextInt(1000));
             try {
                 if (queue.offer(random, 6, TimeUnit.SECONDS)) {
-                    System.out.println(time() + " 线程名: " +
+                    System.out.println(System.nanoTime() + " 线程名: " +
                             Thread.currentThread().getName() +
                             ", 在队列中放入值 " + random);
                 } else {
-                    System.out.println(time() + " 线程名: " +
+                    System.out.println(System.nanoTime() + " 线程名: " +
                             Thread.currentThread().getName() +
                             ", 在队列中放入值 " + random + " 失败");
                 }
