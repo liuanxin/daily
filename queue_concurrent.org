@@ -46,18 +46,17 @@ BlockingQueue 在入队列时已满则等待, 出队列时已空则等待, 另�
 | 出(remove)    | remove   | poll   | E take()    队列空时将等待 | E poll(time, unit)           |
 | 检查(examine) | element  | peek   | ?                          | ?                            |
 
-Deque 有头尾两种操作, BlockingDeque 在此基础上还有阻塞操作.
+Deque 有头尾两种操作(first & last), BlockingDeque 在此基础上还有阻塞操作.
 
 
-常见的 BlockingQueue 对比如下, 加上了 ConcurrentLinkedQueue 这个非阻塞队列
-| 队列                  | 场景                           | 优点                     | 缺点                                                         |
-|-----------------------+--------------------------------+--------------------------+--------------------------------------------------------------|
-| ConcurrentLinkedQueue | 在不适用阻塞功能时最有效       | 效率最高(原子操作), 无界 | 不能阻塞线程, 因此无法获取队列大小, 也无法控制队列容量       |
-| LinkedBlockingQueue   | 基于链表实现的阻塞队列         | 出入队列锁分离, 效率高   | 定位中间元素需要遍历, 性能上有一定影响                       |
-| ArrayBlockingQueue    | 基于数组实现的阻塞队列         | 省内存                   | 容量固定, 不能扩容, 出入队列不能同时进行                     |
-| PriorityBlockingQueue | 基于排序(优先级)实现的阻塞队列 | 元素有序                 | 出入队列较慢, 扩容需要数组复制, 容量不能减小, 入队列不能阻塞 |
-| SynchronousQueue      | 同步队列                       | 阻塞, 快速交换队列       | 内部没有容量                                                 |
-| DelayQueue            | 延时队列, 时间过期才能出队列   | 阻塞, 延时               | 基于 PriorityQueue(排序)实现, 效率低, 入队列不能阻塞        |
+| 队列                  | 场景                     | 优点                   | 缺点                                                 |
+|-----------------------+--------------------------+------------------------+------------------------------------------------------|
+| ConcurrentLinkedQueue | 在不适用阻塞功能时最有效 | 效率最高(原子操作)     | 不能阻塞线程, 无法获取队列大小及控制队列容量         |
+| LinkedBlockingQueue   | 基于链表实现的阻塞队列   | 出入队列锁分离, 效率高 | 定位元素需要遍历, 性能上有一定影响                   |
+| ArrayBlockingQueue    | 基于数组实现的阻塞队列   | 省内存                 | 容量固定, 不能扩容, 出入队列不能并发                 |
+| PriorityBlockingQueue | 排序(优先级)的阻塞队列   | 元素有序               | 出入较慢, 扩容需要数组复制且不能减小, 入队列不能阻塞 |
+| SynchronousQueue      | 同步队列                 | 阻塞, 快速交换队列     | 内部没有容量                                         |
+| DelayQueue            | 延时队列, 过期才能出队列 | 阻塞, 延时             | 基于 PriorityQueue(排序)实现, 且入队列不能阻塞       |
 
 #+BEGIN_EXAMPLE
 如果不需要阻塞队列则选择 ConcurrentLinkedQueue.
@@ -71,7 +70,8 @@ java 7 以后, ConcurrentLinkedQueue、公平模式的 SynchronousQueue(默认�
 无界的 LinkedBlockingQueue 可以用 LinkedTransferQueue 替代
 #+END_EXAMPLE
 
-最后来重点说一下 jdk 7 新增加的 [[http://www.cs.rochester.edu/u/scott/papers/2009_Scherer_CACM_SSQ.pdf][LinkedTransferQueue]].
+
+最后重点说一下 jdk 7 新增加的 [[http://www.cs.rochester.edu/u/scott/papers/2009_Scherer_CACM_SSQ.pdf][LinkedTransferQueue]].
 #+BEGIN_EXAMPLE
 之前的 BlockingQueue 是对 读或写 锁定整个队列, 在竞争多的时候, 锁会比较耗时.
 而 SynchronousQueue 完全没有容量的概念, 要么有元素在等人拿, 要么有一个空的在等人放.
