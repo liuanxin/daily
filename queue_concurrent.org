@@ -203,8 +203,7 @@ private E xfer(E e, boolean haveData, int how, long nanos) {
 1. 立即关闭线程池使用 shutdownNow(), 同时得到未执行的任务列表
 1. 检测线程池是否正处于关闭中使用 isShutdown()
 1. 检测线程池是否已经关闭使用 isTerminated()
-1. 定时或者永久等待线程池关闭结束使用 awaitTermination(), 
-PS: 执行 shutdown 和 shutdownNow 之后线程池将不能再添加线程执行, awaitTermination 还可以被复用
+1. 定时或者永久等待线程池关闭结束使用 awaitTermination(), 一般是放在 shutdown 的后面调用.
 
 各参数说明
 + corePoolSize 核心数大小
