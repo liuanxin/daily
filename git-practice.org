@@ -89,7 +89,7 @@ PS: 第 12 步操作完之后, 原先基于 develop 的 commit 记录也会被�
 
 
 ** Shxt
-*版本控制还是蛮复杂的, 所以才有了 git flow 这一类的工具. 但是大致的实践是基于上面的步骤来的*
+*版本控制还是蛮复杂的, 所以才有了 [[https://danielkummer.github.io/git-flow-cheatsheet/index.zh_CN.html][git flow]] 这一类的工具. 但是大致的实践是基于上面的步骤来的*
 
 我想起 [[http://www.yinwang.org/blog-cn/2015/03/03/how-to-respect-a-programmer][这里]] 最后一段关于 git 的说明
 #+BEGIN_QUOTE
