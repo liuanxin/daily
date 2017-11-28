@@ -299,9 +299,10 @@ Next-Key Lock 的设计上的是为了解决幻读(phantom problem).
 
 -----
 
-Explain: mysql 使用 rr 做为默认隔离级别的主要原因是在于 binlog.
+mysql 使用 rr 做为默认隔离级别的主要原因是在于 binlog.
+
 在 5.1 之前, 基于语句(statement) 是 binlog 的默认格式, 之后就有了 row(行) 和 mixed(混用) 两种模式.
-从 5.1 开始, 如果使用 基于语句(statement) 的 binlog(以 commit 为序), 将不支持 rc 和 ru 级别(不支持 rc 级别的原因是它的执行顺序是不正确的).
+从 5.1 开始, 如果使用 基于语句(statement) 的 binlog(以 commit 为序), 将不支持 rc 和 ru 级别.
 要想使用 rc 级别, 必须使用 row(行) 或 mixed(混用) 模式.
 
 为什么 rc 级别不支持 基于语句(statement) 的 binlog 呢? 假设有下面的表
