@@ -297,6 +297,7 @@ Next-Key Lock 的设计上的是为了解决幻读(phantom problem).
 不可重复读的问题是可以接受的. 因为它读到的就是已经提交的数据, 这本身不会带来什么问题.
 所以 oracle, sql server 将 rc 设置为默认级别, 如果 mysql 的 binlog 使用 row 也可以可以 rc 级别.
 
+-----
 
 Explain: mysql 使用 rr 做为默认隔离级别的主要原因是在于 binlog.
 在 5.1 之前, 基于语句(statement) 是 binlog 的默认格式, 之后就有了 row(行) 和 mixed(混用) 两种模式.
