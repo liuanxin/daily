@@ -297,6 +297,8 @@ Next-Key Lock 的设计上的是为了解决幻读(phantom problem).
 不可重复读的问题是可以接受的. 因为它读到的就是已经提交的数据, 这本身不会带来什么问题.
 所以 oracle, sql server 将 rc 设置为默认级别, 如果 mysql 的 binlog 使用 row 也可以可以 rc 级别.
 
+PS: 熟悉 xtraBackup 工具
+
 -----
 
 mysql 使用 rr 做为默认隔离级别的主要原因是在于 binlog.
@@ -350,7 +352,7 @@ update t1 set c2 = 4 where c1 in (select c1 from t2);
 select * from t2;  -- 此时查询两行数据, 第一行是 1 4, 第二行是 2 2.
 commit;
 #+END_SRC
-在 5.1 及以上的 rc 级别下, 基于语句(statement)的 binlog 执行结果是不正确的.
+由此可知, 在 5.1 及以上的 rc 级别下, 基于语句(statement)的 binlog 执行结果是不正确的.
 
 如果使用 rr 级别(上面的两个会话把 read-committed 改成 repeatable-read)
 会话一
@@ -372,9 +374,7 @@ begin;
 delete from t1 where c1 = 2;  -- 2
 commit;                       -- 3
 #+END_SRC
-与 rc 级别不同的是, 在 rr 中由于要保证可重复读, 会话二的 delete 将会被会话一阻塞, 提交会话一提交.
+与 rc 级别不同的是, 在 rr 中由于要保证可重复读, 会话二的 delete 将会被会话一阻塞, 直到会话一提交或超时.
 在 rr 中, 会话一的语句会先在 t1 的记录上 共享 s 锁(5.1 的 rc 不会, 5.0 的 rc 会), 由于 会话一没有提交, 会话二的 delte 需要等待于是阻塞.
 
 5.0 的 rc 与 5.1 的 rr 使用的类似的并发和上锁机制, 也就是说, 5.0 的 rc 和 5.1 及以上的 rc 会有兼容问题.
-
-PS: 熟悉 xtraBackup 工具
