@@ -280,8 +280,8 @@ update t1 set c2 = 100 where c1 = 1;  -- 2
 commit;
 #+END_SRC
 
-如果在 read-committed 级别下, 第 3 步的数据将会拿到更新后的 c2 的值
-而如果是在 repeatable-read 级别下, 第 1 步和 第 3 步获取的数据结果是一样的
+如果在 read-committed 级别下, 第 3 步的数据将会拿到更新后的 c2 的值.
+而如果是在 repeatable-read 级别下, 第 1 步和 第 3 步获取的数据结果是一样的.
 
 InnoDB 的行锁有 3 种算法
 + Record Lock   : 单个行记录上的锁
@@ -298,10 +298,81 @@ Next-Key Lock 的设计上的是为了解决幻读(phantom problem).
 所以 oracle, sql server 将 rc 设置为默认级别, 如果 mysql 的 binlog 使用 row 也可以可以 rc 级别.
 
 
-PS: mysql 使用 rr 做为默认隔离级别的主要原因是在于 binlog.
-在 5.1 之前, statement(语句) 是 binlog 的默认格式, 之后就有了 row(行) 和 mixed(混用) 两种模式.
-从 5.1 开始, 如果使用 statement 的 binlog(以 commit 为序) 不支持 rc 和 ru 级别.
-statement 的 binlog 不支持 rc 级别的原因是它的执行顺序是不正确的
+Explain: mysql 使用 rr 做为默认隔离级别的主要原因是在于 binlog.
+在 5.1 之前, 基于语句(statement) 是 binlog 的默认格式, 之后就有了 row(行) 和 mixed(混用) 两种模式.
+从 5.1 开始, 如果使用 基于语句(statement) 的 binlog(以 commit 为序), 将不支持 rc 和 ru 级别(不支持 rc 级别的原因是它的执行顺序是不正确的).
+要想使用 rc 级别, 必须使用 row(行) 或 mixed(混用) 模式.
 
+为什么 rc 级别不支持 基于语句(statement) 的 binlog 呢? 假设有下面的表
+#+BEGIN_SRC sql
+drop table t1;
+drop table t2;
+create table t1(c1 int, c2 int);
+create table t2(c1 int, c2 int);
 
-PS again: 熟悉 xtraBackup 工具
+insert into t1 values(1,1), (2,2);
+insert into t2 values(1,1), (2,2);
+#+END_SRC
+
+会话一
+#+BEGIN_SRC sql
+select @@tx_isolation;
+set tx_isolation='read-committed';
+begin;
+update t2 set c2 = 3 where c1 in (select c1 from t1);  -- 1
+update t2 set c2 = 4 where c1 in (select c1 from t1);  -- 4
+select * from t2;  -- 此时查询两行数据, 第一行是 1 4, 第二行是 2 3.
+commit;
+#+END_SRC
+
+会话二
+#+BEGIN_SRC sql
+select @@tx_isolation;
+set tx_isolation='read-committed';
+begin;
+delete from t1 where c1 = 2;  -- 2
+commit;                       -- 3
+#+END_SRC
+
+会话二的执行时序在会话一的语句之间, 并且影响了会话一的结果, 由于 binlog 要求 sql 串行化, 它是以提交时间来排序的. 因此在 binlog 中的顺序将是这样
+#+BEGIN_SRC sql
+set tx_isolation='read-committed';
+begin;
+delete from t1 where c1 = 2;
+commit;
+
+set tx_isolation='read-committed';
+begin;
+update t1 set c2 = 3 where c1 in (select c1 from t2);
+update t1 set c2 = 4 where c1 in (select c1 from t2);
+select * from t2;  -- 此时查询两行数据, 第一行是 1 4, 第二行是 2 2.
+commit;
+#+END_SRC
+在 5.1 及以上的 rc 级别下, 基于语句(statement)的 binlog 执行结果是不正确的.
+
+如果使用 rr 级别(上面的两个会话把 read-committed 改成 repeatable-read)
+会话一
+#+BEGIN_SRC sql
+select @@tx_isolation;
+set tx_isolation='repeatable-read';
+begin;
+update t2 set c2 = 3 where c1 in (select c1 from t1);  -- 1
+update t2 set c2 = 4 where c1 in (select c1 from t1);  -- 4
+select * from t2;  -- 此时查询两行数据, 第一行是 1 4, 第二行是 2 3.
+commit;
+#+END_SRC
+
+会话二
+#+BEGIN_SRC sql
+select @@tx_isolation;
+set tx_isolation='repeatable-read';
+begin;
+delete from t1 where c1 = 2;  -- 2
+commit;                       -- 3
+#+END_SRC
+与 rc 级别不同的是, 在 rr 中由于要保证可重复读, 会话二的 delete 将会被会话一阻塞, 提交会话一提交.
+在 rr 中, 会话一的语句会先在 t1 的记录上 共享 s 锁(5.1 的 rc 不会, 5.0 的 rc 会), 由于 会话一没有提交, 会话二的 delte 需要等待于是阻塞.
+
+5.0 的 rc 与 5.1 的 rr 使用的类似的并发和上锁机制, 也就是说, 5.0 的 rc 和 5.1 及以上的 rc 会有兼容问题.
+
+PS: 熟悉 xtraBackup 工具
