@@ -52,7 +52,7 @@ gpg --keyserver hkp://pool.sks-keyservers.net --send-keys 上面生成的公钥
 
 发布包到中央仓库
 #+BEGIN_SRC conf
-mvn clean source:jar deploy -P sonatype-oss-release -Dgpg.passphrase=上面生成的公钥
+mvn -DskipTests clean source:jar deploy -P sonatype-oss-release -Dgpg.passphrase=上面生成的公钥
 #+END_SRC
 输入上面设置好的 8 位密码, 将会把项目提交到公网做准备.
 
