@@ -354,7 +354,7 @@ commit;
 #+END_SRC
 所以在 5.1 及以上的 rc 级别下, 基于语句(statement)的 binlog 将会与预期的不一样, 如果是 基于行(row)的 binlog 就不会有这个问题.
 
-会话一
+改成 rr 级别的会话一
 #+BEGIN_SRC sql
 select @@tx_isolation;
 set tx_isolation='repeatable-read';
@@ -365,7 +365,7 @@ select * from t2;  -- 此时查询两行数据, 第一行是 1 4, 第二行是 2
 commit;
 #+END_SRC
 
-会话二
+改成 rr 级别的会话二
 #+BEGIN_SRC sql
 select @@tx_isolation;
 set tx_isolation='repeatable-read';
