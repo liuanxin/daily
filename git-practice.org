@@ -28,12 +28,12 @@ git push -u origin develop
 
 + 基于本地 develop 建一个本地 feature 分支(用个人命名) ==> /开发人员操作/ *(5)*
 #+BEGIN_SRC bash
-git checkout -b liujie develop
+git checkout -b liuanxin develop
 #+END_SRC
 
 + +(可选, 这一步可以不需要)将本地 feature 分支推到远程+ *(6)*
 #+BEGIN_SRC bash
-git push -u origin liujie
+git push -u origin liuanxin
 #+END_SRC
 
 + 本地开发 & 提交代码 ==> /开发人员操作/  *(7)*
@@ -43,7 +43,7 @@ git commit -a -m "xxx" <==> git add . & git commit -m "xxx" # <==> 表示左右�
 
 + 从远程 develop 分支拉取代码(pull 等同于先 fetch, 再与当前分支合并) ==> /开发人员操作/ *(8)*
 #+BEGIN_SRC bash
-git pull origin develop <==> git fetch origin develop & git merge liujie # <==> 表示左右两边的意思等同
+git pull origin develop <==> git fetch origin develop & git merge liuanxin # <==> 表示左右两边的意思等同
 #+END_SRC
 
 + 基于当前本地 feature 分支向远程的 develop 分支推送代码 ==> /开发人员操作/ *(9)*
@@ -53,7 +53,7 @@ git push origin develop
 
 + +(可选, 这一步可以不需要)删除本地和跟本地对应的远程分支+ *(10)*
 #+BEGIN_SRC bash
-git branch -d liujie & git push origin --delete liujie
+git branch -d liuanxin & git push origin --delete liuanxin
 #+END_SRC
 
 + 从远程 develop 分支拉取代码 ==> *仓库负责人操作*  *(11)*
