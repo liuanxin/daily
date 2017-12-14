@@ -172,14 +172,15 @@ public class MybatisCacheConfig {
 
 #+BEGIN_EXAMPLE
 type : 基础缓存类型, 默认是 PerpetualCache(就是一个 HashMap)
-flushInterval : 缓存自动刷新时间. 默认是 0
-size : 缓存条数, 默认是 0
+flushInterval : 缓存刷新间隔. 单位: 毫秒. 默认情况是不设置, 也就是没有刷新间隔, 缓存仅仅调用语句时刷新
+size : 缓存条数, 默认是 1024
 readOnly : 是否只读, 默认是 false
 blocking : 操作时是否阻塞, 默认是 false
-eviction : 排除算法缓存类型. 默认是 LRU, 还有 FIFO 等
-    LRU：Least Recently Used，最近最少使用。判断最近被使用的时间，目前最远的数据优先被淘汰
-    FIFO：First In First Out，先进先出。判断被存储的时间，离目前最远的数据优先被淘汰
-    LFU：Least Frequently Used，最不经常使用。在一段时间内，数据被使用次数最少的，优先被淘汰
+eviction : 排除算法缓存类型. 默认是 LRU, 还有 FIFO
+    LRU   Least Recently Used 最近最少使用的: 移除最长时间不被使用的对象
+    FIFO  First In First Out 先进先出: 按对象进入缓存的顺序来移除它们
+    SOFT  软引用: 移除基于垃圾回收器状态和软引用规则的对象
+    WEAK  弱引用: 更积极地移除基于垃圾收集器状态和弱引用规则的对象
 #+END_EXAMPLE
 
 -----
