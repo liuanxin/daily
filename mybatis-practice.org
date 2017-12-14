@@ -154,7 +154,18 @@ public class GenderHandler extends BaseTypeHandler {
 </dependency>
 #+END_SRC
 
-并在对应的 mapper.xml 中添加下面的代码, 则此 xml 中所有的 sql 都会走缓存
+放一个类进 spring 的上下文
+#+BEGIN_SRC java
+@Configuration
+public class MybatisCacheConfig {
+    @Bean
+    public RedisContextUtils redisContext() {
+        return new RedisContextUtils();
+    }
+}
+#+END_SRC
+
+而后在对应的 mapper.xml 中添加下面的代码, 则此 xml 中所有的 sql 都会走 redis 缓存
 #+BEGIN_SRC xml
 <cache type="com.github.liuanxin.caches.MybatisRedisCache" />
 #+END_SRC
