@@ -44,7 +44,10 @@ function addSuffix(str) {
     return str + "/";
 }
 function appendUrl(str) {
-    if (isBlank(str)) return "";
-    return src + (src.contains("?") ? "&" : "?");
+    return isBlank(str) ? "" : (src + (src.contains("?") ? "&" : "?"));
+}
+
+function format(json) {
+    return isBlank(json) ? "" : JSON.stringify(JSON.parse(json), null, '  ');
 }
 #+END_SRC
