@@ -1,53 +1,158 @@
 
 #+BEGIN_SRC js
+var EMPTY = "";
+var NULL = "null";
+var UNDEFINED = "undefined";
+
 if (!String.prototype.trim) {
-    String.prototype.trim = function () {
-        return this.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, '');
-    };
+String.prototype.trim = function () {
+    return this.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, '');
+};
 }
-/* "{0} is bad, use {1}! {0} {2}".format("jsp", "thymeleaf") ==> jsp is bad, use thymeleaf! jsp {2} */
+/* "{0} is bad, use {1}! {0} {2}".format("jsp", "xxx") ==> jsp is bad, use xxx! jsp {2} */
 if (!String.prototype.format) {
-    String.prototype.format = function() {
-        var args = arguments;
-        return this.replace(/{(\d+)}/g, function(match, number) {
-            return typeof args[number] != "undefined" ? args[number] : match;
-        });
-    };
-}
-/* String.format("{0} is bad, use {1}! {0} {2}", "jsp", "thymeleaf") ==> jsp is bad, use thymeleaf! jsp {2} */
-if (!String.format) {
-    String.format = function(format) {
-        var args = Array.prototype.slice.call(arguments, 1);
-        return format.replace(/{(\d+)}/g, function(match, number) {
-            return typeof args[number] != "undefined" ? args[number] : match;
-        });
-    };
+String.prototype.format = function() {
+    var args = arguments;
+    return this.replace(/{(\d+)}/g, function(match, number) {
+        return typeof args[number] !== UNDEFINED ? args[number] : match;
+    });
+};
 }
 
+/** 为空则返回 true */
 function isBlank(str) {
-    return str == null || str === null
-        || str == undefined || str === undefined
-        || "" == str.trim() || "null" == str.trim() || "undefined" == str.trim();
+if (str === null || str === undefined) {
+    return true;
 }
+var tmp = String(str).trim().toLowerCase();
+return EMPTY === tmp || NULL === tmp || UNDEFINED === tmp;
+}
+/** 不为空则返回 true */
 function isNotBlank(str) {
-    return !isBlank(str);
+return !isBlank(str);
 }
 
+/** 转换成整数, 失败则转换成 0 */
+function toInt(str) {
+return isBlank(str) || isNaN(str) ? 0 : parseInt(str);
+}
+/** 转换成浮点数, 失败则转换成 0 */
+function toFloat(str) {
+return isBlank(str) || isNaN(str) ? 0 : parseFloat(str);
+}
+/** 传入的值大于 0 就返回 true */
+function greater0(str) {
+return toFloat(str) > 0;
+}
+/** 传入的值小于等于 0 就返回 true */
+function less0(str) {
+return toFloat(str) <= 0;
+}
+/** 将字符串中指定位数的值模糊成 * 并返回. 索引位从 0 开始 */
+function foggy(str, start, end) {
+if (isBlank(str)) {
+    return EMPTY;
+}
+var s = toInt(start);
+var e = toInt(end);
+if (s < 0 || e < s || e > str.length) {
+    return str;
+}
+return str.substring(0, s) + str.substring(s, e).replace(/./g, "*") + str.substring(e);
+}
+/** 是手机号就返回 true */
+function checkPhone(str) {
+return isNotBlank(str) && /^1[0-9]{10}$/.test(str);
+}
+/** 是邮件就返回 true */
+function checkEmail(str) {
+return isNotBlank(str) && /^\w[\w\-]*@([\w\-]+\.\w+)+$/.test(str);
+}
+/** 是图片就返回 true */
+function checkImage(str) {
+return isNotBlank(str) && /\.(gif|jpeg|jpg|bmp|png)$/i.test(str);
+}
+/** 有中文就返回 true */
+function checkChinese(str) {
+return isNotBlank(str) && /[\u4e00-\u9fa5]/.test(str);
+}
+/** 给 url 转义 */
+function encode(url) {
+return isBlank(url) ? EMPTY : encodeURIComponent(url);
+}
+/** 给 url 反转义 */
+function decode(url) {
+return isBlank(url) ? EMPTY : decodeURIComponent(url);
+}
+/** 在前面加 / 返回 */
 function addPrefix(str) {
     if (isBlank(str)) return "/";
     if (str.startsWith("/")) return str;
     return "/" + str;
 }
+
+/** 在后面加 / 返回 */
 function addSuffix(str) {
     if (isBlank(str)) return "/";
     if (str.endsWith("/")) return str;
     return str + "/";
 }
+/** 加 ? 或 & 返回 */
 function appendUrl(str) {
-    return isBlank(str) ? "" : (src + (src.contains("?") ? "&" : "?"));
+    return isBlank(str) ? EMPTY : (src + (src.contains("?") ? "&" : "?"));
 }
 
-function format(json) {
-    return isBlank(json) ? "" : JSON.stringify(JSON.parse(json), null, '  ');
+/** 格式化 json */
+function formatJson(json) {
+    if (isBlank(json)) {
+        return EMPTY;
+    }
+    try {
+        return JSON.stringify(JSON.parse(json), null, "  ");
+    } catch (e) {
+        return json;
+    }
+}
+
+/** 返回文件后缀 */
+function getSuffix(str) {
+    return isNotBlank(str) && str.indexOf(".") !== -1 ? str.substring(str.lastIndexOf(".")) : EMPTY;
+}
+
+function uuid() {
+    var now = new Date().getTime();
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = (now + Math.random() * 16) % 16 | 0;
+        now = Math.floor(now / 16);
+        return (c === 'x' ? r : (r & 0x7 | 0x8)).toString(16);
+    });
+}
+/** 将传入的文件名重命名成一个 uuid 的名字 */
+function renameFile(str) {
+    return isBlank(str) ? EMPTY : (uuid() + getSuffix(str));
+}
+/** 生成指定个数的随机数 */
+function randomNum(len) {
+    if (toInt(len) <= 0) {
+        return EMPTY;
+    }
+    var returnStr = EMPTY;
+    for (var i = 0; i < len; i++) {
+        returnStr += String(Math.round(Math.random() * 10));
+    }
+    return returnStr;
+}
+/** 生成指定个数的随机字母 */
+function randomLetter(len) {
+    if (toInt(len) <= 0) {
+        return EMPTY;
+    }
+    var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+    var returnStr = EMPTY;
+    for (var i = 0; i < len; i++) {
+        returnStr += possible.charAt(Math.floor(Math.random() * possible.length));
+    }
+    return returnStr;
 }
 #+END_SRC
