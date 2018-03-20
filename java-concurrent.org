@@ -50,22 +50,25 @@ class Worker implements Runnable {
             semaphore.acquire();
         } catch (InterruptedException e) {
             e.printStackTrace();
+            return;
         }
         // 向信号量申请许可成功
 
-        // 业务处理开始
-        System.out.println("线程 " + Thread.currentThread().getName() + " 获得了许可, 开始执行");
         try {
-            Thread.sleep(20 * (new Random().nextInt(4)));
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+            // 业务处理开始
+            System.out.println("线程 " + Thread.currentThread().getName() + " 获得了许可, 开始执行");
+            try {
+                Thread.sleep(20 * (new Random().nextInt(4)));
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            System.out.println("线程 " + Thread.currentThread().getName() + " 执行完毕, 开始释放许可");
+            // 业务处理结束, 准备释放许可
+        } finally {
+            // 让信号量释放当前线程的许可
+            semaphore.release();
+            System.out.println("线程 " + Thread.currentThread().getName() + " 许可释放完成");
         }
-        System.out.println("线程 " + Thread.currentThread().getName() + " 执行完毕, 开始释放许可");
-        // 业务处理结束, 准备释放许可
-
-        // 让信号量释放当前线程的许可
-        semaphore.release();
-        System.out.println("线程 " + Thread.currentThread().getName() + " 许可释放完成");
     }
 }
 #+END_SRC
@@ -128,7 +131,7 @@ import java.util.concurrent.Executors;
 /** 计数器(CountDownLatch -> 不能重复使用) */
 public class CountDownLatchTest {
 
-    // 如果不想使用线程池, 将 // pool 所在的行去掉, 将下面的 // 整段代码解开即可
+    // 如果不想使用线程池, 将 // pool 所在的行去掉, 将 // no pool 解开即可
 
     private static final ExecutorService executor = Executors.newCachedThreadPool();  // pool --> for example
     private static final int COUNT = 3;
@@ -137,17 +140,17 @@ public class CountDownLatchTest {
         final CountDownLatch latch = new CountDownLatch(COUNT);
         
         // 下面的 多线程 运行完之后才会运行此 Waiter
-        executor.submit(new Waiter(latch));          // pool
-        for (int i = 0; i < COUNT; i++) {            // pool
-            executor.submit(new Decrement(latch));   // pool
-        }                                            // pool
-        executor.shutdown();                         // pool
+        executor.submit(new Waiter(latch));               // pool
+        for (int i = 0; i < COUNT; i++) {                 // pool
+            executor.submit(new Decrement(latch));        // pool
+        }                                                 // pool
+        executor.shutdown();                              // pool
 
-//        // 下面的 多线程 运行完之后才会运行此 Waiter
-//        new Thread(new Waiter(latch)).start();
-//        for (int i = 0; i < COUNT; i++) {
-//            new Thread(new Decrement(latch)).start();
-//        }
+        // // 下面的 多线程 运行完之后才会运行此 Waiter
+        // new Thread(new Waiter(latch)).start();         // no pool
+        // for (int i = 0; i < COUNT; i++) {              // no pool
+        //     new Thread(new Decrement(latch)).start();  // no pool
+        // }                                              // no pool
 
         // 上面的 多线程 运行完之后才会运行下面的块代码
         try {
@@ -276,7 +279,7 @@ class Worker implements Runnable {
         // 如果指定数量的线程都执行到了这里, 这一组线程就都可以往下执行了
 
         // 业务处理开始. 如 3 个人开始同时起跑
-        System.out.println("指定数量的线程 都准备好了, 当前线程 " + Thread.currentThread().getName() + " 开始出发");
+        System.out.println("指定数量的线程 都准备好了, 当前线程 " + Thread.currentThread().getName() + " 开始出发");
         // ...
     }
 }
@@ -356,11 +359,12 @@ class Worker implements Runnable {
         System.out.println("线程 " + Thread.currentThread().getName() + " 开始");
         try {
             List<Integer> info = Arrays.asList(new Random().nextInt(10), new Random().nextInt(100), new Random().nextInt(1000));
+            System.out.printf("当前线程 %s 持有的数据是: %s\n", Thread.currentThread().getName(), info);
+
             // 开始交换数据
             List<Integer> exchangeInfo = exchanger.exchange(info);
 
-            System.out.printf("当前线程 %s 持有的数据是: %s, 交换过来的数据是 %s\n",
-                    Thread.currentThread().getName(), info, exchangeInfo);
+            System.out.printf("当前线程 %s 交换过来的数据是 %s\n", Thread.currentThread().getName(), exchangeInfo);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -371,9 +375,11 @@ class Worker implements Runnable {
 运行结果大致如下
 #+BEGIN_SRC text
 线程 pool-1-thread-1 开始
+当前线程 pool-1-thread-1 持有的数据是: [7, 33, 209]
 线程 pool-1-thread-2 开始
-当前线程 pool-1-thread-1 持有的数据是: [0, 26, 181], 交换过来的数据是 [9, 25, 876]
-当前线程 pool-1-thread-2 持有的数据是: [9, 25, 876], 交换过来的数据是 [0, 26, 181]
+当前线程 pool-1-thread-2 持有的数据是: [1, 96, 73]
+当前线程 pool-1-thread-2 交换过来的数据是 [7, 33, 209]
+当前线程 pool-1-thread-1 交换过来的数据是 [1, 96, 73]
 #+END_SRC
 
 
@@ -391,7 +397,7 @@ import java.util.concurrent.Phaser;
 /** 移相器(Phaser). 当前示例主要用来替换 计数器(CountDownLatch -> 不能重复使用) */
 public class PhaserReplaceCountDownLatchTest {
 
-    // 如果不想使用线程池, 将 // pool 所在的行去掉, 将下面的 // 整段代码解开即可
+    // 如果不想使用线程池, 将 // pool 所在的行去掉, 将 // no pool 解开即可
 
     private static final ExecutorService executor = Executors.newCachedThreadPool();  // pool --> for example
     private static final int COUNT = 3;
@@ -400,17 +406,17 @@ public class PhaserReplaceCountDownLatchTest {
         final Phaser phaser = new Phaser(COUNT);
 
         // 下面的 多线程 运行完之后才会运行此 Waiter
-        executor.submit(new Waiter(phaser));         // pool
-        for (int i = 0; i < COUNT; i++) {            // pool
-            executor.submit(new Decrement(phaser));  // pool
-        }                                            // pool
-        executor.shutdown();                         // pool
+        executor.submit(new Waiter(phaser));               // pool
+        for (int i = 0; i < COUNT; i++) {                  // pool
+            executor.submit(new Decrement(phaser));        // pool
+        }                                                  // pool
+        executor.shutdown();                               // pool
 
-//        // 下面的 多线程 运行完之后才会运行此 Waiter
-//        new Thread(new Waiter(phaser)).start();
-//        for (int i = 0; i < COUNT; i++) {
-//            new Thread(new Decrement(phaser)).start();
-//        }
+        // 下面的 多线程 运行完之后才会运行此 Waiter
+        // new Thread(new Waiter(phaser)).start();         // no pool
+        // for (int i = 0; i < COUNT; i++) {               // no pool
+        //     new Thread(new Decrement(phaser)).start();  // no pool
+        // }                                               // no pool
 
         // 上面的 多线程 运行完之后才会运行下面的块代码
         phaser.awaitAdvance(phaser.getPhase());
@@ -467,10 +473,10 @@ class Decrement implements Runnable {
 计数器线程 pool-1-thread-3 开始
 计数器线程 pool-1-thread-4 开始
 计数器线程 pool-1-thread-4 执行完毕
-计数器线程 pool-1-thread-2 执行完毕
 计数器线程 pool-1-thread-3 执行完毕
-已达到指定数量, 主线程 main 可以运行了
+计数器线程 pool-1-thread-2 执行完毕
 已达到指定数量, 非计数器线程 pool-1-thread-1 可以运行了
+已达到指定数量, 主线程 main 可以运行了
 #+END_SRC
 
 
@@ -489,7 +495,7 @@ public class PhaserReplaceCyclicBarrierTest {
     private static final ExecutorService executor = Executors.newCachedThreadPool();  // pool --> for example
 
     public static void main(String[] args) throws Exception {
-        final haser phaser = new Phaser(3);
+        final Phaser phaser = new Phaser(3);
 
         for (int i = 0; i < 9; i++) {
             // new Thread(new Worker(phaser)).start();  // no pool
@@ -522,7 +528,7 @@ class Worker implements Runnable {
         // 如果指定数量的线程都执行到了这里, 这一组线程就都可以往下执行了
 
         // 业务处理开始. 如 3 个人开始同时起跑
-        System.out.println("线程 " + Thread.currentThread().getName() + " 出发");
+        System.out.println("指定线程数都准备好了, 当前线程 " + Thread.currentThread().getName() + " 开始出发");
         // ...
     }
 }
@@ -531,30 +537,30 @@ class Worker implements Runnable {
 运行结果大致如下
 #+BEGIN_SRC text
 线程 pool-1-thread-1 开始
-线程 pool-1-thread-1 准备好了
 线程 pool-1-thread-2 开始
 线程 pool-1-thread-3 开始
 线程 pool-1-thread-4 开始
 线程 pool-1-thread-5 开始
 线程 pool-1-thread-6 开始
-线程 pool-1-thread-6 准备好了
 线程 pool-1-thread-7 开始
-线程 pool-1-thread-8 开始
-线程 pool-1-thread-3 准备好了
-指定线程数都准备好了, 当前线程 pool-1-thread-6 开始出发
-指定线程数都准备好了, 当前线程 pool-1-thread-3 开始出发
-指定线程数都准备好了, 当前线程 pool-1-thread-1 开始出发
-线程 pool-1-thread-9 开始
-线程 pool-1-thread-2 准备好了
-线程 pool-1-thread-4 准备好了
 线程 pool-1-thread-7 准备好了
-指定线程数都准备好了, 当前线程 pool-1-thread-4 开始出发
+线程 pool-1-thread-8 开始
+线程 pool-1-thread-9 开始
+线程 pool-1-thread-1 准备好了
+线程 pool-1-thread-6 准备好了
+指定线程数都准备好了, 当前线程 pool-1-thread-6 开始出发
+指定线程数都准备好了, 当前线程 pool-1-thread-1 开始出发
 指定线程数都准备好了, 当前线程 pool-1-thread-7 开始出发
-指定线程数都准备好了, 当前线程 pool-1-thread-2 开始出发
-线程 pool-1-thread-5 准备好了
 线程 pool-1-thread-8 准备好了
+线程 pool-1-thread-5 准备好了
+线程 pool-1-thread-2 准备好了
+指定线程数都准备好了, 当前线程 pool-1-thread-2 开始出发
+指定线程数都准备好了, 当前线程 pool-1-thread-8 开始出发
+指定线程数都准备好了, 当前线程 pool-1-thread-5 开始出发
+线程 pool-1-thread-3 准备好了
+线程 pool-1-thread-4 准备好了
 线程 pool-1-thread-9 准备好了
 指定线程数都准备好了, 当前线程 pool-1-thread-9 开始出发
-指定线程数都准备好了, 当前线程 pool-1-thread-5 开始出发
-指定线程数都准备好了, 当前线程 pool-1-thread-8 开始出发
+指定线程数都准备好了, 当前线程 pool-1-thread-4 开始出发
+指定线程数都准备好了, 当前线程 pool-1-thread-3 开始出发
 #+END_SRC
