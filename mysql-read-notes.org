@@ -158,7 +158,7 @@ mysql 能使用如下三种方式应用 where 条件, 从好到坏依次为:
 *** 查询优化处理(第 208 页)
 #+BEGIN_EXAMPLE
 in 完全等同于多个 or 条件的子句. 这在 mysql 中并不成立. 其会将 in 列表中的数据先进行排序
-再二分查找的方式来确定列表中的值是否满足条件, 这是一个 O(log n) 复杂度的操作, 造价转换成 or 后的查询复杂度为 O(n)
+再二分查找的方式来确定列表中的值是否满足条件, 这是一个 O(log n) 复杂度的操作, 等价转换成 or 后的查询复杂度为 O(n)
 对于 in 列表中有大量聚会的时候, mysql 的处理速度将会更快.
 
 mysql 总是从一个表开始一直嵌套循环, 回溯完成所有表关联. 所以 mysql 的执行计划是一棵左测深度优先的树.
@@ -208,7 +208,7 @@ update t1 set c1 = 10;
 *** 向外扩展(第 510 页)
 向外扩展(也叫横向扩展和水平扩展)策略分为三个部分: 复制、拆分、和数据分片(sharding)
 
-最简单也最常见的扩展方式是通过复制将数据颁发到多个服务器, 然后将备库用于读查询.
+最简单也最常见的扩展方式是通过复制将数据分发到多个服务器, 然后将备库用于读查询.
 #+BEGIN_EXAMPLE
 分片? 还是不分片?
 
@@ -282,6 +282,7 @@ commit;
 
 如果在 read-committed 级别下, 第 3 步的数据将会拿到更新后的 c2 的值.
 而如果是在 repeatable-read 级别下, 第 1 步和 第 3 步获取的数据结果是一样的.
+(如果只有事务一且 1 和 3 之间进行了 update t1 set xx where c1 = 1 操作, 第 3 步获取的数据将会是被更新过的)
 
 InnoDB 的行锁有 3 种算法
 + Record Lock   : 单个行记录上的锁
@@ -295,13 +296,13 @@ Next-Key Lock 的设计上的是为了解决幻读(phantom problem).
 不可重复读是指一个事务内读到了已经提交的数据.
 
 不可重复读的问题是可以接受的. 因为它读到的就是已经提交的数据, 这本身不会带来什么问题.
-所以 oracle, sql server 将 rc 设置为默认级别, 如果 mysql 的 binlog 使用 row 也可以可以 rc 级别.
+所以 oracle, sql server 将 rc 设置为默认级别, 如果 mysql 的 binlog 使用 row 复制也可以使用 rc 级别.
 
 PS: 熟悉 xtraBackup 工具
 
 -----
 
-mysql 使用 rr 做为默认隔离级别的主要原因是在于 binlog.
+*mysql 使用 rr 做为默认隔离级别的主要原因是在于 binlog.*
 
 在 5.1 之前, 基于语句(statement) 是 binlog 的默认格式, 之后就有了 row(行) 和 mixed(混用) 两种模式.
 从 5.1 开始, 如果使用 基于语句(statement) 的 binlog(以 commit 为序), 将不支持 rc 和 ru 级别.
@@ -323,8 +324,8 @@ insert into t2 values(1,1), (2,2);
 select @@tx_isolation;
 set tx_isolation='read-committed';
 begin;
-update t2 set c2 = 3 where c1 in (select c1 from t1);  -- 1
-update t2 set c2 = 4 where c1 in (select c1 from t1);  -- 4
+update t2 set c2 = 3 where c1 in (select c1 from t1);  -- 1  括号里的 c1 有 1,2
+update t2 set c2 = 4 where c1 in (select c1 from t1);  -- 4  括号里的 c1 只有 1
 select * from t2;  -- 此时查询两行数据, 第一行是 1 4, 第二行是 2 3.
 commit;
 #+END_SRC
