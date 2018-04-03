@@ -41,17 +41,17 @@ mysql 锁策略有: 表锁(table lock) 和 行级锁(row lock)
 事务一
 #+BEGIN_SRC sql
 begin;
-update t1 set c1 = x where c2 = 1;    -- 1
-update t1 set c1 = y where c2 = 2;    -- 3
-commit;
+update t1 set c1 = x where c2 = 1;   -- 1
+update t1 set c1 = y where c2 = 2;   -- 3
+commit;                              -- 5
 #+END_SRC
 
 事务二
 #+BEGIN_SRC sql
 begin;
-update t1 set c1 = yy where c2 = 2;    -- 2
-update t1 set c1 = xx where c2 = 1;    -- 4
-commit;
+update t1 set c1 = yy where c2 = 2;  -- 2
+update t1 set c1 = xx where c2 = 1;  -- 4
+commit;                              -- 6
 #+END_SRC
 
 #+BEGIN_EXAMPLE
@@ -64,7 +64,7 @@ commit;
 事务二的提交动作将不会对任何数据有影响
 事务一的提交动作将会影响两条数据
 
-也就是说 导致生效的数据 来自于 出现竞争时先操作的那个事务
+也就是说: 生效的数据 来自于 出现竞争时先操作的那个事务
 #+END_EXAMPLE
 
 
