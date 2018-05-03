@@ -129,7 +129,7 @@ public class ApiVersionCondition implements RequestCondition<ApiVersionCondition
 #+BEGIN_SRC java
 /** @see org.springframework.boot.autoconfigure.web.WebMvcAutoConfiguration */
 @Configuration
-public class WarInit extends WebMvcConfigurationSupport {
+public class WebInit extends WebMvcConfigurationSupport {
 
     @Override
     protected RequestMappingHandlerMapping createRequestMappingHandlerMapping() {
@@ -166,30 +166,27 @@ public class ExampleApplication {
 }
 
 @RequestMapping("/v")
-@Controller
+@RestController
 public class VersionController {
 
     // 当前示例共有 5 个版本, v1 ~ v5, 其中只定义了 v2 和 v5 方法, 还有一个未定义版本的默认方法
 
     /** 「错误的版本号」或「不带版本号」的请求将会路由至此, 在这个示例中, v1 v10 或不带版本的都将被路由过来 */
-    @ResponseBody
-    @RequestMapping("/e")
+    @GetMapping("/e")
     public String v() {
         return "example";
     }
 
     /** 在这个示例中, v2、v3、v4 版本的请求将会路由至此 */
     @ApiVersion(Version.V2)
-    @ResponseBody
-    @RequestMapping("/e")
+    @GetMapping("/e")
     public String v2() {
         return "example: " + Version.V2;
     }
 
     /** 在这个示例中, v5 版本的请求将会路由至此 */
     @ApiVersion(Version.V5)
-    @ResponseBody
-    @RequestMapping("/e")
+    @GetMapping("/e")
     public String v5() {
         return "example: " + Version.V5;
     }
