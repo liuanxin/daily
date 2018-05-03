@@ -71,13 +71,15 @@ git merge --no-ff develop     # --no-ff 是指不使用 fast-forward 方式合�
 
 + 基于本地 master 分支打一个 tag 并给一个说明 ==> *仓库负责人操作* *(13)*
 #+BEGIN_SRC bash
-git tag -a v1.0.0 -m "更新内容" master
+git tag -a 1.0.0 -m "更新内容" master
+# git tag -d 1.0.0   # 删除本地的 tag
 #+END_SRC
 
 + 基于本地 master 分支向远程 master 分支推送, 并将 tag 推送至远程 ==> *仓库负责人操作* *(14)*
 #+BEGIN_SRC bash
 git push
 git push --tags
+# git push origin --delete tag 1.0.0   # 删除远程的 tag
 #+END_SRC
 
 
