@@ -32,8 +32,8 @@
 
 做为调用方来说, 全局给定一个版本给后端通常有这么几种方式
 + 加在 url 上, 比如: /v1/example 表示针对 v1 版本的 url, /v2/example 表示针对 v2 版本的 url
-+ 把版本信息附加到 user-agent 中去: 如: wechat/1.2 (iPhone; iOS 9.1; ...)    wechat/2.0 (Mozilla/5.0 Android...)
-+ 与上面的类似, 只是单独抽出来, 把版本信息放到 header 或者 param 中. 如: _v=(1|2)
++ 把版本信息附加到 user-agent 中去: 如: wechat/1 (iPhone; iOS 9.1; ...)    wechat/2 (Mozilla/5.0 Android...)
++ 与上面的类似, 只是单独抽出来, 把版本信息放到 header 或者 param 中. 如: app_ver=(1|2)
 
 这几种方式对于 app 来说都可以很轻松的全局配置, 通常后面两种方式是比较好的, 也建议这么弄. 下面以后面两种为例.
 
