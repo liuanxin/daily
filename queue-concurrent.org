@@ -71,7 +71,7 @@ Deque 有头尾两种操作(first & last), BlockingDeque 在此基础上还有�
     需要对队列中的元素进行延时操作选择 DelayQueue
 
 java 7 以后, ConcurrentLinkedQueue、公平模式的 SynchronousQueue(默认构造)、
-无界的 LinkedBlockingQueue 可以用 LinkedTransferQueue 替代
+无界的 LinkedBlockingQueue(默认构造. 长度是 Int.MAX, 可以理解为是无界) 可以用 LinkedTransferQueue 替代
 #+END_EXAMPLE
 
 -----
