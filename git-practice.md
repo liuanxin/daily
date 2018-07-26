@@ -54,7 +54,7 @@ git pull
 9. 切换回本地 master 分支, 并将本地 develop 分支合并到本地 master 分支 ==> 仓库负责人操作
 ```
 git checkout master
-git merge --no-ff develop
+git merge develop
 ```
 
 10. 基于本地 master 分支打一个 tag 并给一个说明 ==> 仓库负责人操作
@@ -83,7 +83,7 @@ git push --tags
 git checkout master
 ```
 
-2. 修复 bug 并提交
+2. 修复 bug 并提交(可以在这里建一个临时分支, 合并后再删除)
 ```
 git add .
 git commit -m "修复生产环境中的 xxx bug"
