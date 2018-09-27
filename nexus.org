@@ -15,9 +15,13 @@ Group Id 最主要的信息, 这个有问题将会无法通过审核
 gpg --gen-key
 # 真实姓名(要有五个字符) + 邮箱 + O(字母 o, 不是数字 0).
 # 还需要设置一个最少 8 位的密码. 最终会生成一个 pub 公钥(40 位)
+# 而后会生成一个密钥一个公钥
+#   gpg: 密钥 xxxxx 被标记为绝对信任
+#   gpg: revocation certificate stored as '~/.gnupg/openpgp-revocs.d/公钥.rev'
+
 # 使用 gpg --list-key 可以查看(目录 ~/.gnupg/openpgp-revocs.d, 命令 <gpg --delete-keys 公钥> 删除公钥)
 
-# 把生成的公钥发布到公网上去(后面的 close 在操作 Signature Validation 时会验证).
+# 用公钥把生成的密钥发布到公网上(后面的 close 在操作 Signature Validation 时会验证).
 gpg --keyserver hkp://pool.sks-keyservers.net --send-keys 上面生成的公钥
 
 # http://pgp.mit.edu:11371
