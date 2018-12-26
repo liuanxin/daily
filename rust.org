@@ -1,0 +1,53 @@
+*** rust 初体验
+
+#+BEGIN_EXAMPLE
+安装开发包 apt install rustc   or   yum install rustc cargo
+rust 使用 cargo 来管理项目, 可以理解成跟 maven 类似
+命令 cargo new guess --bin 生成 项目雏形
+切换到 guess 目录
+修改 Cargo.toml, 在 dependencies 下添加 rand = "0.4.0"
+修改 src/main.rs 成上面的内容
+运行 cargo run 开始猜数字
+生成的 target/debug/guess 是一个可执行命令, 随便 cp 到别的地方直接运行也是可以的
+#+END_EXAMPLE
+
+#+BEGIN_SRC rust
+extern crate rand;
+
+use std::io;
+use std::cmp::Ordering;
+use rand::Rng;
+
+fn main() {
+    let min = 1;
+    let max = 10000;
+    println!("猜数字, 范围在 {} 到 {} 之间", min, max);
+    let secret_number = rand::thread_rng().gen_range(min, max);
+    // println!("数字是: {}", secret_number);
+
+    loop {
+        println!("请输入你猜的数:");
+
+        let mut guess = String::new();
+        io::stdin().read_line(&mut guess).expect("读取输入失败!");
+        let guess: u32 = match guess.trim().parse() { // .expect("Please type a number!");
+            Ok(num) => num,
+            Err(_)  => { // => continue,
+                println!("不是一个数字, 请继续输入");
+                continue;
+            }
+        };
+
+        println!("你猜的数是: {}", guess);
+
+        match guess.cmp(&secret_number) {
+            Ordering::Less    => println!("太小了!"),
+            Ordering::Greater => println!("太大了!"),
+            Ordering::Equal   => {
+                println!("你猜对了!");
+                break;
+            }
+        }
+    }
+}
+#+BEGIN_SRC rust
