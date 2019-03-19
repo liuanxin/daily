@@ -117,31 +117,31 @@ function *f3() {
     // 调用第 1 次 next('N') 时运行的代码
     console.log('0');
     let y1 = yield 1;
-    return 1;                          // | 封装成 {value: 1, done: false} 返回
-                                       // |
-                                       // | 这两行等同于 let y1 = yield 1;
+    return 1;                           // | 封装成 {value: 1, done: false} 返回
+                                        // |
+                                        // | 这两行等同于 let y1 = yield 1;
     // 调用第 2 次 next('I') 时运行的代码 // |
-    let y1 = 'I';                      // |
+    let y1 = 'I';                       // |
     console.log('1: ' + y1);
-    return y1 + 2;                     // | 封装成 {value: "I2", done: false} 返回
-                                       // |
-                                       // | 这两行等同于 let y2 = yield y1 + 2;
+    return y1 + 2;                      // | 封装成 {value: "I2", done: false} 返回
+                                        // |
+                                        // | 这两行等同于 let y2 = yield y1 + 2;
     // 调用第 3 次 next('L') 时运行的代码 // |
-    let y2 = 'L';                      // |
+    let y2 = 'L';                       // |
     console.log('2: ' + y2);
-    return y2 + 3;                     // | 封装成 {value: "L3", done: false} 返回
-                                       // |
-                                       // | 这两行等同于 let y3 = yield (y2 + 3);
+    return y2 + 3;                      // | 封装成 {value: "L3", done: false} 返回
+                                        // |
+                                        // | 这两行等同于 let y3 = yield (y2 + 3);
     // 调用第 4 次 next('S') 时运行的代码 // |
-    let y3 = 'S';                      // |
+    let y3 = 'S';                       // |
     console.log('3: ' + y3);
-    return y3;                         // | 封装成 {value: "S", done: false} 返回
-                                       // |
-                                       // | 这两行等同于 let y4 = (yield y3) + 4;
+    return y3;                          // | 封装成 {value: "S", done: false} 返回
+                                        // |
+                                        // | 这两行等同于 let y4 = (yield y3) + 4;
     // 调用第 5 次 next('H') 时运行的代码 // |
-    let y4 = 'H'                       // |
+    let y4 = 'H'                        // |
     console.log('4: ' + y4);
-    return '??';                       // 封装成 {value: "??", done: true} 返回
+    return '??';                        // 封装成 {value: "??", done: true} 返回
 }
 ```
 再回头想一想就知道了, 第一次运行 next('N') 的时候, 传进去的 N 是会被忽略的, 因为第一次 next() 传的值没有 yield 前面来接收. 再去看书也好, 看查到的文章也好, 第一次 next() 都是没有传过参数
