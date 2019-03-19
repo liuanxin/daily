@@ -112,6 +112,7 @@ console.log(v3.next('T')); // 输出  {value: undefined, done: true}
 
 大致上就清楚 yield 的运行逻辑了, 以上面的 f3 为例, 对照上面的输出来看, 它其实是将一个方法分成了这样几段来执行
 ```js
+// 下面  五行一起的竖线(|)  用一个大括号表示出来会更直观一点
 function *f3() {
     // 调用第 1 次 next('N') 时运行的代码
     console.log('0');
@@ -140,7 +141,7 @@ function *f3() {
     // 调用第 5 次 next('H') 时运行的代码 // |
     let y4 = 'H'                       // |
     console.log('4: ' + y4);
-    return '??';                       // | 封装成 {value: "??", done: true} 返回
+    return '??';                       // 封装成 {value: "??", done: true} 返回
 }
 ```
 再回头想一想就知道了, 第一次运行 next('N') 的时候, 传进去的 N 是会被忽略的, 因为第一次 next() 传的值没有 yield 前面来接收. 再去看书也好, 看查到的文章也好, 第一次 next() 都是没有传过参数
