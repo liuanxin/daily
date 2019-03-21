@@ -187,7 +187,17 @@ function escapeHtml(html) {
 }
 /** 将时间戳格式化到毫秒 */
 function formatDate(date) {
-    var d = new Date(date);
+    if (date === undefined || date === null || date === 'undefined' || date === 'null' || date === '') {
+        return '';
+    }
+    var d;
+    if (date instanceof Date) {
+        d = date;
+    } else if (typeof date === 'number') {
+        d = new Date(date);
+    } else {
+        return date;
+    }
 
     var y = d.getFullYear().toString();
     var m = (d.getMonth() + 1).toString();
