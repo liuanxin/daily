@@ -35,7 +35,7 @@ function isNotBlank(str) {
 
 /** 转换成整数, 失败则转换成 0 */
 function toInt(str) {
-    return isBlank(str) || isNaN(str) ? 0 : parseInt(str);
+    return isBlank(str) || isNaN(str) ? 0 : parseInt(str, 10);
 }
 /** 转换成浮点数, 失败则转换成 0 */
 function toFloat(str) {
@@ -85,11 +85,11 @@ function encode(url) {
 function decode(url) {
     return isBlank(url) ? EMPTY : decodeURIComponent(url);
 }
+
 /** 在 url 后面拼接 ? 或 & */
 function appendUrl(url) {
     return isBlank(url) ? EMPTY : (url + (url.includes("?") ? "&" : "?"));
 }
-
 /** 在 path 前面加 / 返回 */
 function addPrefix(path) {
     if (isBlank(path)) return "/";
@@ -159,23 +159,6 @@ function randomLetter(len) {
     return returnStr;
 }
 
-/** 将数字转换成千分位, 如 12345678.123 返回 12,345,678.123 */
-function thousands(num) {
-    if (isNaN(num)) {
-        return num;
-    }
-    var number = (typeof num === 'number') ? num.toString() : num;
-    var first,second;
-    if (number.includes('.')) {
-        var p = number.indexOf('.');
-        first = number.substring(0, p);
-        second = number.substring(p);
-    } else {
-        first = number;
-        second = '';
-    }
-    return first.replace(/(\d)(?=(?:\d{3})+$)/g, '$1,') + second;
-}
 /** 将 html 代码进行转义 */
 function escapeHtml(html) {
     if (isBlank(html)) {
@@ -185,6 +168,7 @@ function escapeHtml(html) {
         .replace(/</g, "&lt;").replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
+
 /** 将时间戳格式化到毫秒 */
 function formatDate(date) {
     if (date === undefined || date === null || date === 'undefined' || date === 'null' || date === '') {
@@ -227,5 +211,40 @@ function formatDate(date) {
         S = '0' + S;
     }
     return y + "-" + m + "-" + dy + " " + h + ":" + mt + ":" + s + " " + S;
+}
+
+/** 分显示成元 */
+function cent2Yuan(cent) {
+    if (isBlank(cent)) {
+        return '';
+    }
+    var v = (typeof cent);
+    var m;
+    if (v === 'number') {
+        m = String(cent);
+    } else if (v === 'string') {
+        m = String(Number.parseInt(cent));
+    } else {
+        return '';
+    }
+    var len = m.length;
+    return (len < 2) ? ('0.' + m) : (m.substring(0, len - 2) + '.' + m.substring(len - 2));
+}
+/** 将数字转换成千分位, 如 12345678.123 返回 12,345,678.123 */
+function thousands(num) {
+    if (isNaN(num)) {
+        return num;
+    }
+    var number = (typeof num === 'number') ? num.toString() : num;
+    var first,second;
+    if (number.includes('.')) {
+        var p = number.indexOf('.');
+        first = number.substring(0, p);
+        second = number.substring(p);
+    } else {
+        first = number;
+        second = '';
+    }
+    return first.replace(/(\d)(?=(?:\d{3})+$)/g, '$1,') + second;
 }
 #+END_SRC
