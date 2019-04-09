@@ -48,7 +48,7 @@ const getData = (data, properties) => {
 
   let tmp = data;
   const arr = properties.split('.');
-  for (let i = 0; i < arr.length; i++) {
+  for (let i in arr) {
     const property = arr[i];
     if (tmp.hasOwnProperty(property)) {
       tmp = tmp[property];
