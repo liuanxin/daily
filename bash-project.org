@@ -1,0 +1,413 @@
+
+写在一台可以连上版本控制的机器上, 由此机器向其他的线上服务器推源码
+#+BEGIN_SRC bash
+#!/usr/bin/env bash
+
+red() {
+    echo -e "\033[31m[INFO] ------------------------------------------------------------------------\033[0m"
+    echo -e "\033[31m[INFO] ${1}\033[0m"
+    echo -e "\033[31m[INFO] ------------------------------------------------------------------------\033[0m"
+}
+log_red() {
+    red "$1"
+    echo ${1} >> "${log_path}/online.log"
+}
+error_and_exit() {
+    red "$1"
+    exit 1
+}
+
+if [ "root" == "`whoami`" ]; then
+    error_and_exit "不要使用 root 运行此脚本! 请切换成普通用户!"
+fi
+
+print_log() {
+    echo "[INFO] ------------------------------------------------------------------------"
+    echo -e "[INFO] ${1}"
+    echo "[INFO] ------------------------------------------------------------------------"
+}
+print_info() {
+    echo -e "\033[34m[INFO] ------------------------------------------------------------------------\033[0m"
+    echo -e "\033[34m[INFO] ${1}\033[0m"
+    echo -e "\033[34m[INFO] ------------------------------------------------------------------------\033[0m"
+}
+
+now="`date +%Y%m%d%H%M%S`"
+current_file="$(readlink -f $0)"
+
+work_dir="/home/`whoami`"     # 工作目录
+project="xxxyyyzzz"           # 项目名
+source="${work_dir}/source"   # 源码目录
+
+# 版本地址
+version_url="http://xxx.yyy.zzz.abc:3000/origin/project"
+
+online_project_file="${project}-export"           # 传输时用到的文件名
+online_upload_path="${work_dir}/source/"          # 源码存放目录
+online_release_file="${work_dir}/bash/release.sh" # 线上的发布脚本全路径
+
+# 导出并上传源码到指定服务器
+online() {
+    # -eq 等于, -ne 不等于, -gt 大于, -lt 小于, ge 大于等于, le 小于等于
+    if [ "$#" -lt 2 ] || [ -z "$1" ] || [ -z "$2" ]; then
+        error_and_exit "usage: online \"user\" \"ip\" \"branch(optional)\""
+    fi
+    
+    user="$1"
+    ip="$2"
+    release_online="${user}@${ip}:${online_upload_path}"
+
+    print_log "开始导出代码"
+    cd "${source}"
+    # 每次都用全新的版本
+    rm -fr "${online_project_file}"
+    
+    print_log "git clone ${version_url} ${project}"
+    git clone ${version_url} ${online_project_file}
+    cd ${online_project_file}
+    if [ "$3" != '' ]; then
+        git checkout $3
+        print_info "切换到 $3 分支或版本"
+    fi
+    print_info "导出的版本信息是: `git log | head -n 1 | awk '{print $2}'`"
+    rm -fr .git*
+    print_log "代码导出完成"
+
+    print_log "开始上传到指定环境"
+    cd "${source}"
+    if [ ! -e ${online_project_file} ]; then
+        error_and_exit "没有 ${source}/${online_project_file} 文件, 无法上传"
+    fi
+
+    file_name="${project}-${now}.tgz"
+    tar acf "${file_name}" "${online_project_file}"
+
+    md5="`md5sum ${file_name} | awk '{print $1}'`"
+    print_info "压缩包(${file_name})的 md5 值是: ${md5}, 文件大小为: `du -sh ${file_name} | awk '{print $1}'`"
+    print_log "scp ${source}/${file_name} ${release_online}"
+    # 服务器可以用 google-auth 开启二次验证, 此处可以用公钥免密码传输
+    time scp -qr "${source}/${file_name}" "${release_online}" || exit 1
+    rm -fr "${source}/${file_name}"
+    
+    print_info "登录到(${ip})上使用下面命令行发布"
+
+    print_info "公共模块 ${online_release_file} module-0-common/common-server ${now} ${md5}"
+    print_info "用户模块     ${online_release_file} module-1-user/user-server ${now} ${md5}"
+    print_info "商品模块     ${online_release_file} module-2-product/product-server ${now} ${md5}"
+    print_info "订单模块     ${online_release_file} module-7-order/order-server ${now} ${md5}"
+    print_info "web 后端 ${online_release_file} web-platform ${now} ${md5}"
+    print_info "后台管理 ${online_release_file} web-manager ${now} ${md5}"
+    print_info "定时任务 ${online_release_file} zero-task ${now} ${md5}"
+    
+    log_red "${online_release_file} all ${now} ${md5}; rm -fr ${online_upload_path}*"
+    print_log "上传完成"
+}
+
+case "$1" in
+    61)
+        online "admin" "xxx.yyy.zzz.abc"
+        ;;
+
+    *)
+        echo "usage:"
+        echo "  「${current_file} 61」   上传源码到(xxx.yyy.zzz.abc)环境"
+esac
+exit 1
+#+END_SRC
+
+线上的发布脚本
+#+BEGIN_SRC bash
+#!/usr/bin/env bash
+
+print_error() {
+    echo -e "\033[31m[error] ------------------------------------------------------------------------\033[0m"
+    echo -e "\033[31m[error] ${1}\033[0m" # 红
+    echo -e "\033[31m[error] ------------------------------------------------------------------------\033[0m"
+}
+error_and_exit() {
+    print_error "$1"
+    exit 1
+}
+
+if [ "root" == "`whoami`" ]; then
+    error_and_exit "不要使用 root 运行此脚本! 请切换成普通用户!"
+fi
+
+# rm -fr /home/`whoami`/logs/* /home/`whoami`/backup/*
+
+check_directory() {
+    if [ ! -d "${1}" ]; then
+        error_and_exit "目录 ${1} 不存在, 无法完成此操作"
+    fi
+}
+check_create_directory() {
+    if [ ! -d "${1}" ]; then
+        mkdir -p "$1"
+    fi
+}
+check_file() {
+    if [ ! -e "${1}" ]; then
+        error_and_exit "文件 ${1} 不存在, 无法完成此操作"
+    fi
+}
+log_in_file() {
+    check_create_directory ${log_path}
+    print_info "${1}"
+    echo ${1} >> "${log_path}/INSTALL.log"
+}
+log() {
+    echo "[INFO] ------------------------------------------------------------------------"
+    echo -e "[INFO] ${1}"
+    echo "[INFO] ------------------------------------------------------------------------"
+}
+print_info() {
+    echo -e "\033[34m[INFO] ------------------------------------------------------------------------\033[0m"
+    echo -e "\033[34m[INFO] ${1}\033[0m" # 蓝. 30(黑), 32(绿), 33(黄), 35(紫), 36(天蓝), 37(白)
+    echo -e "\033[34m[INFO] ------------------------------------------------------------------------\033[0m"
+}
+
+current_file="$(readlink -f $0)"
+now="`date +%Y%m%d%H%M%S`"
+
+work_dir="/home/`whoami`"     # 工作目录
+project="xxxyyyzzz"           # 项目名
+source="${work_dir}/source"   # 源码目录
+publish="${work_dir}/project" # 发布目录
+backup="${work_dir}/backup"   # 备份目录
+log_path="${work_dir}/logs"   # 日志目录
+
+profile="prod"                # 当前环境
+
+jvm_args="-server -Xmx512m"
+jvm_args="${jvm_args} -XX:+PrintGCDateStamps -XX:+PrintGCDetails -verbose:gc"
+jvm_args="${jvm_args} -Djava.security.egd=file:/dev/./urandom"
+jvm_args="${jvm_args} -Dspring.profiles.active=${profile}"
+# jvm_args="${jvm_args} -Ddubbo.reference.check=false"
+
+
+# 项目模块, 主要是「模块的包名、说明、最终打成 jar 包的文件名」三个参数
+
+module_name_arr+=("common")
+module_desc_arr+=("公共模块")
+module_file_arr+=("common-8081")
+
+module_name_arr+=("user")
+module_desc_arr+=("用户模块")
+module_file_arr+=("user-8082")
+
+module_name_arr+=("product")
+module_desc_arr+=("商品模块")
+module_file_arr+=("product-8083")
+
+module_name_arr+=("order")
+module_desc_arr+=("订单模块")
+module_file_arr+=("order-8084")
+
+module_name_arr+=("web-backend")
+module_desc_arr+=("web 后台")
+module_file_arr+=("web-backend-8090")
+
+module_name_arr+=("web-manager")
+module_desc_arr+=("后台管理")
+module_file_arr+=("web-manager-8100")
+
+module_name_arr+=("zero-task")
+module_desc_arr+=("定时任务")
+module_file_arr+=("zero-task-8200")
+
+
+# 检查代码包的 md5 值并解压, 为编译做准备
+check() {
+    log "开始检查代码"
+    # -eq 等于, -ne 不等于, -gt 大于, -lt 小于, ge 大于等于, le 小于等于
+    if [ "$#" -lt 2 ] || [ -z "$1" ] || [ -z "$2" ]; then
+        error_and_exit "usage: check \"发布的时间戳\" \"压缩包的 md5 值\""
+    fi
+    check_directory "${source}"
+
+    cd "${source}"
+    file_name="${project}-${1}.tgz"
+    check_file "${file_name}"
+
+    md5=`md5sum ${file_name} | awk '{print $1}'`
+    print_info "file md5 info: `md5sum ${file_name}`"
+    print_info "send md5 info: ${2}"
+    if [ "${md5}" != "${2}" ]; then
+        error_and_exit "文件的 md5 与传入的值不一致!"
+    fi
+
+    tar axf "${file_name}"
+    rm -fr "${project}"
+    mv "${project}-export" "${project}"
+    log "代码检查通过"
+}
+
+# 使用 maven 编译打包代码
+compile() {
+    check_directory "${source}/${project}"
+
+    log "开始打包代码"
+    cd "${source}/${project}"
+    if [ "$#" -gt 0 ]; then
+        # http://books.sonatype.com/mvnref-book/reference/_using_advanced_reactor_options.html
+        # 参数 -pl 指定需要打包的项目列表, -am 同时打包相关的依赖
+        echo "mvn -DskipTests clean package -pl $* -am"
+        mvn -DskipTests clean package -pl "$*" -am
+    else
+        mvn -DskipTests clean package
+    fi
+    log "代码打包完成"
+}
+
+
+# 杀掉 jar 进程
+kill_jar() {
+    if [ "$#" != 1 ] || [ -z "$1" ]; then
+        error_and_exit "usage: kill_jar \"运行的 jar 包路径\""
+    fi
+    process="`ps aux | grep ${1} | grep java | grep -v grep | awk '{print $2}'`"
+    log "项目 ${1} 进程号: (${process})"
+    if [ -n "${process}" ]; then
+        log "强行杀掉 ${1} 进程: ${process}"
+        kill -9 "${process}"
+    fi
+}
+# 启动 jar 进程
+start_jar() {
+    if [ "$#" != 2 ] || [ -z "$1" ] || [ -z "$2" ]; then
+        error_and_exit "usage: start_jar \"运行的 jar 包路径\" \"gc 文件名\""
+    fi
+
+    check_file "$1"
+    java ${jvm_args} -Xloggc:${log_path}/${2} -jar ${1} &
+    sleep 10
+    log "进程 ${1} 信息:\n`ps aux | grep -v grep | grep java | grep --color=auto ${1}`"
+}
+# 发布 jar 包项目
+release_jar() {
+    check_directory "${source}"
+    if [ "$#" != 3 ] || [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ]; then
+        error_and_exit "usage: release_jar \"发布包文字说明\" \"模块名\" \"文件名(不带后缀)\""
+    fi
+    comment="$1"
+    package="$2"
+    file_name="$3"
+    gc_file="gc-${package}.log"
+    gc_file="${gc_log//\//-}"  # / 替换成 -, 也可以写成 ////-, 格式: //old/new
+    revert="revert_${package}"
+
+    suffix="jar"
+    release="${source}/${project}/${package}/target/${file_name}.${suffix}"
+    if [ ! -e "${release}" ]; then
+        error_and_exit "没有此发布包: ${release}, 请确认是否有打包代码"
+    fi
+
+    current_release="${publish}/${file_name}.${suffix}"
+    backup_release="${backup}/${package}-${now}.${suffix}"
+
+    log "开始发布「${comment}」"
+    backup_project "${current_release}" "${backup_release}" "${revert}"
+    kill_jar "${current_release}"
+    mv "${release}" "${current_release}"
+    start_jar "${current_release}" "${gc_file}"
+    log "「${comment}」发布完成"
+}
+# 还原 jar 包项目
+revert_jar() {
+    if [ "$#" != 4 ] || [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ] || [ -z "$4" ]; then
+        error_and_exit "usage: revert_jar \"还原包文字说明\" \"模块名\" \"文件名(不带后缀)\" \"还原包的时间戳\""
+    fi
+    comment="$1"
+    package="$2"
+    file_name="$3"
+    gc_file="gc-${package}.log"
+    time="$4"
+
+    suffix="jar"
+    backup_file="${backup}/${package}-${time}.${suffix}"
+    if [ ! -e "${backup_file}" ]; then
+        error_and_exit "没有此还原包: ${backup_file}"
+    fi
+
+    current_release="${publish}/${file_name}.${suffix}"
+
+    log "开始还原「${comment}」"
+    kill_jar "${current_release}"
+    rm -fr "${current_release}"
+    cp -R "${backup_file}" "${current_release}"
+    start_jar "${current_release}" "${gc_file}"
+    log "「${comment}」还原完成"
+}
+
+# 备份现有的发布包
+backup_project() {
+    check_create_directory ${backup}
+    if [ "$#" != 3 ] || [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ]; then
+        error_and_exit "usage: backup_project \"发布包文件路径\" \"备份的文件路径\" \"还原指令\""
+    fi
+    if [ -e "${1}" ]; then
+        log "复制包 mv ${1} ${2}"
+        touch "${1}"
+        mv "${1}" "${2}"
+        
+        log "删除 12 个小时以前的备份文件 => find ${backup} -mmin +720 -type f | grep -v "${2}" | xargs rm -fr"
+        find "${backup}" -mmin +720 -type f | grep -v "${2}" | xargs rm -fr
+        log_in_file "运行 ${current_file} ${3} ${now} 还原之前的「${1}」版本"
+    fi
+}
+
+
+case "$1" in
+    restart)
+        check "$2" "$3"
+        compile "common,user,product,order"
+
+        release_jar "公共模块" "common" "common-8081"
+        release_jar "用户模块" "user" "user-8082"
+        release_jar "商品模块" "product" "product-8083"
+        release_jar "订单模块" "order" "order-8084"
+        ;;
+
+    *)
+        for i in ${!module_name_arr[@]}; do
+            name="${module_name_arr[$i]}"
+            desc="${module_desc_arr[$i]}"
+            file="${module_file_arr[$i]}"
+
+            if [ "$1" = "${name}" ]; then
+                check "$2" "$3"
+                compile "${name}"
+                release_jar "${desc}" "${name}" "${file}"
+                exit 1
+            elif [ "$1" = "stop_${name}" ]; then
+                kill_jar "${publish}/${file}.jar"
+                exit 1
+            elif [ "$1" = "restart_${name}" ]; then
+                kill_jar "${publish}/${file}.jar"
+                start_jar "${publish}/${file}.jar" "gc-${name}.log"
+                exit 1
+            elif [ "$1" = "revert_${name}" ]; then
+                revert_jar "${desc}" "${name}" "${file}" "$2"
+                exit 1
+            fi
+        done
+
+        echo "usage:"
+        echo "  「${current_file} restart」     打包及发布需要频繁更新的模块(公共,用户,商品,订单)"
+        echo ""
+        for i in ${!module_name_arr[@]}; do
+            name="${module_name_arr[$i]}"
+            desc="${module_desc_arr[$i]}"
+            file="${module_file_arr[$i]}"
+            if [ -n "${name}" ] && [ -n "${desc}" ] && [ -n "${file}" ]; then
+                echo "  「${current_file} ${name} time md5」           打包及发布「${desc}」"
+                echo "  「${current_file} stop_${name}」               关闭「${desc}」"
+                echo "  「${current_file} restart_${name}」            重启「${desc}」"
+                echo "  「${current_file} revert_${name} {timestamp}」 还原「${desc}」"
+                echo ""
+            fi
+        done
+        echo -e "   \033[31m{timestamp} 若不记得请去 INSTALL.log 查看\033[0m"
+esac
+exit 1
+#+END_SRC
