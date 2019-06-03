@@ -20,8 +20,6 @@ if [ "root" == "`whoami`" ]; then
     error_and_exit "不要使用 root 运行此脚本! 请切换成普通用户!"
 fi
 
-# rm -fr /home/`whoami`/logs/* /home/`whoami`/backup/*
-
 check_directory() {
     if [ ! -d "${1}" ]; then
         error_and_exit "目录 ${1} 不存在, 无法完成此操作"
@@ -548,8 +546,6 @@ error_and_exit() {
 if [ "root" == "`whoami`" ]; then
     error_and_exit "不要使用 root 运行此脚本! 请切换成普通用户!"
 fi
-
-# rm -fr /home/`whoami`/logs/* /home/`whoami`/backup/*
 
 check_directory() {
     if [ ! -d "${1}" ]; then
