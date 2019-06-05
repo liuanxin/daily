@@ -1,0 +1,86 @@
+*** 多环境打包
+
+如果用到 spring boot, 那没什么好说的 ~-Dspring.profiles.active=test|prod~ 就可以了. 会自动读 application-test|prod.yml 相关的配置文件
+
+如果基于 maven, 使用 ant 脚本在打包的时候做一点事, 也可以达到同样的效果
+
+#+BEGIN_SRC xml
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-maven-plugin</artifactId>
+        </plugin>
+
+        <plugin>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <executions>
+                <execution>
+                    <id>rebuildDir</id>
+                    <phase>compile</phase>
+                    <goals>
+                        <goal>run</goal>
+                    </goals>
+                    <configuration>
+                        <target>
+                            <delete file="${project.build.outputDirectory}/application.yml"/>
+                            <copy file="src/main/resources/${profile-id}/application.yml"
+                                  tofile="${project.build.outputDirectory}/application.yml"/>
+
+                            <delete file="${project.build.outputDirectory}/logback.xml"/>
+                            <copy file="src/main/resources/${profile-id}/logback.xml"
+                                  tofile="${project.build.outputDirectory}/logback.xml"/>
+
+                            <delete dir="${project.build.outputDirectory}/dev" />
+                            <delete dir="${project.build.outputDirectory}/test" />
+                            <delete dir="${project.build.outputDirectory}/prod" />
+                        </target>
+                    </configuration>
+                </execution>
+            </executions>
+        </plugin>
+    </plugins>
+</build>
+
+<profiles>
+    <profile>
+        <id>dev</id>
+        <activation>
+            <activeByDefault>true</activeByDefault>
+        </activation>
+        <properties>
+            <profile-id>dev</profile-id>
+        </properties>
+    </profile>
+
+    <profile>
+        <id>test</id>
+        <properties>
+            <profile-id>test</profile-id>
+        </properties>
+    </profile>
+
+    <profile>
+        <id>prod</id>
+        <properties>
+            <profile-id>prod</profile-id>
+        </properties>
+    </profile>
+</profiles>
+#+END_SRC
+
+其文件结构如下
+#+BEGIN_EXAMPLE
+resources
+├── dev
+│   ├── application.yml
+│   └── logback.xml
+├── prod
+│   ├── application.yml
+│   └── logback.xml
+└── test
+    ├── application.yml
+    └── logback.xml
+#+END_EXAMPLE
+
+之后打包的时候 ~mvn -Ptest|prod -DskipTests clean package~ 即可
