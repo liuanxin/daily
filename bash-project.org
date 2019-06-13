@@ -28,7 +28,7 @@ echo "" >> /etc/bashrc
 echo "JAVA_HOME=$(readlink -f /usr/bin/java | sed "s:bin/java::")" | sudo tee -a /etc/bashrc
 
 wget http://mirror.bit.edu.cn/apache/maven/maven-3/3.6.0/binaries/apache-maven-3.6.0-bin.tar.gz
-tar axf apache-maven-3.6.0-bin.tar.gz && mv apache-maven-3.6.1 /opt/
+tar axf apache-maven-3.6.0-bin.tar.gz && mv apache-maven-3.6.0 /opt/
 ln -s apache-maven-3.6.0 maven
 
 echo "" >> /etc/bashrc
@@ -44,7 +44,7 @@ source /etc/bashrc
 # tar axf apache-tomcat-8.5.42.tar.gz && mv apache-tomcat-8.5.42 ~/server/
 #+END_SRC
 
-复制下面的内容写成 settings.xml 到 /home/admin/.m2 下
+复制下面的内容写成 settings.xml 到 /home/admin/ .m2 下
 #+BEGIN_SRC xml
 <?xml version="1.0" encoding="UTF-8"?>
 <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
