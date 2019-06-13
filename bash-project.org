@@ -39,9 +39,64 @@ echo "export PATH JAVA_HOME MAVEN_HOME" >> /etc/bashrc
 echo "" >> /etc/bashrc
 
 source /etc/bashrc
+#+END_SRC
 
-# wget http://mirrors.tuna.tsinghua.edu.cn/apache/tomcat/tomcat-8/v8.5.42/bin/apache-tomcat-8.5.42.tar.gz
-# tar axf apache-tomcat-8.5.42.tar.gz && mv apache-tomcat-8.5.42 ~/server/
+如果使用的是 tomcat
+#+BEGIN_SRC bash
+wget http://mirrors.tuna.tsinghua.edu.cn/apache/tomcat/tomcat-8/v8.5.42/bin/apache-tomcat-8.5.42.tar.gz
+tar axf apache-tomcat-8.5.42.tar.gz && mv apache-tomcat-8.5.42 ~/server/
+# 如果有多个 web 服务, 就把 tomcat 复制多个, 改成相关的项目名. 当然, 还得去改里面的端口配置以及将 webapps 中的所有文件删除
+#+END_SRC
+然后在要发布的 tomcat/conf/server.xml 文件中, 最底下的 host 节点中添加下面的配置
+#+BEGIN_SRC xml
+<!-- path 置空, 这样用 http://ip:port 就是项目地址了, 不需要再带上 path, docBase 用全目录, 不要将 war 包放进 webapps 目录来发布, 这样能避免一些发布时的缓存问题 -->
+<Context path="" docBase="/home/admin/project/xxx.war" reloadable="true" />
+#+END_SRC
+
+在每个 tomcat 的 bin 目录下新建 setenv.sh 文件来写配置(不要直接写到 catalina.sh 中, catalina.sh 文件最前面有详细注释)
+#+BEGIN_SRC bash
+#!/bin/bash
+
+# 当前运行环境
+profile="test"
+log="/home/`whoami`/logs"
+project="platform"
+if [ ! -d "${log}" ]; then
+  mkdir -p ${log}
+fi
+# gc 的 dump 日志
+dump="${log}/dump-${project}"
+if [ ! -d "${dump}" ]; then
+  mkdir -p ${dump}
+fi
+# gc 日志
+gc_file="${log}/gc-${project}.log"
+
+# 如果使用 apr 的话
+# CATALINA_OPTS="$CATALINA_OPTS -Djava.library.path=/usr/local/apr/lib"
+
+# when run in server
+# JAVA_OPTS="$JAVA_OPTS -server"
+
+# -Xms/Xmx
+#   Xms Sets the initial size of the Heap
+#   Xmx sets the Maximum size of the Heap.
+#  http://stackoverflow.com/questions/16087153/what-happens-when-we-set-xmx-and-xms-equal-size
+#  http://crunchify.com/jvm-tuning-heapsize-stacksize-garbage-collection-fundamental/
+# JAVA_OPTS="$JAVA_OPTS -Xms1024M -Xmx1024M"
+
+# open dump file, when OnOutOfMemory
+JAVA_OPTS="${JAVA_OPTS} -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=${dump}"
+
+# print gc info
+JAVA_OPTS="-XX:+PrintGCDateStamps -XX:+PrintGCDetails -verbose:gc -Xloggc:${gc_file}"
+
+# spring profile use test
+JAVA_OPTS="${JAVA_OPTS} -Dspring.profiles.active=${profile}"
+
+JAVA_OPTS="$JAVA_OPTS -Djava.security.egd=file:/dev/./urandom"
+
+export CATALINA_OPTS JAVA_OPTS
 #+END_SRC
 
 复制下面的内容写成 settings.xml 到 ~/home/admin/.m2~ 下
@@ -141,7 +196,7 @@ backup="${release_path}/backup"       # 备份目录
 log_path="${release_path}/logs"       # 日志目录
 tomcat_path="${release_path}/server"  # tomcat 目录
 
-profile="test"                        # 当前环境
+profile="test"                        # 当前环境, 如果是用 tomcat 来发布的, 以 tomcat/bin/setenv.sh 中的配置为准
 
 jvm_args="-server"
 jvm_args="${jvm_args} -Xms512m -Xmx1G -Dfile.encoding=UTF-8"
@@ -172,8 +227,8 @@ module_file_arr+=("order-8083")
 
 
 module_name_arr+=("web-platform")
-module_desc_arr+=("web 后端")
-module_file_arr+=("web-platform-8100")
+module_desc_arr+=("web 后端") # 这个项目打包成 war, 用 tomcat 来发布, 最后一个 | 是 tomcat 的发布目录
+module_file_arr+=("web-platform-8100|war|${tomcat_path}/platform")
 
 module_name_arr+=("web-manager")
 module_desc_arr+=("后台管理")
