@@ -1,5 +1,86 @@
+在 centos 的系统中初始化机器
+#+BEGIN_SRC bash
+# javac 在 java-1.8.0-openjdk-devel 包里面
+yum install java-1.8.0-openjdk java-1.8.0-openjdk-devel git subversion
 
-测试环境的本地一键部署
+adduser admin
+passwd admin
+usermod -aG wheel admin
+
+mkdir backup bash config logs server source project tool web
+
+echo "" > README
+echo "backup  : 备份目录" >> README
+echo "bash    : 脚本目录" >> README
+echo "config  : 外部配置文件, 如 https 证书等" >> README
+echo "logs    : 日志目录" >> README
+echo "server  : 项目对应 tomcat(如果有的话) 的目录" >> README
+echo "source  : 源码目录" >> README
+echo "project : 发布包目录" >> README
+echo "temp    : 临时目录" >> README
+echo "tool    : 工具包目录" >> README
+echo "web     : 前端目录, 被 nginx 指向" >> README
+echo "" >> README
+
+
+echo "" >> /etc/bashrc
+echo "" >> /etc/bashrc
+echo "JAVA_HOME=$(readlink -f /usr/bin/java | sed "s:bin/java::")" | sudo tee -a /etc/bashrc
+
+wget http://mirror.bit.edu.cn/apache/maven/maven-3/3.6.0/binaries/apache-maven-3.6.0-bin.tar.gz
+tar axf apache-maven-3.6.0-bin.tar.gz && mv apache-maven-3.6.1 /opt/
+ln -s apache-maven-3.6.0 maven
+
+echo "" >> /etc/bashrc
+echo "MAVEN_HOME=/opt/maven" >> /etc/bashrc
+echo "PATH=$PATH:$MAVEN_HOME/bin" >> /etc/bashrc
+echo "" >> /etc/bashrc
+echo "export PATH JAVA_HOME MAVEN_HOME" >> /etc/bashrc
+echo "" >> /etc/bashrc
+
+source /etc/bashrc
+
+# wget http://mirrors.tuna.tsinghua.edu.cn/apache/tomcat/tomcat-8/v8.5.42/bin/apache-tomcat-8.5.42.tar.gz
+# tar axf apache-tomcat-8.5.42.tar.gz && mv apache-tomcat-8.5.42 ~/server/
+#+END_SRC
+
+复制下面的内容写成 settings.xml 到 /home/admin/.m2 下
+#+BEGIN_SRC xml
+<?xml version="1.0" encoding="UTF-8"?>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
+    <mirrors>
+        <mirror>
+            <id>aliyun</id>
+            <name>aliyun maven</name>
+            <mirrorOf>central</mirrorOf>
+            <url>http://maven.aliyun.com/nexus/content/groups/public/</url>
+        </mirror>
+    </mirrors>
+
+    <profiles>
+        <profile>
+            <id>company</id>
+            <pluginRepositories>
+                <pluginRepository>
+                    <id>aliyun-plugin</id>
+                    <url>http://maven.aliyun.com/nexus/content/groups/public/</url>
+                    <releases><enabled>true</enabled></releases>
+                    <snapshots><enabled>false</enabled></snapshots>
+                </pluginRepository>
+            </pluginRepositories>
+        </profile>
+    </profiles>
+
+    <activeProfiles>
+        <activeProfile>company</activeProfile>
+    </activeProfiles>
+</settings>
+#+END_SRC
+
+
+测试环境的一键部署脚本
 #+BEGIN_SRC bash
 #!/usr/bin/env bash
 
@@ -53,7 +134,7 @@ print_info() {
 
 
 release_path="/home/`whoami`"         # 发布目录
-project="wlwerpv2"                    # 项目名
+project="project"                     # 项目名
 source="${release_path}/source"       # 源码目录
 publish="${release_path}/project"     # 发布目录
 backup="${release_path}/backup"       # 备份目录
@@ -65,13 +146,11 @@ profile="test"                        # 当前环境
 jvm_args="-server"
 jvm_args="${jvm_args} -Xms512m -Xmx1G -Dfile.encoding=UTF-8"
 jvm_args="${jvm_args} -XX:+UseG1GC"
-# jvm_args="${jvm_args} -XX:+UseConcMarkSweepGC -XX:CMSInitiatingOccupancyFraction=75 -XX:+AlwaysPreTouch"
 jvm_args="${jvm_args} -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35"
 jvm_args="${jvm_args} -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps"
 jvm_args="${jvm_args} -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=100M"
 jvm_args="${jvm_args} -Djava.security.egd=file:/dev/./urandom"
 jvm_args="${jvm_args} -Dspring.profiles.active=${profile}"
-# jvm_args="${jvm_args} -Ddubbo.reference.check=false"
 
 
 # 项目模块, 主要是「模块的包名、说明、最终打成 jar 包的文件名」三个参数
@@ -106,7 +185,7 @@ module_file_arr+=("zero-task")
 
 
 # 版本信息
-version_url="http://gitlab.qidid.com/erpdev/wlwerpv2.git"
+version_url="http://ip:3000/origin/project.git"
 
 
 # 从版本控制更新代码, 为打包做准备
@@ -132,10 +211,9 @@ compile() {
 
     log "开始打包代码"
     cd "${source}/${project}"
-    # 在 develop 分支打包
+    # 测试环境用 develop 分支打包
     git checkout develop
     if [ "$*" != "" ]; then
-        # echo "mvn -DskipTests clean package -pl $* -am"
         mvn -DskipTests clean package -pl "$*" -am
     else
         mvn -DskipTests clean package
@@ -410,10 +488,9 @@ case "$1" in
 esac
 exit 1
 #+END_SRC
+通常来说, 线上服务器不需要直接连到版本控制, 此时: 先用一台可以连上版本控制的机器下载代码并压缩再上传到线上服务器, 再去服务器校验文件并打包发布
 
-当线上服务器不能连到版本控制时, 用下面的方式发布: 先用一台可以连上版本控制的机器下载代码并压缩再上传到线上服务器, 再去服务器校验文件并打包发布
-
-写在一台可以连上版本控制的机器上, 由此机器向其他的线上服务器推源码
+写在一台可以连上版本控制的机器上, 由此机器向线上服务器推源码
 #+BEGIN_SRC bash
 #!/usr/bin/env bash
 
@@ -454,7 +531,7 @@ project="xxxyyyzzz"           # 项目名
 source="${work_dir}/source"   # 源码目录
 
 # 版本地址
-version_url="http://xxx.yyy.zzz.abc:3000/origin/project"
+version_url="http://ip:port/origin/project.git"
 
 online_project_file="${project}-export"           # 传输时用到的文件名
 online_upload_path="${work_dir}/source/"          # 源码存放目录
@@ -506,10 +583,10 @@ online() {
     print_info "登录到(${ip})上使用下面命令行发布"
 
     print_info "公共模块 ${online_release_file} module-0-common/common-server ${now} ${md5}"
-    print_info "用户模块     ${online_release_file} module-1-user/user-server ${now} ${md5}"
-    print_info "商品模块     ${online_release_file} module-2-product/product-server ${now} ${md5}"
-    print_info "订单模块     ${online_release_file} module-7-order/order-server ${now} ${md5}"
-    print_info "web 后端 ${online_release_file} web-platform ${now} ${md5}"
+    print_info "用户模块 ${online_release_file} module-1-user/user-server ${now} ${md5}"
+    print_info "商品模块 ${online_release_file} module-2-product/product-server ${now} ${md5}"
+    print_info "订单模块 ${online_release_file} module-7-order/order-server ${now} ${md5}"
+    print_info "后端项目 ${online_release_file} web-platform ${now} ${md5}"
     print_info "后台管理 ${online_release_file} web-manager ${now} ${md5}"
     print_info "定时任务 ${online_release_file} zero-task ${now} ${md5}"
     
@@ -518,13 +595,16 @@ online() {
 }
 
 case "$1" in
-    61)
+    abc)
         online "admin" "xxx.yyy.zzz.abc"
         ;;
-
+    xyz)
+        online "admin" "123.123.123.xyz"
+        ;;
     *)
         echo "usage:"
-        echo "  「${current_file} 61」   上传源码到(xxx.yyy.zzz.abc)环境"
+        echo "  「${current_file} abc」  上传源码到(xxx.yyy.zzz.abc)环境"
+        echo "  「${current_file} xyz」  上传源码到(123.123.123.xyz)环境"
 esac
 exit 1
 #+END_SRC
