@@ -45,11 +45,15 @@ source /etc/bashrc
 #+BEGIN_SRC bash
 wget http://mirrors.tuna.tsinghua.edu.cn/apache/tomcat/tomcat-8/v8.5.42/bin/apache-tomcat-8.5.42.tar.gz
 tar axf apache-tomcat-8.5.42.tar.gz && mv apache-tomcat-8.5.42 ~/server/
-# 如果有多个 web 服务, 就把 tomcat 复制多个, 改成相关的项目名. 当然, 还得去改里面的端口配置以及将 webapps 中的所有文件删除
+# 如果有多个 web 服务, 就把 tomcat 复制多个, 改成相关的项目名
+# 当然, 还得去改里面的端口配置以及将 webapps 中的所有文件删除
 #+END_SRC
 然后在要发布的 tomcat/conf/server.xml 文件中, 最底下的 host 节点中添加下面的配置
 #+BEGIN_SRC xml
-<!-- path 置空, 这样用 http://ip:port 就是项目地址了, 不需要再带上 path, docBase 用全目录, 不要将 war 包放进 webapps 目录来发布, 这样能避免一些发布时的缓存问题 -->
+<!--
+  path 置空, 这样用 http://ip:port 就是项目地址了, 不需要再带上 path
+  docBase 用全目录, 不要将 war 包放进 webapps 目录来发布, 这样能避免一些发布时的缓存问题
+-->
 <Context path="" docBase="/home/admin/project/xxx.war" reloadable="true" />
 #+END_SRC
 
@@ -59,8 +63,12 @@ tar axf apache-tomcat-8.5.42.tar.gz && mv apache-tomcat-8.5.42 ~/server/
 
 # 当前运行环境
 profile="test"
-log="/home/`whoami`/logs"
+# 当前项目名
 project="platform"
+
+# 放 gc 日志和 dump 文件的目录
+log="/home/`whoami`/logs"
+
 if [ ! -d "${log}" ]; then
   mkdir -p ${log}
 fi
@@ -75,26 +83,14 @@ gc_file="${log}/gc-${project}.log"
 # 如果使用 apr 的话
 # CATALINA_OPTS="$CATALINA_OPTS -Djava.library.path=/usr/local/apr/lib"
 
-# when run in server
-# JAVA_OPTS="$JAVA_OPTS -server"
-
-# -Xms/Xmx
-#   Xms Sets the initial size of the Heap
-#   Xmx sets the Maximum size of the Heap.
-#  http://stackoverflow.com/questions/16087153/what-happens-when-we-set-xmx-and-xms-equal-size
-#  http://crunchify.com/jvm-tuning-heapsize-stacksize-garbage-collection-fundamental/
-# JAVA_OPTS="$JAVA_OPTS -Xms1024M -Xmx1024M"
-
-# open dump file, when OnOutOfMemory
-JAVA_OPTS="${JAVA_OPTS} -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=${dump}"
-
-# print gc info
-JAVA_OPTS="-XX:+PrintGCDateStamps -XX:+PrintGCDetails -verbose:gc -Xloggc:${gc_file}"
-
-# spring profile use test
 JAVA_OPTS="${JAVA_OPTS} -Dspring.profiles.active=${profile}"
 
+JAVA_OPTS="$JAVA_OPTS -server"
+JAVA_OPTS="$JAVA_OPTS -Xms1024M -Xmx1024M"
+JAVA_OPTS="$JAVA_OPTS -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=${dump}"
+JAVA_OPTS="$JAVA_OPTS -XX:+PrintGCDateStamps -XX:+PrintGCDetails -verbose:gc -Xloggc:${gc_file}"
 JAVA_OPTS="$JAVA_OPTS -Djava.security.egd=file:/dev/./urandom"
+# 还可以加上 g1 cms 等其他的配置
 
 export CATALINA_OPTS JAVA_OPTS
 #+END_SRC
