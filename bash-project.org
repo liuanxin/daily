@@ -44,7 +44,7 @@ source /etc/bashrc
 # tar axf apache-tomcat-8.5.42.tar.gz && mv apache-tomcat-8.5.42 ~/server/
 #+END_SRC
 
-复制下面的内容写成 settings.xml 到 /home/admin/ .m2 下
+复制下面的内容写成 settings.xml 到 ~/home/admin/.m2~ 下
 #+BEGIN_SRC xml
 <?xml version="1.0" encoding="UTF-8"?>
 <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
