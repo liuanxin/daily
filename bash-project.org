@@ -83,13 +83,12 @@ gc_file="${log}/gc-${project}.log"
 # 如果使用 apr 的话
 # CATALINA_OPTS="$CATALINA_OPTS -Djava.library.path=/usr/local/apr/lib"
 
-JAVA_OPTS="${JAVA_OPTS} -Dspring.profiles.active=${profile}"
-
 JAVA_OPTS="$JAVA_OPTS -server"
 JAVA_OPTS="$JAVA_OPTS -Xms1024M -Xmx1024M"
 JAVA_OPTS="$JAVA_OPTS -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=${dump}"
 JAVA_OPTS="$JAVA_OPTS -XX:+PrintGCDateStamps -XX:+PrintGCDetails -verbose:gc -Xloggc:${gc_file}"
 JAVA_OPTS="$JAVA_OPTS -Djava.security.egd=file:/dev/./urandom"
+JAVA_OPTS="${JAVA_OPTS} -Dspring.profiles.active=${profile}"
 # 还可以加上 g1 cms 等其他的配置
 
 export CATALINA_OPTS JAVA_OPTS
