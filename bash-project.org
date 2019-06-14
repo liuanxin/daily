@@ -953,3 +953,66 @@ case "$1" in
 esac
 exit 1
 #+END_SRC
+
+部署从 mysql 同步数据进 es 的服务脚本(先在 ~/project 目录下建一个 application.yml, 内容参照: [[https://github.com/liuanxin/mysql2es/blob/master/src/main/resources/application-prod.yml][es-sync-config]])
+#+BEGIN_SRC bash
+#!/usr/bin/env bash
+
+jvm_args="-server"
+jvm_args="${jvm_args} -Dfile.encoding=UTF-8 -Xms128m -Xmx128m"
+jvm_args="${jvm_args} -XX:+UseG1GC -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps"
+jvm_args="${jvm_args} -Djava.security.egd=file:/dev/./urandom"
+
+project="mysql2es"
+release_path="/home/`whoami`"
+source="${release_path}/source"
+publish="${release_path}/project"
+log_path="${release_path}/logs"
+
+version_url="https://github.com/liuanxin/${project}"
+
+update() {
+    if [ -d "${source}/${project}" ]; then
+        cd "${source}/${project}"
+        git pull
+    else
+        cd "${source}"
+        git clone ${version_url}
+        cd "${project}"
+    fi
+}
+compile() {
+    cd "${source}/${project}"
+    mvn clean package -DskipTests || exit 1
+}
+kill_process() {
+    process="`ps aux | grep '${project}' | grep java | awk '{print $2}'`"
+    if [ -n "${process}" ]; then
+        kill -9 "${process}"
+    fi
+}
+release() {
+    rm -fr ${publish}/${project}.jar
+    mv ${source}/${project}/target/${project}.jar ${publish}/${project}.jar
+
+    cd ${publish}
+    java ${jvm_args} -Dspring.config.location=${publish}/application.yml -Xloggc:${log_path}/gc-${project}.log -jar ${publish}/${project}.jar &
+    sleep 5
+    ps aux | grep java | grep '${project}'
+}
+
+case "$1" in
+    stop)
+        kill_process
+        echo "已杀掉 ${project} 进程"
+        ps aux | grep '${project}' | grep java
+        ;;
+    *)
+        update
+        compile
+        kill_process
+        release
+        ;;
+esac
+exit 1
+#+END_SRC
