@@ -203,39 +203,46 @@ jvm_args="${jvm_args} -Djava.security.egd=file:/dev/./urandom"
 jvm_args="${jvm_args} -Dspring.profiles.active=${profile}"
 
 
-# 项目模块, 主要是「模块的包名、说明、最终打成 jar 包的文件名」三个参数
+# 项目模块, 主要是「模块的包名、说明、最终打成 jar 包的文件名」三个参数, batch 为 1 表示全局发布的时候包含进去
 module_name_arr+=("module-1-common/common-server")
 module_desc_arr+=("公共模块")
 module_file_arr+=("common-server-20870")
+module_batch_arr+=("1")
 
 module_name_arr+=("module-2-user/user-server")
 module_desc_arr+=("用户模块")
 module_file_arr+=("user-8081")
+module_batch_arr+=("1")
 
 module_name_arr+=("module-3-product/product-server")
 module_desc_arr+=("商品模块")
 module_file_arr+=("product-8082")
+module_batch_arr+=("1")
 
 module_name_arr+=("module-4-order/order-server")
 module_desc_arr+=("订单模块")
 module_file_arr+=("order-8083")
+module_batch_arr+=("1")
 
 
 module_name_arr+=("web-platform")
 module_desc_arr+=("web 后端") # 这个项目打包成 war, 用 tomcat 来发布, 最后一个 | 是 tomcat 的发布目录
 module_file_arr+=("web-platform-8100|war|${tomcat_path}/platform")
+module_batch_arr+=("1")
 
 module_name_arr+=("web-manager")
 module_desc_arr+=("后台管理")
 module_file_arr+=("web-manager-8200")
+module_batch_arr+=("1")
 
 module_name_arr+=("zero-task")
 module_desc_arr+=("定时任务")
 module_file_arr+=("zero-task")
+module_batch_arr+=("0")
 
 
 # 版本信息
-version_url="http://ip:3000/origin/project.git"
+version_url="http://ip:port/origin/project.git"
 
 
 # 从版本控制更新代码, 为打包做准备
@@ -470,12 +477,20 @@ revert_tomcat() {
 case "$1" in
     restart)
         check "$2" "$3"
-        compile "common,user,product,order"
-
-        release_jar "公共模块" "common" "common-8081"
-        release_jar "用户模块" "user" "user-8082"
-        release_jar "商品模块" "product" "product-8083"
-        release_jar "订单模块" "order" "order-8084"
+        compile
+        for i in ${!module_name_arr[@]}; do
+            if [ "1" = "${module_batch_arr[$i]}" ]; then
+                name="${module_name_arr[$i]}"
+                desc="${module_desc_arr[$i]}"
+                file="${module_file_arr[$i]}"
+                
+                if [ "war" = "$(cut -d '|' -f 2 <<< "${file}")" ]; then
+                    release_tomcat "${desc}" "$(cut -d '|' -f 3 <<< "${file}")" "$(cut -d '|' -f 1 <<< "${file}")"
+                else
+                    release_jar "${desc}" "${name}" "${file}"
+                fi
+            fi
+        done
         ;;
 
     *)
@@ -727,35 +742,43 @@ jvm_args="${jvm_args} -Dspring.profiles.active=${profile}"
 # jvm_args="${jvm_args} -Ddubbo.reference.check=false"
 
 
-# 项目模块, 主要是「模块的包名、说明、最终打成 jar 包的文件名」三个参数
+# 项目模块, 主要是「模块的包名、说明、最终打成 jar 包的文件名」三个参数, batch 为 1 表示全局发布的时候包含进去
 
 module_name_arr+=("module-1-common/common-server")
 module_desc_arr+=("公共模块")
 module_file_arr+=("common-8081")
+module_batch_arr+=("1")
 
 module_name_arr+=("module-2-user/user-server")
 module_desc_arr+=("用户模块")
 module_file_arr+=("user-8082")
+module_batch_arr+=("1")
 
 module_name_arr+=("module-3-product/product-server")
 module_desc_arr+=("商品模块")
 module_file_arr+=("product-8083")
+module_batch_arr+=("1")
 
 module_name_arr+=("module-4-order/order-server")
 module_desc_arr+=("订单模块")
 module_file_arr+=("order-8084")
+module_batch_arr+=("1")
+
 
 module_name_arr+=("web-backend")
 module_desc_arr+=("web 后台")
 module_file_arr+=("web-backend-8090")
+module_batch_arr+=("1")
 
 module_name_arr+=("web-manager")
 module_desc_arr+=("后台管理")
 module_file_arr+=("web-manager-8100")
+module_batch_arr+=("1")
 
 module_name_arr+=("zero-task")
 module_desc_arr+=("定时任务")
 module_file_arr+=("zero-task-8200")
+module_batch_arr+=("0")
 
 
 # 检查代码包的 md5 值并解压, 为编译做准备
@@ -902,12 +925,17 @@ backup_project() {
 case "$1" in
     restart)
         check "$2" "$3"
-        compile "common,user,product,order"
+        compile
+        # compile "common,user,product,order"
 
-        release_jar "公共模块" "module-1-common/common-server" "common-8081"
-        release_jar "用户模块" "module-2-user/user-server" "user-8082"
-        release_jar "商品模块" "module-3-product/product-server" "product-8083"
-        release_jar "订单模块" "module-4-order/order-server" "order-8084"
+        for i in ${}; do
+            if [ "1" = "${module_batch_arr[$i]}" ]; then
+                name="${module_name_arr[$i]}"
+                desc="${module_desc_arr[$i]}"
+                file="${module_file_arr[$i]}"
+                release_jar "${desc}" "${name}" "${file}"
+            fi
+        fone
         ;;
 
     *)
