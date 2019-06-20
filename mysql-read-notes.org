@@ -23,10 +23,11 @@ mysql 锁策略有: 表锁(table lock) 和 行级锁(row lock)
 
 *** 隔离级别
 | 隔离级别                   | 导致脏读? | 导致不可重复读? | 导致幻读? | 加锁读 |
-| 读未提交(read uncommitted) | Yes       | Yes             | Yes       | No     |
-| 读提交(read committed)     | No        | Yes             | Yes       | No     |
-| 重复读(repeatable read)    | No        | No              | Yes       | No     |
-| 串行化(serializable)       | No        | No              | No        | Yes    |
+|---------------------------+----------+----------------+----------+--------|
+| 读未提交(read uncommitted) | Yes      | Yes            | Yes      | No     |
+| 读提交(read committed)     | No       | Yes            | Yes      | No     |
+| 重复读(repeatable read)    | No       | No             | Yes      | No     |
+| 串行化(serializable)       | No       | No             | No       | Yes    |
 
 *个人观点*
 : 重复读(repeatable read)这个级别 是数据库理论过度学术导致的问题.
