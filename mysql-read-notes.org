@@ -326,7 +326,7 @@ set tx_isolation='read-committed';
 begin;
 update t2 set c2 = 3 where c1 in (select c1 from t1);  -- 1  括号里的 c1 有 1,2
 update t2 set c2 = 4 where c1 in (select c1 from t1);  -- 4  括号里的 c1 只有 1
-select * from t2;  -- 此时查询两行数据, 第一行是 1 4, 第二行是 2 3.
+select * from t2;  -- 此时查询两行数据, 第一行是 1 4, 第二行是 2 3
 commit;
 #+END_SRC
 
@@ -350,10 +350,10 @@ set tx_isolation='read-committed';
 begin;
 update t1 set c2 = 3 where c1 in (select c1 from t2);
 update t1 set c2 = 4 where c1 in (select c1 from t2);
-select * from t2;  -- 此时查询两行数据, 第一行是 1 4, 第二行是 2 2.
+select * from t2;  -- 此时查询两行数据, 第一行是 1 4, 第二行是 2 2
 commit;
 #+END_SRC
-所以在 5.1 及以上的 rc 级别下, 基于语句(statement)的 binlog 将会与预期的不一样, 如果是 基于行(row)的 binlog 就不会有这个问题.
+所以在 5.1 及以上的 rc 级别下, 基于语句(statement)的 binlog 将会与预期的不一样, 如果是 基于行(row)的 binlog 就不会有这个问题
 
 改成 rr 级别的会话一
 #+BEGIN_SRC sql
@@ -362,7 +362,7 @@ set tx_isolation='repeatable-read';
 begin;
 update t2 set c2 = 3 where c1 in (select c1 from t1);  -- 1
 update t2 set c2 = 4 where c1 in (select c1 from t1);  -- 4
-select * from t2;  -- 此时查询两行数据, 第一行是 1 4, 第二行是 2 3.
+select * from t2;  -- 此时查询两行数据, 第一行是 1 4, 第二行是 2 3
 commit;
 #+END_SRC
 
@@ -374,6 +374,6 @@ begin;
 delete from t1 where c1 = 2;  -- 2 ==> 阻塞...
 commit;                       -- 3 ==> 无法在会话一的前面完成 commit
 #+END_SRC
-如果使用 rr 级别, 与 rc 级别不同的是, 在 rr 中由于要保证可重复读, 会话二的 delete 将会被会话一阻塞(第 2 步), 直到会话一提交或超时, 所以会话二的 commit 将会无法在会话一的前面 commit, 这样就保证了 基于语句(statement)的 binlog 不会出问题.
+如果使用 rr 级别, 与 rc 级别不同的是, 在 rr 中由于要保证可重复读, 会话二的 delete 将会被会话一阻塞(第 2 步), 直到会话一提交或超时, 所以会话二的 commit 将会无法在会话一的前面 commit, 这样就保证了 基于语句(statement)的 binlog 不会出问题
 
-5.0 的 rc 与 5.1 的 rr 使用类似的并发和上锁机制, 也就是说, 同样的 rc 级别在 5.0 和 5.1 上会有兼容问题.
+5.0 的 rc 与 5.1 的 rr 使用类似的并发和上锁机制, 也就是说, 同样的 rc 级别在 5.0 和 5.1 上会有兼容问题
