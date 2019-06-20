@@ -321,7 +321,7 @@ insert into t2 values(1,1), (2,2);
 
 会话一
 #+BEGIN_SRC sql
-select @@tx_isolation;
+select @@tx_isolation;  -- 8 及之后的版本改成了 transaction_isolation
 set tx_isolation='read-committed';
 begin;
 update t2 set c2 = 3 where c1 in (select c1 from t1);  -- 1  括号里的 c1 有 1,2
