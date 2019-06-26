@@ -29,14 +29,12 @@ alias 和 root 的区别点如下(引自 http://www.wkii.org/nginx-set-directory
 location /abc {
     alias /opt/html/abc/;
 }
-#+END_SRC
 
 基于上面的配置, hxxp://test/abc/a.html 指定的是 /opt/html/abc/a.html, 也可以改成
 #+BEGIN_SRC conf
 location /abc {
     root /opt/html/;
 }
-#+END_SRC
 
 使用 root 设置目录的绝对路径时, 少了 /abc, 也就是说, 使用 root 来设置前端非根目录时, nginx 会组合 root 和 location 的路径.
 另外, 如果使用了二级目录 /picture/ 之后, 后面的全局匹配不能使用 location ~ / {} 这种方式(也就是不能加 ~), 不然 /picture 会往后面的 / 去匹配!
