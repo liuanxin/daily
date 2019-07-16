@@ -42,11 +42,12 @@ Queue 接口的 api 总结如下
 | 检查(examine) | E element() 空时抛出异常 | E peek()      空时返回 null  | 返回头元素但不移除 |
 
 BlockingQueue 在入队列时已满则等待, 出队列时已空则等待, 另外还提供插入和删除元素时可以等待指定的持续时间, 总结如下
-| 操作          | 抛出异常 | 返回值 | 阻塞                       | 超时                         |
-|---------------+----------+--------+----------------------------+------------------------------|
-| 入(insert)    | add      | offer  | void put(E) 队列满时将等待 | boolean offer(E, time, unit) |
-| 出(remove)    | remove   | poll   | E take()    队列空时将等待 | E poll(time, unit)           |
-| 检查(examine) | element  | peek   | ?                          | ?                            |
+| 操作          | 抛出异常 | 返回值                      | 阻塞                       | 超时                         |
+|---------------+----------+-----------------------------+----------------------------+------------------------------|
+| 入(insert)    | add      | offer 返回添加是否成功      | void put(E) 队列满时将等待 | boolean offer(E, time, unit) |
+| 出(remove)    | remove   | poll 返回队列头, 超时返回空 | E take()    队列空时将等待 | E poll(time, unit)           |
+| 检查(examine) | element  | peek 从 queue 继承而来      | ?                          | ?                            |
+
 
 Deque 有头尾两种操作(first & last), BlockingDeque 在此基础上还有阻塞操作.
 
