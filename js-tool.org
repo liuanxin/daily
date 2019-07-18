@@ -58,15 +58,13 @@ const getData = (data, properties) => {
   }
   return tmp;
 }
-
-/** 
+/**
  * 将列表中的 undefined 或 null 值去掉后返回, 项是 0、{}、[]、'' 都会保留
  * removeNull(['abc', null, 1, 0, undefined, {}, '', []]) 会返回 ['abc', 1, 0, {}, '', []]
  */
 const removeNull = (list) => {
   return Array.isArray(list) ? list.filter((obj) => { return obj !== undefined && obj !== null; }) : list;
 }
-
 /**
  * 使用 const v = x.y || false 时, 期望的是当 x.z 为 undefined 或 null 时将 v 赋值为 false
  * 但是此时会当成 或运算, 所以赋值是有问题的
@@ -92,6 +90,7 @@ const greater0 = (str) => {
 const less0 = (str) => {
   return toFloat(str) <= 0;
 }
+
 /** 将字符串中指定位数的值模糊成 * 并返回. 索引位从 0 开始 */
 const foggy = (str, start, end) => {
   if (isBlank(str)) {
@@ -120,6 +119,7 @@ const checkImage = (str) => {
 const checkChinese = (str) => {
   return isNotBlank(str) && /[\u4e00-\u9fa5]/.test(str);
 }
+
 /** 将 url 进行编码 */
 const encode = (url) => {
   return isBlank(url) ? '' : encodeURIComponent(url);
@@ -145,35 +145,18 @@ const addSuffix = (path) => {
   if (path.endsWith("/")) { return path; }
   return path + "/";
 }
-
-/** 用两个空格来格式化 json */
-const formatJson = (json) => {
-  if (isBlank(json)) {
-    return '';
-  }
-  try {
-    return JSON.stringify(JSON.parse(json), null, "  ");
-  } catch (e) {
-    return json;
-  }
-}
-
 /** 返回文件后缀 */
 const getSuffix = (fileName) => {
   return isNotBlank(fileName) && fileName.includes(".") ? fileName.substring(fileName.lastIndexOf(".")) : '';
 }
-
+/** 生成 uuid */
 const uuid = () => {
-  const now = new Date().getTime();
+  let now = new Date().getTime();
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     const r = (now + Math.random() * 16) % 16 | 0;
     now = Math.floor(now / 16);
     return (c === 'x' ? r : (r & 0x7 | 0x8)).toString(16);
   });
-}
-/** 将传入的文件名重命名成一个 uuid 的名字 */
-const renameFile = (fileName) => {
-  return isBlank(fileName) ? '' : (uuid() + getSuffix(fileName));
 }
 /** 生成指定个数的随机数 */
 const randomNum = (len) => {
@@ -208,11 +191,21 @@ const escapeHtml = (html) => {
     return null;
   }
   return html.replace(/&/g, "&amp;")
-  .replace(/</g, "&lt;").replace(/>/g, "&gt;")
-  .replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    .replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
-
-const formatNumber = (n) => {
+/** 用两个空格来格式化 json */
+const formatJson = (json) => {
+  if (isBlank(json)) {
+    return '';
+  }
+  try {
+    return JSON.stringify(JSON.parse(json), null, "  ");
+  } catch (e) {
+    return json;
+  }
+}
+const placeZero = (n) => {
   n = n.toString();
   return n[1] ? n : '0' + n;
 }
@@ -226,43 +219,42 @@ const formatDate = (date, format) => {
   } else {
     datetime = new Date();
   }
-  
+
   if (isBlank(format)) {
     format = 'yyyy-MM-dd HH:mm:ss';
   }
   const year = datetime.getFullYear(),
-      month = datetime.getMonth(),
-      day = datetime.getDate(),
-      hour = datetime.getHours(),
-      minute = datetime.getMinutes(),
-      second = datetime.getSeconds(),
-      miliseconds = datetime.getMilliseconds()
-      
-      yyyy = year + '',
-      yy = yyyy.substr(2, 2),
-      M = month + 1,
-      MM = formatNumber(month + 1),
-      dd = formatNumber(day),
-      h = hour % 12,
-      hh = formatNumber(h),
-      HH = formatNumber(hour),
-      mm = formatNumber(minute),
-      ss = formatNumber(second),
-      aaa = hour < 12 ? 'AM' : 'PM';
-  
-  return format.trim()
-      .replace('yyyy', yyyy).replace('yy', yy)
-      .replace('MM', MM).replace('M', M)
-      .replace('dd', dd).replace('d', day)
-      
-      .replace('hh', hh).replace('h', h)
-      .replace('HH', HH).replace('H', hour)
-      .replace('mm', mm).replace('m', minute)
-      .replace('ss', ss).replace('s', second)
-      .replace('SSS', miliseconds)
-      .replace('aaa', aaa);
-}
+    month = datetime.getMonth(),
+    day = datetime.getDate(),
+    hour = datetime.getHours(),
+    minute = datetime.getMinutes(),
+    second = datetime.getSeconds(),
+    miliseconds = datetime.getMilliseconds(),
 
+    yyyy = year + '',
+    yy = yyyy.substr(2, 2),
+    M = month + 1,
+    MM = placeZero(month + 1),
+    dd = placeZero(day),
+    h = hour % 12,
+    hh = placeZero(h),
+    HH = placeZero(hour),
+    mm = placeZero(minute),
+    ss = placeZero(second),
+    aaa = hour < 12 ? 'AM' : 'PM';
+
+  return format.trim()
+    .replace('yyyy', yyyy).replace('yy', yy)
+    .replace('MM', MM).replace('M', M)
+    .replace('dd', dd).replace('d', day)
+
+    .replace('hh', hh).replace('h', h)
+    .replace('HH', HH).replace('H', hour)
+    .replace('mm', mm).replace('m', minute)
+    .replace('ss', ss).replace('s', second)
+    .replace('SSS', miliseconds)
+    .replace('aaa', aaa);
+}
 /** 分显示成元 */
 const cent2Yuan = (cent) => {
   if (isBlank(cent)) {
@@ -297,7 +289,6 @@ const thousands = (num) => {
   }
   return first.replace(/(\d)(?=(?:\d{3})+$)/g, '$1,') + second;
 }
-
 /** 将请求接口 promise 化 */
 const promisify = (fun, options = {}) => {
   return new Promise((resolve, reject) => {
@@ -308,4 +299,14 @@ const promisify = (fun, options = {}) => {
     fun(options);
   })
 }
+
+/*
+export { isBlank, isNotBlank }
+export { getData, removeNull, defaultValue }
+export { toInt, toFloat, greater0, less0 }
+export { foggy, checkPhone, checkEmail, checkImage, checkChinese }
+export { encode, decode }
+export { appendUrl, addPrefix, addSuffix, getSuffix, uuid, randomNum, randomLetter }
+export { escapeHtml, formatJson, formatDate, cent2Yuan, thousands, promisify }
+*/
 #+END_SRC
