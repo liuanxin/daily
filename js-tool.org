@@ -216,27 +216,51 @@ const formatNumber = (n) => {
   n = n.toString();
   return n[1] ? n : '0' + n;
 }
-/** 格式化 时间 或 时间戳 成 年-月-日 时:分:秒 毫秒, 无参数则默认返回当前时间 */
-const dateTimeMs = (datetime) => {
-  let date;
-  if (datetime instanceof Date) {
-    date = datetime;
+/** 格式化 时间 或 时间戳 成 年-月-日 时:分:秒, 无参数则默认返回当前时间, 格式: yyyy-MM-dd HH:mm:ss SSS aaa */
+const formatDate = (date, format) => {
+  let datetime;
+  if (date instanceof Date) {
+    datetime = date;
   } else if (typeof datetime === 'number') {
-    date = new Date(datetime);
+    datetime = new Date(date);
   } else {
-    date = new Date();
+    datetime = new Date();
   }
-
-  const y = date.getFullYear();
-  const m = date.getMonth() + 1;
-  const d = date.getDate();
-
-  const h = date.getHours();
-  const mu = date.getMinutes();
-  const s = date.getSeconds();
-  let ms = String(date.getMilliseconds());
-  ms = ms[2] ? ms : ('0' + (ms[1] ? ms : ('0' + ms)));
-  return '[' + [y, m, d].map(formatNumber).join('-') + ' ' + [h, mu, s].map(formatNumber).join(':') + ' ' + ms + '] ';
+  
+  if (isBlank(format)) {
+    format = 'yyyy-MM-dd HH:mm:ss';
+  }
+  const year = datetime.getFullYear(),
+      month = datetime.getMonth(),
+      day = datetime.getDate(),
+      hour = datetime.getHours(),
+      minute = datetime.getMinutes(),
+      second = datetime.getSeconds(),
+      miliseconds = datetime.getMilliseconds()
+      
+      yyyy = year + '',
+      yy = yyyy.substr(2, 2),
+      M = month + 1,
+      MM = formatNumber(month + 1),
+      dd = formatNumber(day),
+      h = hour % 12,
+      hh = formatNumber(h),
+      HH = formatNumber(hour),
+      mm = formatNumber(minute),
+      ss = formatNumber(second),
+      aaa = hour < 12 ? 'AM' : 'PM';
+  
+  return format.trim()
+      .replace('yyyy', yyyy).replace('yy', yy)
+      .replace('MM', MM).replace('M', M)
+      .replace('dd', dd).replace('d', day)
+      
+      .replace('hh', hh).replace('h', h)
+      .replace('HH', HH).replace('H', hour)
+      .replace('mm', mm).replace('m', minute)
+      .replace('ss', ss).replace('s', second)
+      .replace('S', miliseconds)
+      .replace('aaa', aaa);
 }
 
 /** 分显示成元 */
