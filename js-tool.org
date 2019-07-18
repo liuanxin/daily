@@ -259,7 +259,7 @@ const formatDate = (date, format) => {
       .replace('HH', HH).replace('H', hour)
       .replace('mm', mm).replace('m', minute)
       .replace('ss', ss).replace('s', second)
-      .replace('S', miliseconds)
+      .replace('SSS', miliseconds)
       .replace('aaa', aaa);
 }
 
