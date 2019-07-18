@@ -152,7 +152,7 @@ const getSuffix = (fileName) => {
 /** 生成 uuid */
 const uuid = () => {
   let now = new Date().getTime();
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+  return 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     const r = (now + Math.random() * 16) % 16 | 0;
     now = Math.floor(now / 16);
     return (c === 'x' ? r : (r & 0x7 | 0x8)).toString(16);
@@ -185,7 +185,7 @@ const randomLetter = (len) => {
   return returnStr;
 }
 
-/** 将 html 代码进行转义 */
+/** 转义 */
 const escapeHtml = (html) => {
   if (isBlank(html)) {
     return null;
@@ -194,13 +194,22 @@ const escapeHtml = (html) => {
     .replace(/</g, "&lt;").replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
+/** 反转义 */
+const unescapeHtml = (html) => {
+  if (isBlank(html)) {
+    return null;
+  }
+  return html.replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"').replace(/&#039;/g, "'");
+}
 /** 用两个空格来格式化 json */
 const formatJson = (json) => {
   if (isBlank(json)) {
     return '';
   }
   try {
-    return JSON.stringify(JSON.parse(json), null, "  ");
+    return JSON.stringify(JSON.parse(json), null, '  ');
   } catch (e) {
     return json;
   }
