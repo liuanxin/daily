@@ -120,6 +120,15 @@ const checkChinese = (str) => {
   return isNotBlank(str) && /[\u4e00-\u9fa5]/.test(str);
 }
 
+/** 使用 base64 编码,  */
+function base64Encode(str) {
+    return window.btoa(unescape(encodeURIComponent(str)));
+}
+/** 使用 base64 解码 */
+function base64Decode(str) {
+    return decodeURIComponent(escape(window.atob(str)));
+}
+
 /** 将 url 进行编码 */
 const encode = (url) => {
   return isBlank(url) ? '' : encodeURIComponent(url);
