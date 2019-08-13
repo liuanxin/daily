@@ -29,9 +29,7 @@ alias 和 root 的区别
 location /abc {
     alias /opt/html/abc/;
 }
-
 基于上面的配置, hxxp://test/abc/a.html 指定的是 /opt/html/abc/a.html, 也可以改成
-#+BEGIN_SRC conf
 location /abc {
     root /opt/html/;
 }
