@@ -24,7 +24,7 @@ gzip_proxied        expired no-cache no-store private auth;
 gzip_types          text/plain text/css application/javascript application/xml application/json;
 #+END_SRC
 
-alias 和 root 的区别点如下(引自 http://www.wkii.org/nginx-set-directory-alias-and-root.html):
+alias 和 root 的区别
 #+BEGIN_SRC conf
 location /abc {
     alias /opt/html/abc/;
