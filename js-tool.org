@@ -307,6 +307,36 @@ const thousands = (num) => {
   }
   return first.replace(/(\d)(?=(?:\d{3})+$)/g, '$1,') + second;
 }
+/**
+ * 按下了回车键则返回 true, 用在 keydown 事件上, 如
+ *
+ * $('...').keydown(function(e) {
+ *     var enter = hasEnter(e);
+ *     if (enter) {
+ *         // do something
+ *     }
+ * }
+ */
+const hasEnter = (event) => {
+    if (event.defaultPrevented) {
+        return;
+    }
+
+    var handled;
+    if (event.key !== undefined) {
+        handled = event.key.toUpperCase() === 'ENTER';
+    } else if (event.keyIdentifier !== undefined) {
+        handled = event.keyIdentifier.toUpperCase() === 'ENTER';
+    } else if (event.keyCode !== undefined) {
+        handled = event.keyCode === 13 || event.keyCode === '13';
+    } else {
+        handled = false;
+    }
+    if (handled) {
+        event.preventDefault();
+    }
+    return handled;
+}
 /** 将请求接口 promise 化 */
 const promisify = (fun, options = {}) => {
   return new Promise((resolve, reject) => {
@@ -325,6 +355,6 @@ export { toInt, toFloat, greater0, less0 }
 export { foggy, checkPhone, checkEmail, checkImage, checkChinese }
 export { encode, decode }
 export { appendUrl, addPrefix, addSuffix, getSuffix, uuid, randomNum, randomLetter }
-export { escapeHtml, formatJson, formatDate, cent2Yuan, thousands, promisify }
+export { escapeHtml, formatJson, formatDate, cent2Yuan, thousands, hasEnter, promisify }
 */
 #+END_SRC
