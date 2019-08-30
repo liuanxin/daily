@@ -23,6 +23,22 @@ const isNotBlank = (str) => {
   return !isBlank(str);
 }
 
+/** 将对象转换成参数 */
+serializeObject = (obj) => {
+    if (isNotBlank(obj)) {
+        var arr = [];
+        Object.keys(obj).forEach(function(k) {
+            var v = obj[k];
+            if (isNotBlank(k) && isNotBlank(v)) {
+                arr.push(k + '=' + v);
+            }
+        });
+        return arr.join('&');
+    } else {
+        return '';
+    }
+}
+
 /**
  * <pre>
  * 从指定对象(不包括数组)中获取属性, 属性层级以 英文点(.) 隔开
