@@ -21,6 +21,7 @@ echo "temp    : 临时目录" >> README
 echo "tool    : 工具包目录" >> README
 echo "web     : 前端目录, 被 nginx 指向" >> README
 echo "" >> README
+chown admin:admin -R /home/admin
 
 
 echo "" >> /etc/bashrc
