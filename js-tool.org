@@ -1,15 +1,5 @@
 
 #+BEGIN_SRC js
-/* "{0} is bad, use {1}! {0} {2}".format("jsp", "xxx") ==> jsp is bad, use xxx! jsp {2} */
-/* if (!String.prototype.format) {
-  String.prototype.format = function() {
-    const args = arguments;
-    return this.replace(/{(\d+)}/g, (match, number) => {
-      return typeof args[number] !== 'undefined' ? args[number] : match;
-    });
-  };
-} */
-
 /** 为空则返回 true */
 const isBlank = (str) => {
   if (str === undefined || str === null) {
@@ -24,7 +14,7 @@ const isNotBlank = (str) => {
 }
 
 /** 将对象转换成参数 */
-serializeObject = (obj) => {
+const serializeObject = (obj) => {
     if (isNotBlank(obj)) {
         var arr = [];
         Object.keys(obj).forEach(function(k) {
@@ -137,11 +127,11 @@ const checkChinese = (str) => {
 }
 
 /** 使用 base64 编码,  */
-function base64Encode(str) {
+const base64Encode = (str) => {
     return window.btoa(unescape(encodeURIComponent(str)));
 }
 /** 使用 base64 解码 */
-function base64Decode(str) {
+const base64Decode = (str) => {
     return decodeURIComponent(escape(window.atob(str)));
 }
 
@@ -353,7 +343,12 @@ const hasEnter = (event) => {
     }
     return handled;
 }
-/** 将请求接口 promise 化 */
+/**
+ * 将请求接口 promise 化
+ * 比如之前调用 request({ url: '/user-info', method: 'GET', data: { id: 123 } })
+ * 现在可以改成 promisify(request, { url: '/user-info', method: 'GET', data: { id: 123 } }).then((info) => { ... }).catch((error) => { ... })
+ * 或者可以使用 const returnInfo = await promisify(request, { url: '/user-info', method: 'GET', data: { id: 123 } })
+ */
 const promisify = (fun, options = {}) => {
   return new Promise((resolve, reject) => {
     options.success = resolve;
@@ -369,7 +364,7 @@ export { isBlank, isNotBlank }
 export { getData, removeNull, defaultValue }
 export { toInt, toFloat, greater0, less0 }
 export { foggy, checkPhone, checkEmail, checkImage, checkChinese }
-export { encode, decode }
+export { base64Encode, base64Decode, encode, decode }
 export { appendUrl, addPrefix, addSuffix, getSuffix, uuid, randomNum, randomLetter }
 export { escapeHtml, formatJson, formatDate, cent2Yuan, thousands, hasEnter, promisify }
 */
