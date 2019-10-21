@@ -354,17 +354,15 @@ start_jar() {
     check_file "$1"
     cd ${publish}
     tmp_jvm_args="${jvm_args}"
+    
+    # 有传参数就按传进来的为准, 再以发布文件上的端口 + 1000 为准(如 user-8081, 远程调试端口则为 9081)
+    DEBUG_PORT=$(cut -d '.' -f 1 <<< "${1##*-}")
     if [ -n "$3" ]; then
         tmp_jvm_args="${tmp_jvm_args} -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=$3"
+    elif [ "${DEBUG_PORT}" -eq "${DEBUG_PORT}" ] 2>/dev/null; then
+        tmp_jvm_args="${tmp_jvm_args} -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=$[DEBUG_PORT + 1000]"
     fi
-    
-    # 开一个远程端口用来远程调试, 远程端口在发布包名的基础上 +1000, 如 user-8081, 远程调试端口则为 9081
-    DEBUG_PORT=$(cut -d '.' -f 1 <<< "${1##*-}")
-    if [ "${DEBUG_PORT}" -eq "${DEBUG_PORT}" ] 2>/dev/null; then
-        java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=$[DEBUG_PORT + 1000] ${tmp_jvm_args} -Xloggc:${log_path}/${2} -jar ${1} &
-    else
-        java ${tmp_jvm_args} -Xloggc:${log_path}/${2} -jar ${1} &
-    fi
+    java ${tmp_jvm_args} -Xloggc:${log_path}/${2} -jar ${1} &
     
     sleep 10
     log "进程 ${1} 信息:\n`ps aux | grep -v grep | grep java | grep --color=auto ${1}`"
