@@ -359,7 +359,7 @@ start_jar() {
     DEBUG_PORT=$(cut -d '.' -f 1 <<< "${1##*-}")
     if [ -n "$3" ]; then
         tmp_jvm_args="${tmp_jvm_args} -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=$3"
-    elif [ "${DEBUG_PORT}" -eq "${DEBUG_PORT}" ] 2>/dev/null; then
+    elif [ "${DEBUG_PORT}" -eq "${DEBUG_PORT}" ] 2>/dev/null; then # eq 是数值比较, 如果最后部分不是数字强转会失败, 因此将失败信息导向黑洞
         tmp_jvm_args="${tmp_jvm_args} -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=$[DEBUG_PORT + 1000]"
     fi
     java ${tmp_jvm_args} -Xloggc:${log_path}/${2} -jar ${1} &
