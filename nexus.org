@@ -42,6 +42,8 @@ gpg --keyserver hkp://pool.sks-keyservers.net --send-keys 上面生成的公钥
 </parent>
 #+END_SRC
 
+-----
+
 在本地 ~.m2/settings.xml~ 中添加
 #+BEGIN_SRC xml
 <servers>
@@ -58,15 +60,16 @@ gpg --keyserver hkp://pool.sks-keyservers.net --send-keys 上面生成的公钥
 </servers>
 #+END_SRC
 
-如果不想把密码直接写在配置, 可以这样
-+ 生成一个主密码: ~mvn --encrypt-master-password xxx~ 将会生成一串字符并会生成一个空文件: ~.m2/settings-security.xml~
+不建议将明文密码直接写在配置中, 可以使用下面的方式
++ 生成一个主密码: ~mvn --encrypt-master-password xxx~ 将会输出一串字符和一个空文件: ~.m2/settings-security.xml~
 + 上面的命令生成的像这样 ~{+wrXG1tIt0sHPzS6058dBcUma8pGIfZnOODe9pOYWOc=}~ 写到上面生成的空文件中去
 #+BEGIN_SRC xml
 <settingsSecurity>
     <master>{+wrXG1tIt0sHPzS6058dBcUma8pGIfZnOODe9pOYWOc=}</master>
 </settingsSecurity>
 #+END_SRC
-+ 运行命令 ~mvn --encrypt-password PASSWORD~ 将会生成这样的字符 ~{b+k2hQKQ760HCkhtjGBXh9UhgQ+IlCsd1UmxTPvrMU0=}~
+
++ 再运行 ~mvn --encrypt-password PASSWORD~ 将会生成这样的字符 ~{b+k2hQKQ760HCkhtjGBXh9UhgQ+IlCsd1UmxTPvrMU0=}~
 + 将其写到 settings.xml 中去
 #+BEGIN_SRC xml
 <server>
@@ -76,6 +79,9 @@ gpg --keyserver hkp://pool.sks-keyservers.net --send-keys 上面生成的公钥
     <password>{b+k2hQKQ760HCkhtjGBXh9UhgQ+IlCsd1UmxTPvrMU0=}</password>
 </server>
 #+END_SRC
+
+见: ~https://maven.apache.org/guides/mini/guide-encryption.html~
+-----
 
 发布包到中央仓库
 #+BEGIN_SRC conf
