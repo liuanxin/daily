@@ -73,21 +73,23 @@ log="/home/`whoami`/logs"
 if [ ! -d "${log}" ]; then
   mkdir -p ${log}
 fi
+
 # gc 的 dump 日志
-dump="${log}/dump-${project}"
-if [ ! -d "${dump}" ]; then
-  mkdir -p ${dump}
-fi
+# dump="${log}/dump-${project}"
+# if [ ! -d "${dump}" ]; then
+#   mkdir -p ${dump}
+# fi
+
 # gc 日志
-gc_file="${log}/gc-${project}.log"
+gc_file="${log}/gc-${project}-${profile}-%t.log"
 
 # 如果使用 apr 的话
 # CATALINA_OPTS="$CATALINA_OPTS -Djava.library.path=/usr/local/apr/lib"
 
 JAVA_OPTS="$JAVA_OPTS -server"
 JAVA_OPTS="$JAVA_OPTS -Xms512M -Xmx512M -Dfile.encoding=UTF-8 -XX:+UseG1GC"
-JAVA_OPTS="$JAVA_OPTS -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=${dump}"
-JAVA_OPTS="$JAVA_OPTS -XX:+PrintGCDateStamps -XX:+PrintGCDetails -verbose:gc -Xloggc:${gc_file}"
+# JAVA_OPTS="$JAVA_OPTS -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=${dump}"
+JAVA_OPTS="$JAVA_OPTS -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps -XX:GCLogFileSize=20M -Xloggc:${gc_file}"
 JAVA_OPTS="$JAVA_OPTS -Djava.security.egd=file:/dev/./urandom"
 JAVA_OPTS="${JAVA_OPTS} -Dspring.profiles.active=${profile}"
 
@@ -241,9 +243,9 @@ profile="test"                        # 当前环境, 如果是用 tomcat 来发
 
 jvm_args="-server"
 jvm_args="${jvm_args} -Xms512m -Xmx1G -Dfile.encoding=UTF-8 -XX:+UseG1GC"
-jvm_args="${jvm_args} -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35"
-jvm_args="${jvm_args} -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=100M"
-jvm_args="${jvm_args} -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps"
+# jvm_args="${jvm_args} -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35"
+# jvm_args="${jvm_args} -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=100M"
+jvm_args="${jvm_args} -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps -XX:GCLogFileSize=20M"
 jvm_args="${jvm_args} -Djava.security.egd=file:/dev/./urandom"
 jvm_args="${jvm_args} -Dspring.profiles.active=${profile}"
 
@@ -402,7 +404,7 @@ release_jar() {
     backup_project "${current_release}" "${backup_release}" "revert_${package}"
     kill_jar "${current_release}"
     mv "${release}" "${current_release}"
-    start_jar "${current_release}" "gc-${package##*/}.log" "${debug_port}"
+    start_jar "${current_release}" "gc-${package##*/}-${profile}-%t.log" "${debug_port}"
     log "「${comment}」发布完成"
 }
 # 还原 jar 包项目
@@ -797,7 +799,7 @@ log_path="${work_dir}/logs"   # 日志目录
 profile="prod"                # 当前环境
 
 jvm_args="-server -Xmx512m"
-jvm_args="${jvm_args} -XX:+PrintGCDateStamps -XX:+PrintGCDetails -verbose:gc"
+jvm_args="${jvm_args} -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps -XX:GCLogFileSize=20M"
 jvm_args="${jvm_args} -Djava.security.egd=file:/dev/./urandom"
 jvm_args="${jvm_args} -Dspring.profiles.active=${profile}"
 # jvm_args="${jvm_args} -Ddubbo.reference.check=false"
@@ -927,7 +929,7 @@ release_jar() {
     comment="$1"
     package="$2"
     file_name="$3"
-    gc_file="gc-${package}.log"
+    gc_file="gc-${package}-%{profile}-%t.log"
     gc_file="${gc_log//\//-}"  # / 替换成 -, 也可以写成 ////-, 格式: //old/new
     revert="revert_${package}"
 
