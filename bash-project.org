@@ -81,7 +81,7 @@ fi
 # fi
 
 # gc 日志
-gc_file="${log}/gc-${project}-${profile}-%t.log"
+gc_file="${log}/gc-${project}-${profile}-$(date +%F).log"
 
 # 如果使用 apr 的话
 # CATALINA_OPTS="$CATALINA_OPTS -Djava.library.path=/usr/local/apr/lib"
@@ -404,7 +404,7 @@ release_jar() {
     backup_project "${current_release}" "${backup_release}" "revert_${package}"
     kill_jar "${current_release}"
     mv "${release}" "${current_release}"
-    start_jar "${current_release}" "gc-${package##*/}-${profile}-%t.log" "${debug_port}"
+    start_jar "${current_release}" "gc-${package##*/}-${profile}-$(date +%F).log" "${debug_port}"
     log "「${comment}」发布完成"
 }
 # 还原 jar 包项目
@@ -929,7 +929,7 @@ release_jar() {
     comment="$1"
     package="$2"
     file_name="$3"
-    gc_file="gc-${package}-%{profile}-%t.log"
+    gc_file="gc-${package}-%{profile}-$(date +%F).log"
     gc_file="${gc_log//\//-}"  # / 替换成 -, 也可以写成 ////-, 格式: //old/new
     revert="revert_${package}"
 
@@ -1210,7 +1210,7 @@ release() {
     mv ${source}/${project}/target/${project}.jar ${publish}/${project}.jar
 
     cd ${publish}
-    java ${jvm_args} -Dspring.config.location=${publish}/application.yml -Xloggc:${log_path}/gc-${project}.log -jar ${publish}/${project}.jar &
+    java ${jvm_args} -Dspring.config.location=${publish}/application.yml -Xloggc:${log_path}/gc-${project}-$(date +%F).log -jar ${publish}/${project}.jar &
     sleep 5
     ps aux | grep java | grep '${project}'
 }
