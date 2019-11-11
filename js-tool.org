@@ -233,6 +233,27 @@ const placeZero = (n) => {
   n = n.toString();
   return n[1] ? n : '0' + n;
 }
+const dateToHuman = (ms) => {
+    if (ms == 0) { return '刚刚'; }
+    
+    var flag = (ms < 0);
+    var ms = flag ? -ms : ms;
+    
+    var second = Math.floor(ms / 1000);
+    if (second < 60) { return '刚刚'; }
+    
+    var state = flag ? '后' : '前';
+    var minute = Math.floor(second / 60);
+    if (minute < 60) { return minute + ' 分钟' + state; }
+    
+    var hour = Math.floor(minute / 60);
+    if (hour < 24) { return hour + ' 小时' + state; }
+    
+    var day = Math.floor(hour / 24);
+    if (day < 365) { return day + ' 天' + state; }
+    
+    return Math.floor(day / 365) + ' 年' + state;
+}
 /** 格式化 时间 或 时间戳 成 年-月-日 时:分:秒, 无参数则默认返回当前时间, 格式: yyyy-MM-dd HH:mm:ss SSS aaa */
 const formatDate = (date, format) => {
   let datetime;
@@ -351,6 +372,6 @@ export { toInt, toFloat, greater0, less0 }
 export { foggy, checkPhone, checkEmail, checkImage, checkChinese }
 export { base64Encode, base64Decode, encode, decode }
 export { appendUrl, addPrefix, addSuffix, getSuffix, uuid, randomNum, randomLetter }
-export { escapeHtml, formatJson, formatDate, cent2Yuan, thousands, hasEnter }
+export { escapeHtml, formatJson, dateToHuman, formatDate, cent2Yuan, thousands, hasEnter }
 */
 #+END_SRC
