@@ -251,7 +251,7 @@ const dateToHuman = (ms) => {
     
     var day = Math.floor(hour / 24);
     if (day === 1) { return flag ? '明天' : '昨天'; }
-    if (day === 2) { return flag ? '前天' : '后天'; }
+    if (day === 2) { return flag ? '后天' : '前天'; }
     if (day < 365) { return day + ' 天' + state; }
     
     return Math.floor(day / 365) + ' 年' + state;
