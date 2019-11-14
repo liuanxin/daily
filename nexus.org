@@ -75,7 +75,7 @@ gpg --keyserver hkp://pool.sks-keyservers.net --send-keys 上面生成的公钥
 <server>
     <id>shucang-nexus</id>
     <username>admin</username>
-    <!-- <password><![CDATA[原先的明文密码写法]]></password> -->
+    <!-- <password><![CDATA[明文密码]]></password> -->
     <password>{b+k2hQKQ760HCkhtjGBXh9UhgQ+IlCsd1UmxTPvrMU0=}</password>
 </server>
 #+END_SRC
