@@ -291,13 +291,13 @@ const formatDate = (date, format) => {
     aaa = hour < 12 ? 'AM' : 'PM';
 
   return format.trim()
-    .replace('yyyy', yyyy).replace('yy', yy)
+    .replace('yyyy', yyyy).replace('YYYY', yyyy).replace('yy', yy)
     .replace('MM', MM).replace('M', M)
-    .replace('dd', dd).replace('d', day)
+    .replace('dd', dd).replace('DD', dd).replace('d', day)
 
-    .replace('hh', hh).replace('h', h)
+    .replace('hh', hh).replace('hi', hh).replace('h', h)
     .replace('HH', HH).replace('H', hour)
-    .replace('mm', mm).replace('m', minute)
+    .replace('mm', mm).replace('mi', mm).replace('m', minute)
     .replace('ss', ss).replace('s', second)
     .replace('SSS', miliseconds)
     .replace('aaa', aaa);
