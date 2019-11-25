@@ -300,7 +300,7 @@ const formatDate = (date, format) => {
     .replace('mm', mm).replace('mi', mm).replace('m', minute)
     .replace('ss', ss).replace('s', second)
     .replace('SSS', miliseconds)
-    .replace('aaa', aaa);
+    .replace('aaa', aaa).replace('a', aaa);
 }
 /** 分显示成元 */
 const cent2Yuan = (cent) => {
