@@ -291,16 +291,15 @@ const formatDate = (date, format) => {
     aaa = hour < 12 ? 'AM' : 'PM';
 
   return format.trim()
-    .replace('yyyy', yyyy).replace('YYYY', yyyy).replace('yy', yy)
+    .replace('yyyy', yyyy).replace('YYYY', yyyy).replace('yy', yy).replace('YY', yy).replace('y', yy).replace('Y', yy)
     .replace('MM', MM).replace('M', M)
-    .replace('dd', dd).replace('DD', dd).replace('d', day)
-
-    .replace('hh', hh).replace('hi', hh).replace('h', h)
-    .replace('HH', HH).replace('H', hour)
-    .replace('mm', mm).replace('mi', mm).replace('m', minute)
+    .replace('dd', dd).replace('DD', dd).replace('D', dd).replace('d', day)
+    
+    .replace('hh', hh).replace('HH', HH).replace('h', h).replace('H', hour)
+    .replace('mm', mm).replace('MI', mm).replace('mi', mm).replace('m', minute)
     .replace('ss', ss).replace('s', second)
-    .replace('SSS', miliseconds)
-    .replace('aaa', aaa).replace('a', aaa);
+    
+    .replace('SSS', miliseconds).replace('aaa', aaa).replace('a', aaa);
 }
 /** 分显示成元 */
 const cent2Yuan = (cent) => {
