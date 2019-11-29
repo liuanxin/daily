@@ -234,12 +234,12 @@ const placeZero = (n) => {
   return n[1] ? n : '0' + n;
 }
 const dateToHuman = (ms) => {
-    if (ms == 0) { return '刚刚'; }
+    if (ms === 0) { return '刚刚'; }
     
     var flag = (ms < 0);
-    var ms = flag ? -ms : ms;
+    var absMs = flag ? -ms : ms;
     
-    var second = Math.floor(ms / 1000);
+    var second = Math.floor(abdMs / 1000);
     if (second < 60) { return '刚刚'; }
     
     var state = flag ? '后' : '前';
