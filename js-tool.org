@@ -144,6 +144,15 @@ const decode = (url) => {
   return isBlank(url) ? '' : decodeURIComponent(url);
 }
 
+/** 将 ipv4 格式的 ip 地址转换成数字 */
+const ip2Num = (ip) => {
+  return ip.split('.').reduce(function(ipInt, octet) { return (ipInt << 8) + parseInt(octet, 10) }, 0) >>> 0;
+}
+/** 将数字转换成 ipv4 格式的 ip 地址 */
+const num2Ip = (ipInt) => {
+    return (ipInt >>> 24) + '.' + (ipInt >> 16 & 255) + '.' + (ipInt >> 8 & 255) + '.' + (ipInt & 255);
+}
+
 /** 在 url 后面拼接 ? 或 & */
 const appendUrl = (url) => {
   return isBlank(url) ? '' : (url + (url.includes("?") ? "&" : "?"));
