@@ -13,6 +13,15 @@ const isNotBlank = (str) => {
   return !isBlank(str);
 }
 
+/** 是 true 或 'true' 就返回 true, 其他情况都返回 false */
+const isTrue = (str) => {
+  return isNotBlank(str) && (str === true || str === 'true')
+}
+/** 不是 true 或 'true' 就返回 false, 其他情况都返回 true */
+const isNotTrue = (str) => {
+  return !isTrue(str)
+}
+
 /** 将对象转换成参数 */
 const serializeObject = (obj) => {
     if (isNotBlank(obj)) {
@@ -376,7 +385,7 @@ const hasEnter = (event) => {
 }
 
 /*
-export { isBlank, isNotBlank }
+export { isBlank, isNotBlank, isTrue, isNotTrue }
 export { getData, removeNull, defaultValue }
 export { toInt, toFloat, greater0, less0 }
 export { foggy, checkPhone, checkEmail, checkImage, checkChinese }
