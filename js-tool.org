@@ -15,7 +15,7 @@ const isNotBlank = (str) => {
 
 /** 是 true 或 'true' 就返回 true, 其他情况都返回 false */
 const isTrue = (str) => {
-  return isNotBlank(str) && (str === true || str === 'true')
+  return isNotBlank(str) && (str === true || String(str).trim().toLowerCase() === 'true')
 }
 /** 不是 true 或 'true' 就返回 false, 其他情况都返回 true */
 const isNotTrue = (str) => {
