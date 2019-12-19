@@ -384,6 +384,20 @@ const hasEnter = (event) => {
     return handled;
 }
 
+const exportFile = (url) => {
+    var id = uuid();
+
+    var a = document.createElement('a');
+    a.setAttribute('href', url);
+    a.setAttribute('target','_blank');
+    a.setAttribute('id', id);
+    if (isBlank(document.getElementById(id))) {
+        document.body.appendChild(a);
+    }
+    a.click();
+    document.body.removeChild(a);
+}
+
 /*
 export { isBlank, isNotBlank, isTrue, isNotTrue }
 export { getData, removeNull, defaultValue }
@@ -391,6 +405,6 @@ export { toInt, toFloat, greater0, less0 }
 export { foggy, checkPhone, checkEmail, checkImage, checkChinese }
 export { base64Encode, base64Decode, encode, decode }
 export { appendUrl, addPrefix, addSuffix, getSuffix, uuid, randomNum, randomLetter }
-export { escapeHtml, formatJson, dateToHuman, formatDate, cent2Yuan, thousands, hasEnter }
+export { escapeHtml, formatJson, dateToHuman, formatDate, cent2Yuan, thousands, hasEnter, exportFile }
 */
 #+END_SRC
