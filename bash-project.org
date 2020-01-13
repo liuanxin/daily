@@ -345,6 +345,7 @@ kill_jar() {
     if [ -n "${process}" ]; then
         log "强行杀掉 ${1} 进程: ${process}"
         kill -9 "${process}"
+        sleep 3
     fi
 }
 # 启动 jar 进程
@@ -465,6 +466,7 @@ kill_tomcat() {
     if [ -n "${process}" ]; then
         log "强行杀掉 ${1} 进程: ${process}"
         kill -9 "${process}"
+        sleep 3
     fi
 }
 # 启动 tomcat 进程
@@ -907,6 +909,7 @@ kill_jar() {
     if [ -n "${process}" ]; then
         log "强行杀掉 ${1} 进程: ${process}"
         kill -9 "${process}"
+        sleep 3
     fi
 }
 # 启动 jar 进程
@@ -1006,6 +1009,7 @@ kill_tomcat() {
     if [ -n "${process}" ]; then
         log "强行杀掉 ${1} 进程: ${process}"
         kill -9 "${process}"
+        sleep 3
     fi
 }
 # 启动 tomcat 进程
