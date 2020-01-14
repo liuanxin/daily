@@ -404,7 +404,7 @@ const exportFile = (url) => {
 
 /*
 export { isBlank, isNotBlank, isTrue, isNotTrue }
-export { getDomain, getData, removeNull, defaultValue }
+export { getDomain, serializeObject, getData, removeNull, defaultValue }
 export { toInt, toFloat, greater0, less0 }
 export { foggy, checkPhone, checkEmail, checkImage, checkChinese }
 export { base64Encode, base64Decode, encode, decode }
