@@ -5,6 +5,32 @@
 如果基于 maven, 使用 ant 脚本在打包的时候做一点事, 也可以达到同样的效果
 
 #+BEGIN_SRC xml
+<profiles>
+    <profile>
+        <id>dev</id>
+        <activation>
+            <activeByDefault>true</activeByDefault>
+        </activation>
+        <properties>
+            <profile-id>dev</profile-id>
+        </properties>
+    </profile>
+
+    <profile>
+        <id>test</id>
+        <properties>
+            <profile-id>test</profile-id>
+        </properties>
+    </profile>
+
+    <profile>
+        <id>prod</id>
+        <properties>
+            <profile-id>prod</profile-id>
+        </properties>
+    </profile>
+</profiles>
+
 <build>
     <plugins>
         <plugin>
@@ -41,33 +67,9 @@
         </plugin>
     </plugins>
 </build>
-
-<profiles>
-    <profile>
-        <id>dev</id>
-        <activation>
-            <activeByDefault>true</activeByDefault>
-        </activation>
-        <properties>
-            <profile-id>dev</profile-id>
-        </properties>
-    </profile>
-
-    <profile>
-        <id>test</id>
-        <properties>
-            <profile-id>test</profile-id>
-        </properties>
-    </profile>
-
-    <profile>
-        <id>prod</id>
-        <properties>
-            <profile-id>prod</profile-id>
-        </properties>
-    </profile>
-</profiles>
 #+END_SRC
+
+不使用 ${profile.id} 而新弄一个 profile-id 的变量(所以会显得有点多此一举)是因为前者在运行时读不到
 
 其文件结构如下
 #+BEGIN_EXAMPLE
