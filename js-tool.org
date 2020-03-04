@@ -13,6 +13,19 @@ const isNotBlank = (str) => {
   return !isBlank(str);
 }
 
+/** 是 true 或 'true' 就返回 true, 其他情况都返回 false */
+const isTrue = (str) => {
+  return isNotBlank(str) && (str === true || String(str).trim().toLowerCase() === 'true');
+}
+/** 不是 true 或 'true' 就返回 false, 其他情况都返回 true */
+const isNotTrue = (str) => {
+  return !isTrue(str);
+}
+
+const getDomain = () => {
+    return location.protocol + '//' + location.host + location.pathname;
+}
+
 /** 将对象转换成参数 */
 const serializeObject = (obj) => {
     if (isNotBlank(obj)) {
@@ -144,6 +157,15 @@ const decode = (url) => {
   return isBlank(url) ? '' : decodeURIComponent(url);
 }
 
+/** 将 ipv4 格式的 ip 地址转换成数字 */
+const ip2Num = (ip) => {
+  return ip.split('.').reduce(function(ipInt, octet) { return (ipInt << 8) + parseInt(octet, 10) }, 0) >>> 0;
+}
+/** 将数字转换成 ipv4 格式的 ip 地址 */
+const num2Ip = (ipInt) => {
+    return (ipInt >>> 24) + '.' + (ipInt >> 16 & 255) + '.' + (ipInt >> 8 & 255) + '.' + (ipInt & 255);
+}
+
 /** 在 url 后面拼接 ? 或 & */
 const appendUrl = (url) => {
   return isBlank(url) ? '' : (url + (url.includes("?") ? "&" : "?"));
@@ -233,6 +255,29 @@ const placeZero = (n) => {
   n = n.toString();
   return n[1] ? n : '0' + n;
 }
+const dateToHuman = (ms) => {
+    if (ms === 0) { return '刚刚'; }
+    
+    var flag = (ms < 0);
+    var absMs = flag ? -ms : ms;
+    
+    var second = Math.floor(abdMs / 1000);
+    if (second < 60) { return '刚刚'; }
+    
+    var state = flag ? '后' : '前';
+    var minute = Math.floor(second / 60);
+    if (minute < 60) { return minute + ' 分钟' + state; }
+    
+    var hour = Math.floor(minute / 60);
+    if (hour < 24) { return hour + ' 小时' + state; }
+    
+    var day = Math.floor(hour / 24);
+    if (day === 1) { return flag ? '明天' : '昨天'; }
+    if (day === 2) { return flag ? '后天' : '前天'; }
+    if (day < 365) { return day + ' 天' + state; }
+    
+    return Math.floor(day / 365) + ' 年' + state;
+}
 /** 格式化 时间 或 时间戳 成 年-月-日 时:分:秒, 无参数则默认返回当前时间, 格式: yyyy-MM-dd HH:mm:ss SSS aaa */
 const formatDate = (date, format) => {
   let datetime;
@@ -268,16 +313,15 @@ const formatDate = (date, format) => {
     aaa = hour < 12 ? 'AM' : 'PM';
 
   return format.trim()
-    .replace('yyyy', yyyy).replace('yy', yy)
+    .replace('yyyy', yyyy).replace('YYYY', yyyy).replace('yy', yy).replace('YY', yy).replace('y', yy).replace('Y', yy)
     .replace('MM', MM).replace('M', M)
-    .replace('dd', dd).replace('d', day)
-
-    .replace('hh', hh).replace('h', h)
-    .replace('HH', HH).replace('H', hour)
-    .replace('mm', mm).replace('m', minute)
+    .replace('dd', dd).replace('DD', dd).replace('D', dd).replace('d', day)
+    
+    .replace('hh', hh).replace('HH', HH).replace('h', h).replace('H', hour)
+    .replace('mm', mm).replace('MI', mm).replace('mi', mm).replace('m', minute)
     .replace('ss', ss).replace('s', second)
-    .replace('SSS', miliseconds)
-    .replace('aaa', aaa);
+    
+    .replace('SSS', miliseconds).replace('aaa', aaa).replace('a', aaa);
 }
 /** 分显示成元 */
 const cent2Yuan = (cent) => {
@@ -344,13 +388,27 @@ const hasEnter = (event) => {
     return handled;
 }
 
+const exportFile = (url) => {
+    var id = uuid();
+
+    var a = document.createElement('a');
+    a.setAttribute('href', url);
+    a.setAttribute('target','_blank');
+    a.setAttribute('id', id);
+    if (isBlank(document.getElementById(id))) {
+        document.body.appendChild(a);
+    }
+    a.click();
+    document.body.removeChild(a);
+}
+
 /*
-export { isBlank, isNotBlank }
-export { getData, removeNull, defaultValue }
+export { isBlank, isNotBlank, isTrue, isNotTrue }
+export { getDomain, serializeObject, getData, removeNull, defaultValue }
 export { toInt, toFloat, greater0, less0 }
 export { foggy, checkPhone, checkEmail, checkImage, checkChinese }
 export { base64Encode, base64Decode, encode, decode }
 export { appendUrl, addPrefix, addSuffix, getSuffix, uuid, randomNum, randomLetter }
-export { escapeHtml, formatJson, formatDate, cent2Yuan, thousands, hasEnter }
+export { escapeHtml, formatJson, dateToHuman, formatDate, cent2Yuan, thousands, hasEnter, exportFile }
 */
 #+END_SRC

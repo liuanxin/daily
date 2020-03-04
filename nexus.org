@@ -1,4 +1,3 @@
-
 去 https://issues.sonatype.org 注册账号并提交一个 issue(以自己的域名为 groupId, 没有可以使用 github 地址). 
 
 #+BEGIN_EXAMPLE
@@ -61,21 +60,18 @@ gpg --keyserver hkp://pool.sks-keyservers.net --send-keys 上面生成的公钥
 #+END_SRC
 
 不建议将明文密码直接写在配置中, 可以使用下面的方式
-+ 生成一个主密码: ~mvn --encrypt-master-password xxx~ 将会输出一串字符和一个空文件: ~.m2/settings-security.xml~
-+ 上面的命令生成的像这样 ~{+wrXG1tIt0sHPzS6058dBcUma8pGIfZnOODe9pOYWOc=}~ 写到上面生成的空文件中去
++ 运行命令 ~mvn --encrypt-master-password xxx~, 其中 xxx 表示主密码, 可以随机. 将会输出一串字符, 像这样: ~{+wrXG1tIt0sHPzS6058dBcUma8pGIfZnOODe9pOYWOc=}~ 将其写到 ~/.m2/settings-security.xml 文件中去
 #+BEGIN_SRC xml
 <settingsSecurity>
     <master>{+wrXG1tIt0sHPzS6058dBcUma8pGIfZnOODe9pOYWOc=}</master>
 </settingsSecurity>
 #+END_SRC
-
-+ 再运行 ~mvn --encrypt-password PASSWORD~ 将会生成这样的字符 ~{b+k2hQKQ760HCkhtjGBXh9UhgQ+IlCsd1UmxTPvrMU0=}~
-+ 将其写到 settings.xml 中去
++ 再运行 ~mvn --encrypt-password PASSWORD~, 其中 ~PASSWORD~ 表示在服务器中的密码, 将会输出一串字符, 像这样: ~{b+k2hQKQ760HCkhtjGBXh9UhgQ+IlCsd1UmxTPvrMU0=}~, 将其写到 ~/.m2/settings.xml 文件中去
 #+BEGIN_SRC xml
 <server>
-    <id>shucang-nexus</id>
+    <id>company-nexus</id>
     <username>admin</username>
-    <!-- <password><![CDATA[原先的明文密码写法]]></password> -->
+    <!-- <password><![CDATA[明文密码]]></password> -->
     <password>{b+k2hQKQ760HCkhtjGBXh9UhgQ+IlCsd1UmxTPvrMU0=}</password>
 </server>
 #+END_SRC
@@ -83,7 +79,7 @@ gpg --keyserver hkp://pool.sks-keyservers.net --send-keys 上面生成的公钥
 见: ~https://maven.apache.org/guides/mini/guide-encryption.html~
 -----
 
-发布包到中央仓库
+发布包到中央仓库. ~source:jar javadoc:jar~ 是指发布的时候顺带将源码和 doc 也传上去
 #+BEGIN_SRC conf
 mvn -DskipTests clean source:jar javadoc:jar deploy -P sonatype-oss-release -Dgpg.passphrase=上面生成的公钥
 #+END_SRC
