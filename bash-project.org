@@ -1243,8 +1243,8 @@ exit 1
 cd ~/project/mall-manager && rm -fr dist boss.tgz && npm run build && tar acf boss.tgz dist && scp boss.tgz user@ip:~/temp/ && rm -fr boss.tgz dist
 
 
-# 线上解压备份之前的
-cd ~/web && tar acf "boss-`date +%Y%m%d%H%M%S`.tgz" boss && mv boss-*.tgz ~/backup/project && cd ~/temp/ && tar axf boss.tgz && cd dist && mv * ~/web/boss/ && cd ~/temp/ && rm -fr dist
+# 线上发布并备份之前的
+cd ~/web && tar acf "boss-`date +%Y%m%d%H%M%S`.tgz" boss && mv boss-*.tgz ~/backup/project && cd ~/temp/ && tar axf boss.tgz && cd dist && rm -fr ~/web/boss/* && mv * ~/web/boss/ && cd ~/temp/ && rm -fr dist
 
 # 线上还原之前的备份(xxx 替换成具体的)
 cd ~/backup/project && tar axf boss-xxx.tgz && cd boss && rm -fr ~/web/boss/* && mv * ~/web/boss/
