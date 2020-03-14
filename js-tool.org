@@ -69,11 +69,10 @@ const getData = (data, properties) => {
   const arr = properties.split('.');
   for (let i in arr) {
     const property = arr[i];
-    if (tmp.hasOwnProperty(property)) {
-      tmp = tmp[property];
-    } else {
+    if (!tmp.hasOwnProperty(property)) {
       return null;
     }
+    tmp = tmp[property];
   }
   return tmp;
 }
@@ -141,11 +140,11 @@ const checkChinese = (str) => {
 
 /** 使用 base64 编码,  */
 const base64Encode = (str) => {
-    return window.btoa(unescape(encodeURIComponent(str)));
+    return window.btoa(unescape(encode(str)));
 }
 /** 使用 base64 解码 */
 const base64Decode = (str) => {
-    return decodeURIComponent(escape(window.atob(str)));
+    return decode(escape(window.atob(str)));
 }
 
 /** 将 url 进行编码 */
