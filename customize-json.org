@@ -8,22 +8,21 @@
 由上面的三种结构组合和嵌套, 可以将整个人类可读的世界予以说明.
 
 
-
 ** 不好的方式
-spring 有使用一个 [[https://spring.io/blog/2014/12/02/latest-jackson-integration-improvements-in-spring][json return]], 然而这种方式并不是很友好. 当不同的接口想要基于相同的对象返回不同的字段时, 这种方式会完全无法实现.
+spring 有使用一个 [[https://spring.io/blog/2014/12/02/latest-jackson-integration-improvements-in-spring][json return]], 然而这种方式并不是那么的友好. 当不同的接口想要基于相同的对象返回不同的字段时, 这种方式会完全无法实现.
 
 
 ** 通常的做法
 通常的做法是建立很多的 vo, 在返回数据之前使用类似 Build 的功能将从数据库来的 model 转换成相应的 vo. 这也是推荐的方式, 在 vo 的基础上还可以很方便的做文档收集
 
 
-
 ** 思路
-这个解决办法是基于 spring core 中的 AntPathMatcher 配合 jackson 的一个 [[https://github.com/Antibrumm/jackson-antpathfilter][插件]] 来完成, 因为这个 filter 的核心只有一个类, 因此做了一些借鉴, 没有再引入这个 jar
+这个解决办法是基于 spring core 中的 AntPathMatcher 配合 jackson 的一个 [[https://github.com/Antibrumm/jackson-antpathfilter][插件]] 来完成, 因为这个插件的核心只有一个 filter 类, 因此做了一些调整, 没必要引入整个 jar
+
 
 *** 实现原理
-1. 将要返回的数据和要返回的字段说明使用工具类处理. 最终只将指定的字段给回来, 其他置空
-2. 使用 jackson 的空值不序列化策略即可.
+1. 将原始数据和要返回的字段说明使用工具类处理. 将指定字段外的其他数据置空
+2. 开启 jackson 的空值不序列化策略, 返回数据
 
 具体如下:
 #+BEGIN_SRC java
