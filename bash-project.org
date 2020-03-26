@@ -28,9 +28,9 @@ echo "" >> /etc/bashrc
 echo "" >> /etc/bashrc
 echo "JAVA_HOME=$(readlink -f /usr/bin/java | sed 's:bin/java::')" | sudo tee -a /etc/bashrc
 
-wget http://mirror.bit.edu.cn/apache/maven/maven-3/3.6.0/binaries/apache-maven-3.6.0-bin.tar.gz
-tar axf apache-maven-3.6.0-bin.tar.gz && mv apache-maven-3.6.0 /opt/
-ln -s apache-maven-3.6.0 maven
+wget https://mirror.bit.edu.cn/apache/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.tar.gz
+tar axf apache-maven-3.6.3-bin.tar.gz && mv apache-maven-3.6.3 /opt/
+ln -s apache-maven-3.6.3 maven
 
 echo "" >> /etc/bashrc
 echo "MAVEN_HOME=/opt/maven" >> /etc/bashrc
