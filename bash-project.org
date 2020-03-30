@@ -89,9 +89,10 @@ gc_file="${log}/gc-${project}-${profile}-$(date +%F).log"
 JAVA_OPTS="$JAVA_OPTS -server"
 JAVA_OPTS="$JAVA_OPTS -Xms512M -Xmx512M -Dfile.encoding=UTF-8 -XX:+UseG1GC"
 # JAVA_OPTS="$JAVA_OPTS -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=${dump}"
+JAVA_OPTS="$JAVA_OPTS -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=20M"
 JAVA_OPTS="$JAVA_OPTS -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps -Xloggc:${gc_file}"
 JAVA_OPTS="$JAVA_OPTS -Djava.security.egd=file:/dev/./urandom"
-JAVA_OPTS="${JAVA_OPTS} -Dspring.profiles.active=${profile}"
+JAVA_OPTS="$JAVA_OPTS -Dspring.profiles.active=${profile}"
 
 export CATALINA_OPTS JAVA_OPTS
 #+END_SRC
@@ -241,10 +242,9 @@ tomcat_path="${release_path}/server"  # tomcat 目录
 
 profile="test"                        # 当前环境, 如果是用 tomcat 来发布的, 以 tomcat/bin/setenv.sh 中的配置为准
 
-jvm_args="-server"
+jvm_args="${jvm_args} -server"
 jvm_args="${jvm_args} -Xms512m -Xmx1G -Dfile.encoding=UTF-8 -XX:+UseG1GC"
-# jvm_args="${jvm_args} -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35"
-# jvm_args="${jvm_args} -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=1 -XX:GCLogFileSize=20M"
+jvm_args="${jvm_args} -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=20M"
 jvm_args="${jvm_args} -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps"
 jvm_args="${jvm_args} -Djava.security.egd=file:/dev/./urandom"
 jvm_args="${jvm_args} -Dspring.profiles.active=${profile}"
@@ -800,7 +800,10 @@ log_path="${work_dir}/logs"   # 日志目录
 
 profile="prod"                # 当前环境
 
-jvm_args="-server -Xmx512m"
+
+jvm_args="${jvm_args} -server"
+jvm_args="${jvm_args} -Xms512m -Xmx512m -Dfile.encoding=UTF-8 -XX:+UseG1GC"
+jvm_args="${jvm_args} -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=20M"
 jvm_args="${jvm_args} -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps"
 jvm_args="${jvm_args} -Djava.security.egd=file:/dev/./urandom"
 jvm_args="${jvm_args} -Dspring.profiles.active=${profile}"
