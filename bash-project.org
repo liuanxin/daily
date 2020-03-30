@@ -573,14 +573,14 @@ case "$1" in
                     release_jar "${desc}" "${name}" "${file}"
                 fi
                 exit 1
-            elif [ "$1" = "stop_${name}" ]; then
+            elif [ "$1" = "stop-${name}" ]; then
                 if [ "war" = "$(cut -d '|' -f 2 <<< "${file}")" ]; then
                     kill_tomcat "$(cut -d '|' -f 3 <<< "${file}")"
                 else
                     kill_jar "${publish}/${file}.jar"
                 fi
                 exit 1
-            elif [ "$1" = "restart_${name}" ]; then
+            elif [ "$1" = "restart-${name}" ]; then
                 if [ "war" = "$(cut -d '|' -f 2 <<< "${file}")" ]; then
                     kill_tomcat "$(cut -d '|' -f 3 <<< "${file}")"
                     start_tomcat "$(cut -d '|' -f 3 <<< "${file}")"
@@ -589,7 +589,7 @@ case "$1" in
                     start_jar "${publish}/${file}.jar" "gc-${name}.log"
                 fi
                 exit 1
-            elif [ "$1" = "revert_${name}" ]; then
+            elif [ "$1" = "revert-${name}" ]; then
                 if [ "war" = "$(cut -d '|' -f 2 <<< "${file}")" ]; then
                     revert_tomcat "${desc}" "$(cut -d '|' -f 3 <<< "${file}")" "$(cut -d '|' -f 1 <<< "${file}")" "$2"
                 else
@@ -608,9 +608,9 @@ case "$1" in
             file="${module_file_arr[$i]}"
             if [ -n "${name}" ] && [ -n "${desc}" ] && [ -n "${file}" ]; then
                 echo "  「${current_file} ${name}」                    打包及发布「${desc}」"
-                echo "  「${current_file} stop_${name}」               停止「${desc}」"
-                echo "  「${current_file} restart_${name}」            重启「${desc}」"
-                echo "  「${current_file} revert_${name} {timestamp}」 还原「${desc}」"
+                echo "  「${current_file} stop-${name}」               停止「${desc}」"
+                echo "  「${current_file} restart-${name}」            重启「${desc}」"
+                echo "  「${current_file} revert-${name} {timestamp}」 还原「${desc}」"
                 echo ""
             fi
         done
@@ -1116,14 +1116,14 @@ case "$1" in
                     release_jar "${desc}" "${name}" "${file}"
                 fi
                 exit 1
-            elif [ "$1" = "stop_${name}" ]; then
+            elif [ "$1" = "stop-${name}" ]; then
                 if [ "war" = "$(cut -d '|' -f 2 <<< "${file}")" ]; then
                     kill_tomcat "$(cut -d '|' -f 3 <<< "${file}")"
                 else
                     kill_jar "${publish}/${file}.jar"
                 fi
                 exit 1
-            elif [ "$1" = "restart_${name}" ]; then
+            elif [ "$1" = "restart-${name}" ]; then
                 if [ "war" = "$(cut -d '|' -f 2 <<< "${file}")" ]; then
                     kill_tomcat "$(cut -d '|' -f 3 <<< "${file}")"
                     start_tomcat "$(cut -d '|' -f 3 <<< "${file}")"
@@ -1132,7 +1132,7 @@ case "$1" in
                     start_jar "${publish}/${file}.jar" "gc-${name}.log"
                 fi
                 exit 1
-            elif [ "$1" = "revert_${name}" ]; then
+            elif [ "$1" = "revert-${name}" ]; then
                 if [ "war" = "$(cut -d '|' -f 2 <<< "${file}")" ]; then
                     revert_tomcat "${desc}" "$(cut -d '|' -f 3 <<< "${file}")" "$(cut -d '|' -f 1 <<< "${file}")" "$2"
                 else
@@ -1151,9 +1151,9 @@ case "$1" in
             file="${module_file_arr[$i]}"
             if [ -n "${name}" ] && [ -n "${desc}" ] && [ -n "${file}" ]; then
                 echo "  「${current_file} ${name} time md5」           打包及发布「${desc}」"
-                echo "  「${current_file} stop_${name}」               关闭「${desc}」"
-                echo "  「${current_file} restart_${name}」            重启「${desc}」"
-                echo "  「${current_file} revert_${name} {timestamp}」 还原「${desc}」"
+                echo "  「${current_file} stop-${name}」               关闭「${desc}」"
+                echo "  「${current_file} restart-${name}」            重启「${desc}」"
+                echo "  「${current_file} revert-${name} {timestamp}」 还原「${desc}」"
                 echo ""
             fi
         done
