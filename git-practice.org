@@ -10,7 +10,7 @@
 
 ** 开发实践
 
-+ 基于 gogs 建立项目. git 会自动在远程建立一个 master 分支. 这是初始状态 *(1)*
++ 基于 gogs/gitea 建立项目. git 会自动在远程建立一个 master 分支. 这是初始状态 *(1)*
 + 将项目 clone 到本地, 此时本地会有一个 master 分支 ==> *开发人员和仓库负责人都要操作这一步 (2)*
 #+BEGIN_SRC bash
 git clone http://url:port/user/project.git
