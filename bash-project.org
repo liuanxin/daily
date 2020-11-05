@@ -89,8 +89,8 @@ gc_file="${log}/gc-${project}-${profile}-$(date +%F).log"
 JAVA_OPTS="$JAVA_OPTS -server"
 JAVA_OPTS="$JAVA_OPTS -Xms512M -Xmx512M -Dfile.encoding=UTF-8 -XX:+UseG1GC"
 # JAVA_OPTS="$JAVA_OPTS -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=${dump}"
-JAVA_OPTS="$JAVA_OPTS -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=20M"
-JAVA_OPTS="$JAVA_OPTS -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps -Xloggc:${gc_file}"
+# JAVA_OPTS="$JAVA_OPTS -verbose:gc -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=20M"
+# JAVA_OPTS="$JAVA_OPTS -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps -Xloggc:${gc_file}"
 JAVA_OPTS="$JAVA_OPTS -Djava.security.egd=file:/dev/./urandom"
 JAVA_OPTS="$JAVA_OPTS -Dspring.profiles.active=${profile}"
 
@@ -188,7 +188,7 @@ current_file="$(readlink -f $0)"
 
 print_error() {
     echo -e "\033[31m[error] ------------------------------------------------------------------------\033[0m"
-    echo -e "\033[31m[error] `date '+%Y-%m-%d %H:%M:%S'` ${1}\033[0m" # 红
+    echo -e "\033[31m[error] `date '+%Y-%m-%d %H:%M:%S'` : ${1}\033[0m" # 红
     echo -e "\033[31m[error] ------------------------------------------------------------------------\033[0m"
 }
 error_and_exit() {
@@ -218,16 +218,16 @@ check_file() {
 log_in_file() {
     check_create_directory ${log_path}
     print_info "${1}"
-    echo "${now} : ${1}" >> "${log_path}/INSTALL.log"
+    echo "date '+%Y-%m-%d %H:%M:%S'` : ${1}" >> "${log_path}/INSTALL.log"
 }
 log() {
     echo "[INFO] ------------------------------------------------------------------------"
-    echo -e "[INFO] `date '+%Y-%m-%d %H:%M:%S'` ${1}"
+    echo -e "[INFO] `date '+%Y-%m-%d %H:%M:%S'` : ${1}"
     echo "[INFO] ------------------------------------------------------------------------"
 }
 print_info() {
     echo -e "\033[34m[INFO] ------------------------------------------------------------------------\033[0m"
-    echo -e "\033[34m[INFO] `date '+%Y-%m-%d %H:%M:%S'` ${1}\033[0m" # 蓝. 30(黑), 32(绿), 33(黄), 35(紫), 36(天蓝), 37(白)
+    echo -e "\033[34m[INFO] `date '+%Y-%m-%d %H:%M:%S'` : ${1}\033[0m" # 蓝. 30(黑), 32(绿), 33(黄), 35(紫), 36(天蓝), 37(白)
     echo -e "\033[34m[INFO] ------------------------------------------------------------------------\033[0m"
 }
 
@@ -244,8 +244,8 @@ profile="test"                        # 当前环境, 如果是用 tomcat 来发
 
 jvm_args="${jvm_args} -server"
 jvm_args="${jvm_args} -Xms512m -Xmx1G -Dfile.encoding=UTF-8 -XX:+UseG1GC"
-jvm_args="${jvm_args} -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=20M"
-jvm_args="${jvm_args} -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps"
+# jvm_args="${jvm_args} -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=20M"
+# jvm_args="${jvm_args} -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps"
 jvm_args="${jvm_args} -Djava.security.egd=file:/dev/./urandom"
 jvm_args="${jvm_args} -Dspring.profiles.active=${profile}"
 
@@ -373,7 +373,8 @@ start_jar() {
     if [ -n "${debug_port}" ] && [ "${debug_port}" -eq "${debug_port}" ] 2>/dev/null; then 
         tmp_jvm_args="${tmp_jvm_args} -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=${debug_port}"
     fi
-    java ${tmp_jvm_args} -Xloggc:${log_path}/${gc_file} -jar ${run_file} &
+    # java ${tmp_jvm_args} -Xloggc:${log_path}/${gc_file} -jar ${run_file} &
+    java ${tmp_jvm_args} -jar ${run_file} &
     
     sleep 10
     log "进程 ${1} 信息:\n`ps aux | grep -v grep | grep java | grep --color=auto ${1}`"
@@ -628,7 +629,7 @@ now="`date +%Y%m%d%H%M%S`"
 
 red() {
     echo -e "\033[31m[INFO] ------------------------------------------------------------------------\033[0m"
-    echo -e "\033[31m[INFO] `date '+%Y-%m-%d %H:%M:%S'` ${1}\033[0m"
+    echo -e "\033[31m[INFO] `date '+%Y-%m-%d %H:%M:%S'` : ${1}\033[0m"
     echo -e "\033[31m[INFO] ------------------------------------------------------------------------\033[0m"
 }
 log_red() {
@@ -646,12 +647,12 @@ fi
 
 print_log() {
     echo "[INFO] ------------------------------------------------------------------------"
-    echo -e "[INFO] `date '+%Y-%m-%d %H:%M:%S'` ${1}"
+    echo -e "[INFO] `date '+%Y-%m-%d %H:%M:%S'` : ${1}"
     echo "[INFO] ------------------------------------------------------------------------"
 }
 print_info() {
     echo -e "\033[34m[INFO] ------------------------------------------------------------------------\033[0m"
-    echo -e "\033[34m[INFO] `date '+%Y-%m-%d %H:%M:%S'` ${1}\033[0m"
+    echo -e "\033[34m[INFO] `date '+%Y-%m-%d %H:%M:%S'` : ${1}\033[0m"
     echo -e "\033[34m[INFO] ------------------------------------------------------------------------\033[0m"
 }
 
@@ -749,7 +750,7 @@ now="`date +%Y%m%d%H%M%S`"
 
 print_error() {
     echo -e "\033[31m[error] ------------------------------------------------------------------------\033[0m"
-    echo -e "\033[31m[error] `date '+%Y-%m-%d %H:%M:%S'` ${1}\033[0m" # 红
+    echo -e "\033[31m[error] `date '+%Y-%m-%d %H:%M:%S'` : ${1}\033[0m" # 红
     echo -e "\033[31m[error] ------------------------------------------------------------------------\033[0m"
 }
 error_and_exit() {
@@ -783,12 +784,12 @@ log_in_file() {
 }
 log() {
     echo "[INFO] ------------------------------------------------------------------------"
-    echo -e "[INFO] `date '+%Y-%m-%d %H:%M:%S'` ${1}"
+    echo -e "[INFO] `date '+%Y-%m-%d %H:%M:%S'` : ${1}"
     echo "[INFO] ------------------------------------------------------------------------"
 }
 print_info() {
     echo -e "\033[34m[INFO] ------------------------------------------------------------------------\033[0m"
-    echo -e "\033[34m[INFO] `date '+%Y-%m-%d %H:%M:%S'` ${1}\033[0m" # 蓝. 30(黑), 32(绿), 33(黄), 35(紫), 36(天蓝), 37(白)
+    echo -e "\033[34m[INFO] `date '+%Y-%m-%d %H:%M:%S'` : ${1}\033[0m" # 蓝. 30(黑), 32(绿), 33(黄), 35(紫), 36(天蓝), 37(白)
     echo -e "\033[34m[INFO] ------------------------------------------------------------------------\033[0m"
 }
 
@@ -807,8 +808,8 @@ profile="prod"                # 当前环境
 
 jvm_args="${jvm_args} -server"
 jvm_args="${jvm_args} -Xms512m -Xmx512m -Dfile.encoding=UTF-8 -XX:+UseG1GC"
-jvm_args="${jvm_args} -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=20M"
-jvm_args="${jvm_args} -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps"
+# jvm_args="${jvm_args} -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=20M"
+# jvm_args="${jvm_args} -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps"
 jvm_args="${jvm_args} -Djava.security.egd=file:/dev/./urandom"
 jvm_args="${jvm_args} -Dspring.profiles.active=${profile}"
 # jvm_args="${jvm_args} -Ddubbo.reference.check=false"
@@ -926,7 +927,8 @@ start_jar() {
     fi
 
     check_file "$1"
-    java ${jvm_args} -Xloggc:${log_path}/${2} -jar ${1} &
+    # java ${jvm_args} -Xloggc:${log_path}/${2} -jar ${1} &
+    java ${jvm_args} -jar ${1} &
     sleep 10
     log "进程 ${1} 信息:\n`ps aux | grep -v grep | grep java | grep --color=auto ${1}`"
 }
@@ -1174,8 +1176,8 @@ exit 1
 #!/usr/bin/env bash
 
 jvm_args="-server"
-jvm_args="${jvm_args} -Dfile.encoding=UTF-8 -Xms128m -Xmx128m"
-jvm_args="${jvm_args} -XX:+UseG1GC -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps"
+jvm_args="${jvm_args} -Dfile.encoding=UTF-8 -Xms128m -Xmx128m -XX:+UseG1GC "
+# jvm_args="${jvm_args} -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps"
 jvm_args="${jvm_args} -Djava.security.egd=file:/dev/./urandom"
 
 project="mysql2es"
