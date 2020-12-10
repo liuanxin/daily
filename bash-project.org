@@ -1246,15 +1246,135 @@ exit 1
 
 -----
 
-前端
+前端本地
 #+BEGIN_SRC bash
-# 本地打包并上传
-cd ~/project/mall-manager && rm -fr dist boss.tgz && npm run build && tar acf boss.tgz dist && scp boss.tgz user@ip:~/temp/ && rm -fr boss.tgz dist
+#!/bin/bash
 
+print_error() {
+  echo -e "\033[31m[error] ------------------------------------------------------------------------\033[0m"
+  echo -e "\033[31m[error] `date '+%Y-%m-%d %H:%M:%S'` ==> ${1}\033[0m"
+  echo -e "\033[31m[error] ------------------------------------------------------------------------\033[0m"
+}
+error_and_exit() {
+  print_error "$1"
+  exit 1
+}
+if [ "root" == "`whoami`" ]; then
+    error_and_exit "不要使用 root 运行此脚本! 请切换成普通用户!"
+fi
 
-# 线上发布并备份之前的
-cd ~/web && tar acf "boss-`date +%Y%m%d%H%M%S`.tgz" boss && mv boss-*.tgz ~/backup/project && cd ~/temp/ && tar axf boss.tgz && cd dist && rm -fr ~/web/boss/* && mv * ~/web/boss/ && cd ~/temp/ && rm -fr dist
+print_info() {
+    echo -e "\033[34m[INFO] ------------------------------------------------------------------------\033[0m"
+    echo -e "\033[34m[INFO] `date '+%Y-%m-%d %H:%M:%S'` ==> ${1}\033[0m"
+    echo -e "\033[34m[INFO] ------------------------------------------------------------------------\033[0m"
+}
 
-# 线上还原之前的备份(xxx 替换成具体的)
-cd ~/backup/project && tar axf boss-xxx.tgz && cd boss && rm -fr ~/web/boss/* && mv * ~/web/boss/
+now="`date +%Y%m%d%H%M%S`"
+file_name="hotel-${now}.tgz"
+release_online="admin@152.136.119.38:~/temp/"
+
+yarn build || exit 1
+tar acf ${file_name} dist
+md5="`md5sum ${file_name} | awk '{print $1}'`"
+print_info "压缩包(${file_name})的 md5 值是: ${md5}, 文件大小为: `du -sh ${file_name} | awk '{print $1}'`"
+time scp ${file_name} ${release_online} || exit 1
+rm -fr ${file_name}
+
+print_info "「~/bash/hotel-release.sh rel ${now} ${md5}」"
+#+END_SRC
+
+前端线上
+#+BEGIN_SRC bash
+#!/bin/bash
+
+print_error() {
+  echo -e "\033[31m[error] ------------------------------------------------------------------------\033[0m"
+  echo -e "\033[31m[error] `date '+%Y-%m-%d %H:%M:%S'` ==> ${1}\033[0m"
+  echo -e "\033[31m[error] ------------------------------------------------------------------------\033[0m"
+}
+error_and_exit() {
+  print_error "$1"
+  exit 1
+}
+if [ "root" == "`whoami`" ]; then
+    error_and_exit "不要使用 root 运行此脚本! 请切换成普通用户!"
+fi
+
+print_info() {
+  echo -e "\033[34m[INFO] ------------------------------------------------------------------------\033[0m"
+  echo -e "\033[34m[INFO] `date '+%Y-%m-%d %H:%M:%S'` ==> ${1}\033[0m"
+  echo -e "\033[34m[INFO] ------------------------------------------------------------------------\033[0m"
+}
+log_in_file() {
+  print_info "${1}"
+  echo "${now} : ${1}" >> ~/logs/INSTALL.log
+}
+
+release() {
+  if [ "$#" -lt 2 ] || [ -z "$1" ] || [ -z "$2" ]; then
+    error_and_exit "usage: check \"发布的时间戳\" \"压缩包的 md5 值\""
+  fi
+
+  current_file="$(readlink -f $0)"
+  now="`date +%Y%m%d%H%M%S`"
+  back_file_name="hotel-${now}.tgz"
+
+  cd ~/temp/
+  file_name="hotel-${1}.tgz"
+  if [ ! -e "${file_name}" ]; then
+    error_and_exit "没有相关的文件, 不能发布"
+  fi
+
+  md5=`md5sum ${file_name} | awk '{print $1}'`
+  print_info "file md5 info: ${md5}"
+  print_info "send md5 info: ${2}"
+  if [ "${md5}" != "${2}" ]; then
+      error_and_exit "文件的 md5 与传入的值不一致!"
+  fi
+
+  cd ~/web/
+  tar acf ${back_file_name} hotel
+  mv ${back_file_name} ~/backup/project/
+
+  cd ~/temp
+  tar axf ${file_name}
+  cd dist
+  rm -fr ~/web/hotel/*
+  mv * ~/web/hotel/
+  print_info "发布成功"
+  cd ../
+  rm -fr dist ${file_name}
+  log_in_file "运行 ${current_file} revert ${now} 还原之前的「${1}」版本"
+}
+
+restore() {
+  if [ "$#" -lt 1 ] || [ -z "$1" ]; then
+    error_and_exit "usage: check \"备份的时间戳\""
+  fi
+
+  back_file_name="hotel-${1}.tgz"
+  cd ~/backup/project
+  if [ ! -e "${back_file_name}" ]; then
+    error_and_exit "没有相关的备份文件, 不能还原"
+  fi
+
+  tar axf ${back_file_name}
+  cd hotel
+  rm -fr ~/web/hotel/
+  mv * ~/web/hotel/
+  print_info "还原成功"
+}
+
+case "$1" in
+  rel)
+    release "$2" "$3"
+    ;;
+  res)
+    restore "$2"
+    ;;
+  *)
+    echo "usage:"
+    echo "  「${current_file}  rel  发布的时间戳  发布包的 md5 值」  发布"
+    echo "  「${current_file}  res  发布包的 md5 值」  还原"
+esac
 #+END_SRC
