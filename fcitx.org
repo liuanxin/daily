@@ -20,6 +20,18 @@ f 分
 n 厘
 
 
+yi ①
+er ②
+san ③
+si ④
+wu ⑤
+liu ⑥
+qi ⑦
+ba ⑧
+jiu ⑨
+shi ⑩
+
+
 j 「
 k 」
 
