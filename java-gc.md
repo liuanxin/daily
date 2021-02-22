@@ -34,6 +34,40 @@ Java 在分配内存时会涉及到以下区域: http://www.cnblogs.com/paddix/p
 
 因此, 新生代实际可用的内存空间为 9/10 的新生代空间
 
+
+
+https://www.oracle.com/java/technologies/javase/vmoptions-jsp.html
+
+配置见: https://docs.oracle.com/javase/8/docs/technotes/guides/vm/gctuning/sizing.html
+
+  -Xms512m 设置 JVM 堆初始内存为 512M
+  -Xmx1g 设置 JVM 堆最大可用内存为 1G
+
+  -Xmn256m 设置 JVM 的新生代大小(-Xmn 是将 NewSize 与 MaxNewSize 设为 256m), 等同下面两个参数
+  -XX:NewSize=256m
+  -XX:MaxNewSize=256m
+
+  -XX:NewRatio=3    设置新生代(包括 Eden 和两个 Survivor 区)与老年代的比值. 默认是 2, 设置为 3 则新生代与老年代所占比值为 1:3, 新生代占整个堆的 1/4
+  -XX:SurvivorRatio=6    默认是 8, 设置为 6 则一个 Survivor 区与一个 Eden 区的比值为 1:6, 一个 Survivor 区占整个新生代的 1/8
+
+  -Xss1m    每个线程都会产生一个栈. 减小这个值能生成更多的线程. 如果值太小会影响方法调用的深度
+
+  方法区内存分配(8 以前的版本使用, 8 以后没有持久代了, 使用 MetaSpace)
+  -XX:PermSize=128m 设置持久代初始内存大小 128M
+  -XX:MaxPermSize=512m 设置持久代最大内存大小 512M
+
+  -XX:MaxDirectMemorySize  当 Direct ByteBuffer 分配的堆外内存到达指定大小后, 即触发 Full GC. 默认是 64M, 最大为 sun.misc.VM.maxDirectMemory()
+  -XX:MaxTenuringThreshold=15  设置新生代代对象进入老年代的年龄, 如果设置为 0, 则直接在老年代分配
+
+  对于老年代比较多的应用, 可以提高效率. 如果将此值设置为一个较大值, 则新生代对象会在 Survivor 区进行多次复制, 这样可以增加对象在新生代的存活时间
+
+  -XX:MaxHeapFreeRatio=70    GC 后 java 堆中空闲量占的最大比例, 大于该值, 则堆内存会减少
+  -XX:MinHeapFreeRatio=40    GC 后 java 堆中空闲量占的最小比例, 小于该值, 则堆内存会增加
+  -XX:PretenureSizeThreshold=1024    (单位字节)对象大小大于 1024 字节的直接在老年代分配对象
+  -XX:TLABWasteTargetPercent=1    TLAB 占 eden 区的百分比, 默认是 1%
+
+
+
 From Survivor 和 To Survivor 只是算法在收集时的主从关系而已, 两者的界定并没有很明确.
 
 在年轻代(Young)中发生的 GC 又称为小回收(Minor GC), 这部分是最为频繁的, 通常是采用复制收集算法.
