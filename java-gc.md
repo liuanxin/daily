@@ -28,11 +28,10 @@ Java 在分配内存时会涉及到以下区域: http://www.cnblogs.com/paddix/p
   新生代(Young) 它又划分为 Eden(伊甸)、From Survivor(存活者)和 To Survivor(遗孀)三个区域
   老年代(Old Generation) 新生代进入老年代的阀值设置 -XX:MaxTenuringThreshold= 默认是 15
 
-默认: 新生代(Young)与老年代(Old)的比例的值为 1:2 (使用 –XX:NewRatio 指定), 
-即: 新生代(Young) = 1/3 的堆空间大小, 老年代(Old) = 2/3 的堆空间大小. 新生代(Young)又细分为 Eden 和 两个 Survivor 区域, 这两个 Survivor 区域分别被命名为 from 和 to.
-默认: Edem : from : to = 8 : 1 : 1 (使用 –XX:SurvivorRatio 指定), 即: Eden = 8/10 的新生代空间大小, from = to = 1/10 的新生代空间大小
-
-因此, 新生代实际可用的内存空间为 9/10 的新生代空间
+默认: 新生代(Young)与老年代(Old)的比例的值为 1:2 (使用 –XX:NewRatio 指定),
+即: 新生代(Young) = 1/3 的堆空间大小, 老年代(Old) = 2/3 的堆空间大小.
+新生代(Young)又细分为 Eden 和 两个 Survivor 区域, 这两个 Survivor 区域分别被命名为 from 和 to.
+默认比例 Edem : from : to = 8 : 1 : 1 (使用 –XX:SurvivorRatio 指定)
 
 
 https://www.oracle.com/java/technologies/javase/vmoptions-jsp.html
