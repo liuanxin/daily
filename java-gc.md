@@ -53,19 +53,16 @@ https://www.oracle.com/java/technologies/javase/vmoptions-jsp.html
   -Xss1m    每个线程都会产生一个栈. 减小这个值能生成更多的线程. 如果值太小会影响方法调用的深度
 
   方法区内存分配(8 以前的版本使用, 8 以后没有持久代了, 使用 MetaSpace)
-  -XX:PermSize=128m 设置持久代初始内存大小 128M
-  -XX:MaxPermSize=512m 设置持久代最大内存大小 512M
+  -XX:PermSize=128m    设置持久代初始内存大小 128M
+  -XX:MaxPermSize=512m    设置持久代最大内存大小 512M
 
-  -XX:MaxDirectMemorySize  当 Direct ByteBuffer 分配的堆外内存到达指定大小后, 即触发 Full GC. 默认是 64M, 最大为 sun.misc.VM.maxDirectMemory()
-  -XX:MaxTenuringThreshold=15  设置新生代代对象进入老年代的年龄, 如果设置为 0, 则直接在老年代分配
-
-  对于老年代比较多的应用, 可以提高效率. 如果将此值设置为一个较大值, 则新生代对象会在 Survivor 区进行多次复制, 这样可以增加对象在新生代的存活时间
+  -XX:MaxDirectMemorySize    当 Direct ByteBuffer 分配的堆外内存到达指定大小后, 即触发 Full GC. 默认是 64M, 最大为 sun.misc.VM.maxDirectMemory()
+  -XX:MaxTenuringThreshold=10    设置新生代代对象进入老年代的年龄, 默认是 15, 如果设置为 0, 则直接在老年代分配
 
   -XX:MaxHeapFreeRatio=70    GC 后 java 堆中空闲量占的最大比例, 大于该值, 则堆内存会减少
   -XX:MinHeapFreeRatio=40    GC 后 java 堆中空闲量占的最小比例, 小于该值, 则堆内存会增加
   -XX:PretenureSizeThreshold=1024    (单位字节)对象大小大于 1024 字节的直接在老年代分配对象
-  -XX:TLABWasteTargetPercent=1    TLAB 占 eden 区的百分比, 默认是 1%
-
+  -XX:TLABWasteTargetPercent=1    线程本地分配缓存 TLAB(Thread Local Allocation Buffer) 占 eden 区的百分比, 默认是 1%
 
 
 From Survivor 和 To Survivor 只是算法在收集时的主从关系而已, 两者的界定并没有很明确.
