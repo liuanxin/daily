@@ -35,7 +35,6 @@ Java 在分配内存时会涉及到以下区域: http://www.cnblogs.com/paddix/p
 因此, 新生代实际可用的内存空间为 9/10 的新生代空间
 
 
-
 https://www.oracle.com/java/technologies/javase/vmoptions-jsp.html
 
 配置见: https://docs.oracle.com/javase/8/docs/technotes/guides/vm/gctuning/sizing.html
