@@ -1,0 +1,115 @@
+
+查看 java 进程: ~jps~
+
+**** 系统工具
+
+查看线程使用资源情况: ~top -Hp $pid~ 见: [[https://man7.org/linux/man-pages/man1/top.1.html][top]]
+
+观察 cpu swap 的使用情况, 指定采样周期和次数, 通常用来观察进程的上下文切换: ~vmstat~ 见: [[https://man7.org/linux/man-pages/man8/vmstat.8.html][vmstat]]
+
+#+BEGIN_SRC text
+procs -----------memory------------- --swap-- ----io---- --system-- ------cpu------
+ r  b   swpd    free    buff  cache   si   so  bi    bo   in   cs   us sy  id wa st
+ 1  0      0  1431260      0 3138520   0    0  12    34   13    1   5   1  94  0  0
+
+r: 等待运行的进程数
+b: 处于非中断睡眠状态的进程数
+swpd: 虚拟内存使用情况
+free: 空闲内存
+buff: 用来作为缓存的内存数量
+si: 从磁盘交换到内存的交换页数量
+so: 从内在交换到磁盘的交换页数量
+bi: 发送到块设备的块数
+bo: 从块设备接收到的块数
+in: 每秒中断数
+cs: 每秒上下文切换次数
+us: 用户 CPU 使用时间
+sy: 内核 CPU 使用时间
+id: 空闲时间
+wa: 等待 IO 时间
+st: 运行虚拟机窃取的时间
+#+END_SRC
+
+监测进行的内存、CPU 以及 IO 使用情况: ~pidstat~ 见: [[https://man7.org/linux/man-pages/man1/pidstat.1.html][pidstat]]
+#+BEGIN_SRC text
+-u: 默认参数. 显示各个进程的 CPU 使用情况
+-r: 显示各个进程的内存使用情况
+-d: 显示各个进程的 IO 使用情况
+-w: 显示每个进程的上下文切换情况
+-p: 指定进程号
+-t: 显示进程中线程的统计情况
+
+如 pidstat -p $pid -r 1 3
+-p 指定进程 id, -r 表示监控内存的使用情况, 1 表示每秒监控一次, 3 表示采样次数, 如果加上 -t 则表示查看该进程下线程的内在使用情况
+
+发生时间  UID       PID  minflt/s  majflt/s     VSZ     RSS   %MEM  Command
+发生时间  abcd      xxxx      0.00      0.00 7354416 2343468  28.68  java
+发生时间  abcd      xxxx      0.00      0.00 7354416 2343468  28.68  java
+发生时间  abcd      xxxx      0.00      0.00 7354416 2343468  28.68  java
+平均时间  abcd      xxxx      0.00      0.00 7354416 2343468  28.68  java
+
+几个关键指标的含义是:
+minflt/s: 任务每秒发生的次要错误, 不需要从磁盘中加载页
+majflt/s: 任务每秒发生的主要错误, 需要从磁盘加载页
+vsz: 虚拟地址大小, 虚拟内存使用 kb
+rss: 常驻集合大小, 非交换区内存使用 kb
+#+END_SRC
+
+
+**** jdk 工具
+
+见: [[https://docs.oracle.com/search/][jdk-tool-search]]
+
+监测 java 应用的实时运行情况: [[https://docs.oracle.com/javase/9/tools/jstat.htm][jstat]]
+#+BEGIN_SRC text
+jstat -help   : 查看关键参数信息
+
+jstat -option : 查看 jstat 有哪些操作, 相关的选项如下
+  -class             显示 ClassLoad 的相关信息
+  -compiler          显示 JIT 编译的相关信息
+  -gc                显示和 gc 相关的堆信息
+  -gccapacity        显示各个代的容量和使用情况
+  -gcmetacapacity    显示 metaspace 的大小
+  -gcnew             显示新生代信息
+  -gcnewcapacity     显示新生代大小
+  -gcold             显示老年代信息
+  -gcoldcapacity     显示老年代大小
+  -gcutil            显示垃圾收集信息
+  -gccause           显示垃圾回收的相关信息
+  -printcompilation  输出 JIT 编译的方法信息
+
+jstat -gc $pid 1000 3  每过 1000 毫秒就监测一次, 共监测 3 次
+S0C      S1C      S0U  S1U  EC        EU        OC        OU        MC        MU        CCSC     CCSU     YGC  YGCT   FGC  FGCT   CGC  CGCT   GCT   
+33984.0  33984.0  0.0  0.0  272000.0  153274.6  681984.0  254676.9  395284.0  376515.7  53264.0  46877.8  345  1.934  2    1.100  24   0.903  3.937
+33984.0  33984.0  0.0  0.0  272000.0  153274.6  681984.0  254676.9  395284.0  376515.7  53264.0  46877.8  345  1.934  2    1.100  24   0.903  3.937
+33984.0  33984.0  0.0  0.0  272000.0  153274.6  681984.0  254676.9  395284.0  376515.7  53264.0  46877.8  345  1.934  2    1.100  24   0.903  3.937
+
+S0C:  年轻代中 To Survivor 的容量(单位 KB)
+S1C:  年轻代中 From Survivor 的容量
+S0U:  年轻代中 To Survivor 已使用空间
+S1U:  年轻代中 From Survivor 已使用空间
+EC:   年轻代中 Eden 的容量
+EU:   年轻代中 Eden 已使用空间
+OC:   老年代的容量
+OU:   老年代已使用空间
+MC:   metaspace 的容量
+MU:   metaspace 已使用空间
+YGC:  年轻代 gc 数量
+YGCT: 年轻代 gc 时间
+FGC:  老年代 gc 数量
+FGCT: 老年代 gc 时间
+GCT:  gc 总用时
+#+END_SRC
+
+
+查看进程内的线程堆栈: [[https://docs.oracle.com/javase/8/docs/technotes/guides/troubleshoot/tooldescr016.html][jstack]] 通常结合 ~top -Hp $pid~ 或 ~pidstat -p $pid -t~ 一起查看具体的线程状态
+先用 top -Hp $pid 查看占用最多 CPU 或内存的线程信息 pid(十进制), 记下来转成十六进制,
+linux 中 ~printf %x 十进制数~ 输出十六进制, ~printf %d 十六进制~ 输出十进制数, 十六进制数以 0x 开头
+再用 jstack -l pid > p.log 可以列出所有正在运行的线程信息, 找到 nid=Oxid(十六进制) 对应的线程信息, 就可以看到对应的代码片段是在哪里运行了
+
+
+查看堆使用情况: [[https://docs.oracle.com/javase/8/docs/technotes/guides/troubleshoot/tooldescr014.html][jmap]] 将存活对象输出在 hprof 文件中: ~jmap -dump:live,format=b,file=xxx.hprof $pid~
+使用 [[https://docs.oracle.com/javase/8/docs/technotes/guides/troubleshoot/tooldescr006.html][jcmd]] 命令也可以: ~jcmd $pid GC.heap_dump xxx.hprof~
+也可以在 oom 的时候自动生成 dump 文件 ~-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/path/~
+
+生成的文件可以使用 [[https://www.eclipse.org/mat][mat]] 打开进行分析
