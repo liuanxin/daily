@@ -112,4 +112,4 @@ linux 中 ~printf %x 十进制数~ 输出十六进制, ~printf %d 十六进制~ 
 使用 [[https://docs.oracle.com/javase/8/docs/technotes/guides/troubleshoot/tooldescr006.html][jcmd]] 命令也可以: ~jcmd $pid GC.heap_dump xxx.hprof~
 也可以在 oom 的时候自动生成 dump 文件 ~-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/path/~
 
-生成的文件可以使用 [[https://www.eclipse.org/mat][mat]] 打开进行分析
+生成的文件可以使用 [[https://www.eclipse.org/mat][mat]] 进行分析
