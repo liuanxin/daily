@@ -8,9 +8,9 @@
 观察 cpu swap 的使用情况, 指定采样周期和次数, 通常用来观察进程的上下文切换: ~vmstat~ 见: [[https://man7.org/linux/man-pages/man8/vmstat.8.html][vmstat]]
 
 #+BEGIN_SRC text
-procs -----------memory------------- --swap-- ----io---- --system-- ------cpu------
- r  b   swpd    free    buff  cache   si   so  bi    bo   in   cs   us sy  id wa st
- 1  0      0  1431260      0 3138520   0    0  12    34   13    1   5   1  94  0  0
+procs  -----------memory-------------  -swap--  ---io---  --system--  ------cpu------
+ r  b   swpd    free    buff  cache    si   so  bi    bo   in   cs    us sy  id wa st
+ 1  0      0  1431260      0  3138520   0    0  12    34   13    1    5   1  94  0  0
 
 r: 等待运行的进程数
 b: 处于非中断睡眠状态的进程数
