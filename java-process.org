@@ -102,11 +102,9 @@ GCT:  gc 总用时
 #+END_SRC
 
 查看进程内的线程堆栈: [[https://docs.oracle.com/javase/8/docs/technotes/guides/troubleshoot/tooldescr016.html][jstack]] 通常结合 ~top -Hp $pid~ 或 ~pidstat -p $pid -t~ 一起查看具体的线程状态
-#+BEGIN_SRC text
-先用 top -Hp $pid 查看占用最多 CPU 或内存的线程信息 pid(十进制), 记下来转成十六进制,
-linux 中 ~printf %x 十进制数~ 输出十六进制, ~printf %d 十六进制~ 输出十进制数, 十六进制数以 0x 开头
-再用 jstack -l pid > p.log 可以列出所有正在运行的线程信息, 找到 nid=Oxid(十六进制) 对应的线程信息, 就可以看到对应的代码片段是在哪里运行了
-#+END_SRC
+1. 先用 top -Hp $pid 查看占用最多 CPU 或内存的线程信息 pid(十进制), 记下来转成十六进制(linux 中 ~printf %x 十进制数~ 输出十六进制, ~printf %d 十六进制~ 输出十进制数, 十六进制数以 0x 开头)
+2. 再用 jstack -l pid > p.log 可以列出所有正在运行的线程信息, 找到 nid=Oxid(十六进制) 对应的线程信息, 就可以看到对应的代码片段是在哪里运行了
+
 
 三种方式生成 ~dump~ 文件: \\
 
