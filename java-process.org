@@ -108,9 +108,9 @@ GCT:  gc 总用时
 
 三种方式生成 ~dump~ 文件: \\
 
-1. 查看堆使用情况: [[https://docs.oracle.com/javase/8/docs/technotes/guides/troubleshoot/tooldescr014.html][jmap]] 将存活对象输出在 hprof 文件中: ~jmap -dump:live,format=b,file=xxx.hprof $pid~
-2. 使用 [[https://docs.oracle.com/javase/8/docs/technotes/guides/troubleshoot/tooldescr006.html][jcmd]] 命令也可以: ~jcmd $pid GC.heap_dump xxx.hprof~
-3. 以在 oom 的时候自动生成 dump 文件 ~-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/path/~
+1. 使用 [[https://docs.oracle.com/javase/8/docs/technotes/guides/troubleshoot/tooldescr014.html][jmap]] 命令输出存活对象到文件: ~jmap -dump:live,format=b,file=xxx.hprof $pid~
+2. 使用 [[https://docs.oracle.com/javase/8/docs/technotes/guides/troubleshoot/tooldescr006.html][jcmd]] 命令: ~jcmd $pid GC.heap_dump xxx.hprof~
+3. 在 oom 的时候自动生成 dump 文件 ~-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/path/~
 
 生成的文件可以使用 [[https://www.eclipse.org/mat][mat]] 进行分析
 #+END_SRC
