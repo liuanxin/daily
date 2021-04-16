@@ -60,7 +60,7 @@ rss: 常驻集合大小, 非交换区内存使用 kb
 
 见: [[https://docs.oracle.com/search/][jdk-tool-search]]
 
-监测 java 应用的实时运行情况: [[https://docs.oracle.com/javase/9/tools/jstat.htm][jstat]]
+监测 java 应用的实时运行情况: [[https://docs.oracle.com/javase/8/docs/technotes/tools/unix/jstat.html][jstat]]
 #+BEGIN_SRC text
 jstat -help   : 查看关键参数信息
 
