@@ -24,8 +24,8 @@ Java 在分配内存时会涉及到以下区域: http://www.cnblogs.com/paddix/p
 ```
 虚拟机管理的最大一块内存. 存放对象. gc 的重点就是操作这部分
 
-堆(Heap)分为三个区域:
-  新生代(Young) 它又划分为 Eden(伊甸)、From Survivor(存活者)和 To Survivor(遗孀)三个区域
+堆(Heap)分为两个区域:
+  新生代(Young) 划分为 Eden(伊甸)、From Survivor(存活者)和 To Survivor(遗孀)三个区域
   老年代(Old Generation) 新生代进入老年代的阀值设置 -XX:MaxTenuringThreshold= 默认是 15
 
 默认: 新生代(Young)与老年代(Old)的比例的值为 1:2 (使用 –XX:NewRatio 指定),
