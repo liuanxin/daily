@@ -34,6 +34,14 @@ Java 在分配内存时会涉及到以下区域: http://www.cnblogs.com/paddix/p
 默认比例 Edem : from : to = 8 : 1 : 1 (使用 –XX:SurvivorRatio 指定)
 
 
+From Survivor 和 To Survivor 只是算法在收集时的主从关系而已, 两者的界定并没有很明确.
+
+在年轻代(Young)中发生的 GC 又称为小回收(Minor GC), 这部分是最为频繁的, 通常是采用复制收集算法.
+在老年代(Old)中发生的 GC 称为大回收(Major GC), 完全回收(Full GC)时会同时进行至少一次 Minor GC
+
+这种针对区域进行不同回收的技术又叫分代回收(Generational GC)
+
+
 https://www.oracle.com/java/technologies/javase/vmoptions-jsp.html
 
 配置见: https://docs.oracle.com/javase/8/docs/technotes/guides/vm/gctuning/sizing.html
@@ -61,15 +69,8 @@ https://www.oracle.com/java/technologies/javase/vmoptions-jsp.html
   -XX:MinHeapFreeRatio=40    GC 后 java 堆中空闲量占的最小比例, 小于该值, 则堆内存会增加
   -XX:PretenureSizeThreshold=1024    (单位字节)对象大小大于 1024 字节的直接在老年代分配对象
   -XX:TLABWasteTargetPercent=1    线程本地分配缓存 TLAB(Thread Local Allocation Buffer) 占 eden 区的百分比, 默认是 1%
-
-
-From Survivor 和 To Survivor 只是算法在收集时的主从关系而已, 两者的界定并没有很明确.
-
-在年轻代(Young)中发生的 GC 又称为小回收(Minor GC), 这部分是最为频繁的, 通常是采用复制收集算法.
-在老年代(Old)中发生的 GC 称为大回收(Major GC), 完全回收(Full GC)时会同时进行至少一次 Minor GC
-
-这种针对区域进行不同回收的技术又叫分代回收(Generational GC)
 ```
+
 5. 方法区(Method Area):
 ```
 在 HotSpot 中又叫永久代(Permanent Generation), JRockit 和 J9 并没有 PermGen space, 
