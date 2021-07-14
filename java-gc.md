@@ -37,7 +37,7 @@ Java 在分配内存时会涉及到以下区域: http://www.cnblogs.com/paddix/p
 From Survivor 和 To Survivor 只是算法在收集时的主从关系而已, 两者的界定并没有很明确.
 
 在年轻代(Young)中发生的 GC 又称为小回收(Minor GC), 这部分是最为频繁的, 通常是采用复制收集算法.
-在老年代(Old)中发生的 GC 称为大回收(Major GC), 完全回收(Full GC)时会同时进行至少一次 Minor GC
+在老年代(Old)中发生的 GC 称为大回收(Major GC), 完全回收(Full GC)时会同时进行至少一次 Minor GC, 通常会采用标记压缩算法.
 
 这种针对区域进行不同回收的技术又叫分代回收(Generational GC)
 
