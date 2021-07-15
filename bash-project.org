@@ -68,7 +68,7 @@ profile="test"
 project="platform"
 
 # 放 gc 日志和 dump 文件的目录
-log="/home/`whoami`/logs"
+log="/home/$(whoami)/logs"
 
 if [ ! -d "${log}" ]; then
   mkdir -p ${log}
@@ -183,12 +183,12 @@ export CATALINA_OPTS JAVA_OPTS
 #+BEGIN_SRC bash
 #!/usr/bin/env bash
 
-now="`date +%Y%m%d%H%M%S`"
+now="$(date +%Y%m%d%H%M%S)"
 current_file="$(readlink -f $0)"
 
 print_error() {
     echo -e "\033[31m[error] ------------------------------------------------------------------------\033[0m"
-    echo -e "\033[31m[error] `date '+%Y-%m-%d %H:%M:%S'` : ${1}\033[0m" # 红
+    echo -e "\033[31m[error] $(date '+%Y-%m-%d %H:%M:%S.%3N') : ${1}\033[0m" # 红
     echo -e "\033[31m[error] ------------------------------------------------------------------------\033[0m"
 }
 error_and_exit() {
@@ -196,7 +196,7 @@ error_and_exit() {
     exit 1
 }
 
-if [ "root" == "`whoami`" ]; then
+if [ "root" == "$(whoami)" ]; then
     error_and_exit "不要使用 root 运行此脚本! 请切换成普通用户!"
 fi
 
@@ -218,21 +218,21 @@ check_file() {
 log_in_file() {
     check_create_directory ${log_path}
     print_info "${1}"
-    echo "date '+%Y-%m-%d %H:%M:%S'` : ${1}" >> "${log_path}/INSTALL.log"
+    echo "$(date '+%Y-%m-%d %H:%M:%S.%3N') : ${1}" >> "${log_path}/INSTALL.log"
 }
 log() {
     echo "[INFO] ------------------------------------------------------------------------"
-    echo -e "[INFO] `date '+%Y-%m-%d %H:%M:%S'` : ${1}"
+    echo -e "[INFO] $(date '+%Y-%m-%d %H:%M:%S.%3N') : ${1}"
     echo "[INFO] ------------------------------------------------------------------------"
 }
 print_info() {
     echo -e "\033[34m[INFO] ------------------------------------------------------------------------\033[0m"
-    echo -e "\033[34m[INFO] `date '+%Y-%m-%d %H:%M:%S'` : ${1}\033[0m" # 蓝. 30(黑), 32(绿), 33(黄), 35(紫), 36(天蓝), 37(白)
+    echo -e "\033[34m[INFO] $(date '+%Y-%m-%d %H:%M:%S.%3N') : ${1}\033[0m" # 蓝. 30(黑), 32(绿), 33(黄), 35(紫), 36(天蓝), 37(白)
     echo -e "\033[34m[INFO] ------------------------------------------------------------------------\033[0m"
 }
 
 
-release_path="/home/`whoami`"         # 发布目录
+release_path="/home/$(whoami)"        # 发布目录
 project="project"                     # 项目名
 source="${release_path}/source"       # 源码目录
 publish="${release_path}/project"     # 发布目录
@@ -340,12 +340,20 @@ kill_jar() {
     if [ "$#" != 1 ] || [ -z "$1" ]; then
         error_and_exit "usage: kill_jar \"运行的 jar 包路径\""
     fi
-    process="`ps aux | grep ${1} | grep java | grep -v grep | awk '{print $2}'`"
+    process="$(ps aux | grep ${1} | grep java | grep -v grep | awk '{print $2}')"
     log "项目 ${1} 进程号: (${process})"
     if [ -n "${process}" ]; then
-        log "强行杀掉 ${1} 进程: ${process}"
-        kill -9 "${process}"
-        sleep 3
+        log "杀掉 ${1} 进程: ${process}"
+        kill "${process}"
+        check_process "${1}"
+    fi
+}
+check_process() {
+    sleep 1
+    process="$(ps aux | grep ${1} | grep java | grep -v grep | awk '{print $2}')"
+    if [ -n "${process}" ]; then
+        log "进程 ${process} 还在"
+        check_process "${1}"
     fi
 }
 # 启动 jar 进程
@@ -377,7 +385,7 @@ start_jar() {
     java ${tmp_jvm_args} -jar ${run_file} &
     
     sleep 10
-    log "进程 ${1} 信息:\n`ps aux | grep -v grep | grep java | grep --color=auto ${1}`"
+    log "进程 ${1} 信息:\n$(ps aux | grep -v grep | grep java | grep --color=auto ${1})"
 }
 # 发布 jar 包项目
 release_jar() {
@@ -405,6 +413,7 @@ release_jar() {
     log "开始发布「${comment}」"
     backup_project "${current_release}" "${backup_release}" "revert_${package}"
     kill_jar "${current_release}"
+    rm "${current_release}"
     mv "${release}" "${current_release}"
     start_jar "${current_release}" "gc-${package##*/}-${profile}-$(date +%F).log" "${debug_port}"
     log "「${comment}」发布完成"
@@ -442,8 +451,8 @@ backup_project() {
         error_and_exit "usage: backup_project \"发布包文件路径\" \"备份的文件路径\" \"还原指令\""
     fi
     if [ -e "${1}" ]; then
-        log "复制包 => mv ${1} ${2}"
-        mv "${1}" "${2}"
+        log "复制包 => cp ${1} ${2}"
+        cp "${1}" "${2}"
         
         # -mtime +7 表示 7 天前的
         log "删除 12 个小时以前的备份文件 => find ${backup} -mmin +720 -type f | grep -v "${2}" | xargs rm -fr"
@@ -460,14 +469,22 @@ kill_tomcat() {
         error_and_exit "usage: kill_tomcat \"全路径的 tomcat 目录\""
     fi
     
-    process="`ps aux | grep ${1} | grep java | grep -v grep | awk '{print $2}'`"
+    process="$(ps aux | grep ${1} | grep java | grep -v grep | awk '{print $2}')"
     echo "项目 ${1} 进程号: (${process})"
     ${1}/bin/shutdown.sh && sleep 2
-    process="`ps aux | grep ${1} | grep java | grep -v grep | awk '{print $2}'`"
+    process="$(ps aux | grep ${1} | grep java | grep -v grep | awk '{print $2}')"
     if [ -n "${process}" ]; then
-        log "强行杀掉 ${1} 进程: ${process}"
-        kill -9 "${process}"
-        sleep 3
+        log "杀掉 ${1} 进程: ${process}"
+        kill "${process}"
+        check_process "${1}"
+    fi
+}
+check_process() {
+    sleep 1
+    process="$(ps aux | grep ${1} | grep java | grep -v grep | awk '{print $2}')"
+    if [ -n "${process}" ]; then
+        log "进程 ${process} 还在"
+        check_process "${1}"
     fi
 }
 # 启动 tomcat 进程
@@ -481,7 +498,7 @@ start_tomcat() {
     echo "rm -fr ${1}logs/* ${1}webapps/* ${1}work/*"
     rm -fr ${1}logs/* ${1}webapps/* ${1}work/*
     ${1}/bin/startup.sh && sleep 2
-    log "进程 ${1} 信息:\n`ps aux | grep -v grep | grep java | grep --color=auto ${1}`"
+    log "进程 ${1} 信息:\n$(ps aux | grep -v grep | grep java | grep --color=auto ${1})"
 }
 # 发布 tomcat 项目
 release_tomcat() {
@@ -506,6 +523,7 @@ release_tomcat() {
     log "开始发布「${comment}」"
     backup_project "${current_release}" "${backup_release}" "revert_${package##*/}"
     kill_tomcat "${tomcat}"
+    rm "${current_release}"
     mv ${release} ${current_release}
     start_tomcat "${tomcat}"
     log "「${comment}」发布完成"
@@ -625,11 +643,11 @@ exit 1
 #+BEGIN_SRC bash
 #!/usr/bin/env bash
 
-now="`date +%Y%m%d%H%M%S`"
+now="$(date +%Y%m%d%H%M%S)"
 
 red() {
     echo -e "\033[31m[INFO] ------------------------------------------------------------------------\033[0m"
-    echo -e "\033[31m[INFO] `date '+%Y-%m-%d %H:%M:%S'` : ${1}\033[0m"
+    echo -e "\033[31m[INFO] $(date '+%Y-%m-%d %H:%M:%S.%3N') : ${1}\033[0m"
     echo -e "\033[31m[INFO] ------------------------------------------------------------------------\033[0m"
 }
 log_red() {
@@ -641,25 +659,25 @@ error_and_exit() {
     exit 1
 }
 
-if [ "root" == "`whoami`" ]; then
+if [ "root" == "$(whoami)" ]; then
     error_and_exit "不要使用 root 运行此脚本! 请切换成普通用户!"
 fi
 
 print_log() {
     echo "[INFO] ------------------------------------------------------------------------"
-    echo -e "[INFO] `date '+%Y-%m-%d %H:%M:%S'` : ${1}"
+    echo -e "[INFO] $(date '+%Y-%m-%d %H:%M:%S.%3N') : ${1}"
     echo "[INFO] ------------------------------------------------------------------------"
 }
 print_info() {
     echo -e "\033[34m[INFO] ------------------------------------------------------------------------\033[0m"
-    echo -e "\033[34m[INFO] `date '+%Y-%m-%d %H:%M:%S'` : ${1}\033[0m"
+    echo -e "\033[34m[INFO] $(date '+%Y-%m-%d %H:%M:%S.%3N') : ${1}\033[0m"
     echo -e "\033[34m[INFO] ------------------------------------------------------------------------\033[0m"
 }
 
-now="`date +%Y%m%d%H%M%S`"
+now="$(date +%Y%m%d%H%M%S)"
 current_file="$(readlink -f $0)"
 
-work_dir="/home/`whoami`"     # 工作目录
+work_dir="/home/$(whoami)"    # 工作目录
 project="xxxyyyzzz"           # 项目名
 source="${work_dir}/source"   # 源码目录
 
@@ -693,7 +711,7 @@ online() {
         git checkout $3
         print_info "切换到 $3 分支或版本"
     fi
-    print_info "导出的版本信息是: `git log | head -n 1 | awk '{print $2}'`"
+    print_info "导出的版本信息是: $(git log | head -n 1 | awk '{print $2}')"
     rm -fr .git*
     print_log "代码导出完成"
 
@@ -706,8 +724,8 @@ online() {
     file_name="${project}-${now}.tgz"
     tar acf "${file_name}" "${online_project_file}"
 
-    md5="`md5sum ${file_name} | awk '{print $1}'`"
-    print_info "压缩包(${file_name})的 md5 值是: ${md5}, 文件大小为: `du -sh ${file_name} | awk '{print $1}'`"
+    md5="$(md5sum ${file_name} | awk '{print $1}')"
+    print_info "压缩包(${file_name})的 md5 值是: ${md5}, 文件大小为: $(du -sh ${file_name} | awk '{print $1}')"
     print_log "scp ${source}/${file_name} ${release_online}"
     # 服务器可以用 google-auth 开启二次验证, 此处可以用公钥免密码传输
     time scp -qr "${source}/${file_name}" "${release_online}" || exit 1
@@ -746,11 +764,11 @@ exit 1
 #+BEGIN_SRC bash
 #!/usr/bin/env bash
 
-now="`date +%Y%m%d%H%M%S`"
+now="$(date +%Y%m%d%H%M%S)"
 
 print_error() {
     echo -e "\033[31m[error] ------------------------------------------------------------------------\033[0m"
-    echo -e "\033[31m[error] `date '+%Y-%m-%d %H:%M:%S'` : ${1}\033[0m" # 红
+    echo -e "\033[31m[error] $(date '+%Y-%m-%d %H:%M:%S.%3N') : ${1}\033[0m" # 红
     echo -e "\033[31m[error] ------------------------------------------------------------------------\033[0m"
 }
 error_and_exit() {
@@ -758,7 +776,7 @@ error_and_exit() {
     exit 1
 }
 
-if [ "root" == "`whoami`" ]; then
+if [ "root" == "$(whoami)" ]; then
     error_and_exit "不要使用 root 运行此脚本! 请切换成普通用户!"
 fi
 
@@ -784,19 +802,19 @@ log_in_file() {
 }
 log() {
     echo "[INFO] ------------------------------------------------------------------------"
-    echo -e "[INFO] `date '+%Y-%m-%d %H:%M:%S'` : ${1}"
+    echo -e "[INFO] $(date '+%Y-%m-%d %H:%M:%S.%3N') : ${1}"
     echo "[INFO] ------------------------------------------------------------------------"
 }
 print_info() {
     echo -e "\033[34m[INFO] ------------------------------------------------------------------------\033[0m"
-    echo -e "\033[34m[INFO] `date '+%Y-%m-%d %H:%M:%S'` : ${1}\033[0m" # 蓝. 30(黑), 32(绿), 33(黄), 35(紫), 36(天蓝), 37(白)
+    echo -e "\033[34m[INFO] $(date '+%Y-%m-%d %H:%M:%S.%3N') : ${1}\033[0m" # 蓝. 30(黑), 32(绿), 33(黄), 35(紫), 36(天蓝), 37(白)
     echo -e "\033[34m[INFO] ------------------------------------------------------------------------\033[0m"
 }
 
 current_file="$(readlink -f $0)"
-now="`date +%Y%m%d%H%M%S`"
+now="$(date +%Y%m%d%H%M%S)"
 
-work_dir="/home/`whoami`"     # 工作目录
+work_dir="/home/$(whoami)"    # 工作目录
 project="xxxyyyzzz"           # 项目名
 source="${work_dir}/source"   # 源码目录
 publish="${work_dir}/project" # 发布目录
@@ -867,8 +885,8 @@ check() {
     file_name="${project}-${1}.tgz"
     check_file "${file_name}"
 
-    md5=`md5sum ${file_name} | awk '{print $1}'`
-    print_info "file md5 info: `md5sum ${file_name}`"
+    md5=$(md5sum ${file_name} | awk '{print $1}')
+    print_info "file md5 info: $(md5sum ${file_name})"
     print_info "send md5 info: ${2}"
     if [ "${md5}" != "${2}" ]; then
         error_and_exit "文件的 md5 与传入的值不一致!"
@@ -912,14 +930,24 @@ kill_jar() {
     if [ "$#" != 1 ] || [ -z "$1" ]; then
         error_and_exit "usage: kill_jar \"运行的 jar 包路径\""
     fi
-    process="`ps aux | grep ${1} | grep java | grep -v grep | awk '{print $2}'`"
+    process="$(ps aux | grep ${1} | grep java | grep -v grep | awk '{print $2}')"
     log "项目 ${1} 进程号: (${process})"
     if [ -n "${process}" ]; then
-        log "强行杀掉 ${1} 进程: ${process}"
-        kill -9 "${process}"
-        sleep 3
+        log "杀掉 ${1} 进程: ${process}"
+        kill "${process}"
+        check_process "${1}"
     fi
 }
+check_process() {
+    sleep 1
+    process="$(ps aux | grep ${1} | grep java | grep -v grep | awk '{print $2}')"
+    if [ -n "${process}" ]; then
+        log "进程 ${process} 还在"
+        check_process "${1}"
+    fi
+}
+
+
 # 启动 jar 进程
 start_jar() {
     if [ "$#" != 2 ] || [ -z "$1" ] || [ -z "$2" ]; then
@@ -930,7 +958,7 @@ start_jar() {
     # java ${jvm_args} -Xloggc:${log_path}/${2} -jar ${1} &
     java ${jvm_args} -jar ${1} &
     sleep 10
-    log "进程 ${1} 信息:\n`ps aux | grep -v grep | grep java | grep --color=auto ${1}`"
+    log "进程 ${1} 信息:\n$(ps aux | grep -v grep | grep java | grep --color=auto ${1})"
 }
 # 发布 jar 包项目
 release_jar() {
@@ -957,6 +985,7 @@ release_jar() {
     log "开始发布「${comment}」"
     backup_project "${current_release}" "${backup_release}" "${revert}"
     kill_jar "${current_release}"
+    rm "${current_release}"
     mv "${release}" "${current_release}"
     start_jar "${current_release}" "${gc_file}"
     log "「${comment}」发布完成"
@@ -995,9 +1024,9 @@ backup_project() {
         error_and_exit "usage: backup_project \"发布包文件路径\" \"备份的文件路径\" \"还原指令\""
     fi
     if [ -e "${1}" ]; then
-        log "复制包 mv ${1} ${2}"
+        log "复制包 cp ${1} ${2}"
         touch "${1}"
-        mv "${1}" "${2}"
+        cp "${1}" "${2}"
         
         log "删除 12 个小时以前的备份文件 => find ${backup} -mmin +720 -type f | grep -v "${2}" | xargs rm -fr"
         find "${backup}" -mmin +720 -type f | grep -v "${2}" | xargs rm -fr
@@ -1011,14 +1040,23 @@ kill_tomcat() {
         error_and_exit "usage: kill_tomcat \"全路径的 tomcat 目录\""
     fi
     
-    process="`ps aux | grep ${1} | grep java | grep -v grep | awk '{print $2}'`"
+    process="$(ps aux | grep ${1} | grep java | grep -v grep | awk '{print $2}')"
     echo "项目 ${1} 进程号: (${process})"
     ${1}/bin/shutdown.sh && sleep 2
-    process="`ps aux | grep ${1} | grep java | grep -v grep | awk '{print $2}'`"
+    process="$(ps aux | grep ${1} | grep java | grep -v grep | awk '{print $2}')"
     if [ -n "${process}" ]; then
-        log "强行杀掉 ${1} 进程: ${process}"
-        kill -9 "${process}"
-        sleep 3
+        log "杀掉 ${1} 进程: ${process}"
+        kill "${process}"
+        check_process "${1}"
+    fi
+}
+
+check_process() {
+    sleep 1
+    process="$(ps aux | grep ${1} | grep java | grep -v grep | awk '{print $2}')"
+    if [ -n "${process}" ]; then
+        log "进程 ${process} 还在"
+        check_process "${1}"
     fi
 }
 # 启动 tomcat 进程
@@ -1032,7 +1070,7 @@ start_tomcat() {
     echo "rm -fr ${1}logs/* ${1}webapps/* ${1}work/*"
     rm -fr ${1}logs/* ${1}webapps/* ${1}work/*
     ${1}/bin/startup.sh && sleep 2
-    log "进程 ${1} 信息:\n`ps aux | grep -v grep | grep java | grep --color=auto ${1}`"
+    log "进程 ${1} 信息:\n$(ps aux | grep -v grep | grep java | grep --color=auto ${1})"
 }
 # 发布 tomcat 项目
 release_tomcat() {
@@ -1057,6 +1095,7 @@ release_tomcat() {
     log "开始发布「${comment}」"
     backup_project "${current_release}" "${backup_release}" "revert_${package##*/}"
     kill_tomcat "${tomcat}"
+    rm "${current_release}"
     mv ${release} ${current_release}
     start_tomcat "${tomcat}"
     log "「${comment}」发布完成"
@@ -1181,7 +1220,7 @@ jvm_args="${jvm_args} -Dfile.encoding=UTF-8 -Xms128m -Xmx128m -XX:+UseG1GC "
 jvm_args="${jvm_args} -Djava.security.egd=file:/dev/./urandom"
 
 project="mysql2es"
-release_path="/home/`whoami`"
+release_path="/home/$(whoami)"
 source="${release_path}/source"
 publish="${release_path}/project"
 log_path="${release_path}/logs"
@@ -1213,9 +1252,18 @@ compile() {
     mvn clean package -DskipTests || exit 1
 }
 kill_process() {
-    process="`ps aux | grep '${project}' | grep java | awk '{print $2}'`"
+    process="$(ps aux | grep '${project}' | grep java | awk '{print $2}')"
     if [ -n "${process}" ]; then
-        kill -9 "${process}"
+        kill "${process}"
+        check_process "${project}"
+    fi
+}
+check_process() {
+    sleep 1
+    process="$(ps aux | grep ${1} | grep java | grep -v grep | awk '{print $2}')"
+    if [ -n "${process}" ]; then
+        log "进程 ${process} 还在"
+        check_process "${1}"
     fi
 }
 release() {
@@ -1252,31 +1300,31 @@ exit 1
 
 print_error() {
   echo -e "\033[31m[error] ------------------------------------------------------------------------\033[0m"
-  echo -e "\033[31m[error] `date '+%Y-%m-%d %H:%M:%S'` ==> ${1}\033[0m"
+  echo -e "\033[31m[error] $(date '+%Y-%m-%d %H:%M:%S.%3N') ==> ${1}\033[0m"
   echo -e "\033[31m[error] ------------------------------------------------------------------------\033[0m"
 }
 error_and_exit() {
   print_error "$1"
   exit 1
 }
-if [ "root" == "`whoami`" ]; then
+if [ "root" == "$(whoami)" ]; then
     error_and_exit "不要使用 root 运行此脚本! 请切换成普通用户!"
 fi
 
 print_info() {
     echo -e "\033[34m[INFO] ------------------------------------------------------------------------\033[0m"
-    echo -e "\033[34m[INFO] `date '+%Y-%m-%d %H:%M:%S'` ==> ${1}\033[0m"
+    echo -e "\033[34m[INFO] $(date '+%Y-%m-%d %H:%M:%S.%3N') ==> ${1}\033[0m"
     echo -e "\033[34m[INFO] ------------------------------------------------------------------------\033[0m"
 }
 
-now="`date +%Y%m%d%H%M%S`"
+now="$(date +%Y%m%d%H%M%S)"
 file_name="hotel-${now}.tgz"
 release_online="admin@ip:~/temp/"
 
 yarn build || exit 1
 tar acf ${file_name} dist
-md5="`md5sum ${file_name} | awk '{print $1}'`"
-print_info "压缩包(${file_name})的 md5 值是: ${md5}, 文件大小为: `du -sh ${file_name} | awk '{print $1}'`"
+md5="$(md5sum ${file_name} | awk '{print $1}')"
+print_info "压缩包(${file_name})的 md5 值是: ${md5}, 文件大小为: $(du -sh ${file_name} | awk '{print $1}')"
 time scp ${file_name} ${release_online} || exit 1
 rm -fr ${file_name}
 
@@ -1287,12 +1335,12 @@ print_info "「~/bash/hotel-release.sh rel ${now} ${md5}」"
 #+BEGIN_SRC bash
 #!/usr/bin/env bash
 
-now="`date +%Y%m%d%H%M%S`"
+now="$(date +%Y%m%d%H%M%S)"
 current_file="$(readlink -f $0)"
 
 print_error() {
     echo -e "\033[31m[error] ------------------------------------------------------------------------\033[0m"
-    echo -e "\033[31m[error] `date '+%Y-%m-%d %H:%M:%S'` : ${1}\033[0m" # 红
+    echo -e "\033[31m[error] $(date '+%Y-%m-%d %H:%M:%S.%3N') : ${1}\033[0m" # 红
     echo -e "\033[31m[error] ------------------------------------------------------------------------\033[0m"
 }
 error_and_exit() {
@@ -1300,7 +1348,7 @@ error_and_exit() {
     exit 1
 }
 
-if [ "root" == "`whoami`" ]; then
+if [ "root" == "$(whoami)" ]; then
     error_and_exit "不要使用 root 运行此脚本! 请切换成普通用户!"
 fi
 
@@ -1322,22 +1370,22 @@ check_file() {
 log_in_file() {
     check_create_directory ${log_path}
     print_info "${1}"
-    echo "`date '+%Y-%m-%d %H:%M:%S'` : ${1}" >> "${log_path}/INSTALL.log"
+    echo "$(date '+%Y-%m-%d %H:%M:%S.%3N') : ${1}" >> "${log_path}/INSTALL.log"
 }
 log() {
     echo "[INFO] ------------------------------------------------------------------------"
-    echo -e "[INFO] `date '+%Y-%m-%d %H:%M:%S'` : ${1}"
+    echo -e "[INFO] $(date '+%Y-%m-%d %H:%M:%S.%3N') : ${1}"
     echo "[INFO] ------------------------------------------------------------------------"
 }
 print_info() {
     echo -e "\033[34m[INFO] ------------------------------------------------------------------------\033[0m"
-    echo -e "\033[34m[INFO] `date '+%Y-%m-%d %H:%M:%S'` : ${1}\033[0m" # 蓝. 30(黑), 32(绿), 33(黄), 35(紫), 36(天蓝), 37(白)
+    echo -e "\033[34m[INFO] $(date '+%Y-%m-%d %H:%M:%S.%3N') : ${1}\033[0m" # 蓝. 30(黑), 32(绿), 33(黄), 35(紫), 36(天蓝), 37(白)
     echo -e "\033[34m[INFO] ------------------------------------------------------------------------\033[0m"
 }
 
 
 project="yec-backend"                    # 项目名
-release_path="/home/`whoami`"            # 发布目录
+release_path="/home/$(whoami)"           # 发布目录
 source="${release_path}/source"          # 源码目录
 publish="${release_path}/project"        # 发布目录
 backup="${release_path}/backup/project"  # 备份目录
@@ -1420,12 +1468,20 @@ kill_jar() {
     if [ "$#" != 1 ] || [ -z "$1" ]; then
         error_and_exit "usage: kill_jar \"运行的 jar 包路径\""
     fi
-    process="`ps aux | grep ${1} | grep java | grep -v grep | awk '{print $2}'`"
+    process="$(ps aux | grep ${1} | grep java | grep -v grep | awk '{print $2}')"
     log "项目 ${1} 进程号: (${process})"
     if [ -n "${process}" ]; then
-        log "强行杀掉 ${1} 进程: ${process}"
-        kill -9 "${process}"
-        sleep 2
+        log "杀掉 ${1} 进程: ${process}"
+        kill "${process}"
+        check_process "${1}"
+    fi
+}
+check_process() {
+    sleep 1
+    process="$(ps aux | grep ${1} | grep java | grep -v grep | awk '{print $2}')"
+    if [ -n "${process}" ]; then
+        log "进程 ${process} 还在"
+        check_process "${1}"
     fi
 }
 # 启动 jar 进程
@@ -1444,7 +1500,7 @@ start_jar() {
     
     java ${tmp_jvm_args} -jar ${1} &
     sleep 5
-    log "进程 ${1} 信息:\n`ps aux | grep -v grep | grep java | grep --color=auto ${1}`"
+    log "进程 ${1} 信息:\n$(ps aux | grep -v grep | grep java | grep --color=auto ${1})"
 }
 # 发布 jar 包项目
 release_jar() {
@@ -1473,6 +1529,7 @@ release_jar() {
     log "开始发布「${comment}」"
     backup_project "${current_release}" "${backup_release}" "revert_${package}"
     kill_jar "${current_release}"
+    rm "${current_release}"
     mv "${release}" "${current_release}"
     start_jar "${current_release}" "gc-${package##*/}.log" "${project_jvm_args}" "${debug_port}"
     log "「${comment}」发布完成"
@@ -1511,8 +1568,8 @@ backup_project() {
             error_and_exit "usage: backup_project \"发布包文件路径\" \"备份的文件路径\" \"还原指令\""
         fi
         if [ -e "${1}" ]; then
-            log "复制包 => mv ${1} ${2}"
-            mv "${1}" "${2}"
+            log "复制包 => cp ${1} ${2}"
+            cp "${1}" "${2}"
 
             log "删除 7 天前的备份文件 => find ${backup} -mtime +7 -type f | grep -v "${2}" | xargs rm -fr"
             find "${backup}" -mtime +7 -type f | grep -v "${2}" | xargs rm -fr
@@ -1596,20 +1653,20 @@ exit 1
 
 print_error() {
   echo -e "\033[31m[error] ------------------------------------------------------------------------\033[0m"
-  echo -e "\033[31m[error] `date '+%Y-%m-%d %H:%M:%S'` ==> ${1}\033[0m"
+  echo -e "\033[31m[error] $(date '+%Y-%m-%d %H:%M:%S.%3N') ==> ${1}\033[0m"
   echo -e "\033[31m[error] ------------------------------------------------------------------------\033[0m"
 }
 error_and_exit() {
   print_error "$1"
   exit 1
 }
-if [ "root" == "`whoami`" ]; then
+if [ "root" == "$(whoami)" ]; then
     error_and_exit "不要使用 root 运行此脚本! 请切换成普通用户!"
 fi
 
 print_info() {
   echo -e "\033[34m[INFO] ------------------------------------------------------------------------\033[0m"
-  echo -e "\033[34m[INFO] `date '+%Y-%m-%d %H:%M:%S'` ==> ${1}\033[0m"
+  echo -e "\033[34m[INFO] $(date '+%Y-%m-%d %H:%M:%S.%3N') ==> ${1}\033[0m"
   echo -e "\033[34m[INFO] ------------------------------------------------------------------------\033[0m"
 }
 log_in_file() {
@@ -1623,7 +1680,7 @@ release() {
   fi
 
   current_file="$(readlink -f $0)"
-  now="`date +%Y%m%d%H%M%S`"
+  now="$(date +%Y%m%d%H%M%S)"
   back_file_name="hotel-${now}.tgz"
 
   cd ~/temp/
@@ -1632,7 +1689,7 @@ release() {
     error_and_exit "没有相关的文件, 不能发布"
   fi
 
-  md5=`md5sum ${file_name} | awk '{print $1}'`
+  md5=$(md5sum ${file_name} | awk '{print $1}')
   print_info "file md5 info: ${md5}"
   print_info "send md5 info: ${2}"
   if [ "${md5}" != "${2}" ]; then
