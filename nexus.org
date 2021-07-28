@@ -60,13 +60,13 @@ gpg --keyserver hkp://pool.sks-keyservers.net --send-keys 上面生成的公钥
 #+END_SRC
 
 如果不想把明文密码直接写在文件中, 可以使用下面的方式
-1. 运行命令 ~mvn --encrypt-master-password xxx~, 其中 xxx 表示主密码, 可以随机. 将会输出一串字符, 像这样: ~{+wrXG1tIt0sHPzS6058dBcUma8pGIfZnOODe9pOYWOc=}~ 将其写到 ~/.m2/settings-security.xml 文件中去
++ 运行 ~mvn --encrypt-master-password xxx~, 其中 xxx 表示主密码, 可以随机. 将会输出一串字符, 像这样: ~{+wrXG1tIt0sHPzS6058dBcUma8pGIfZnOODe9pOYWOc=}~ 将其写到 ~/.m2/settings-security.xml 文件中去
 #+BEGIN_SRC xml
 <settingsSecurity>
     <master>{+wrXG1tIt0sHPzS6058dBcUma8pGIfZnOODe9pOYWOc=}</master>
 </settingsSecurity>
 #+END_SRC
-2. 运行 ~mvn --encrypt-password PASSWORD~, 其中 ~PASSWORD~ 表示在服务器中的密码, 将会输出一串字符, 像这样: ~{b+k2hQKQ760HCkhtjGBXh9UhgQ+IlCsd1UmxTPvrMU0=}~, 将其写到 ~/.m2/settings.xml 文件中去
++ 运行 ~mvn --encrypt-password PASSWORD~, 其中 ~PASSWORD~ 表示在服务器中的密码, 将会输出一串字符, 像这样: ~{b+k2hQKQ760HCkhtjGBXh9UhgQ+IlCsd1UmxTPvrMU0=}~, 将其写到 ~/.m2/settings.xml 文件中去
 #+BEGIN_SRC xml
 <server>
     <id>company-nexus</id>
