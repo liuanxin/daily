@@ -8,7 +8,7 @@
 由上面的三种结构组合和嵌套, 可以将整个人类可读的世界予以说明.
 
 
-** 不好的方式
+** 类 valiate 的 group 处理方式
 使用 [[https://spring.io/blog/2014/12/02/latest-jackson-integration-improvements-in-spring][JsonView]] 注解, 这样一来, 实体中将会有大量的注解信息
 
 
