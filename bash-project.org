@@ -381,8 +381,8 @@ start_jar() {
     if [ -n "${debug_port}" ] && [ "${debug_port}" -eq "${debug_port}" ] 2>/dev/null; then 
         tmp_jvm_args="${tmp_jvm_args} -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=${debug_port}"
     fi
-    # java ${tmp_jvm_args} -Xloggc:${log_path}/${gc_file} -jar ${run_file} &
-    java ${tmp_jvm_args} -jar ${run_file} &
+    # echo "$(readlink -f /bin/java) ${tmp_jvm_args} -Xloggc:${log_path}/${gc_file} -jar ${run_file} &"
+    eval "$(readlink -f /bin/java) ${tmp_jvm_args} -Xloggc:${log_path}/${gc_file} -jar ${run_file} &"
     
     sleep 10
     log "进程 ${1} 信息:\n$(ps aux | grep -v grep | grep java | grep --color=auto ${1})"
@@ -955,8 +955,8 @@ start_jar() {
     fi
 
     check_file "$1"
-    # java ${jvm_args} -Xloggc:${log_path}/${2} -jar ${1} &
-    java ${jvm_args} -jar ${1} &
+    # echo "$(readlink -f /bin/java) ${jvm_args} -Xloggc:${log_path}/${2} -jar ${1} &"
+    eval "$(readlink -f /bin/java) ${jvm_args} -jar ${1} &"
     sleep 10
     log "进程 ${1} 信息:\n$(ps aux | grep -v grep | grep java | grep --color=auto ${1})"
 }
@@ -1271,7 +1271,7 @@ release() {
     mv ${source}/${project}/target/${project}.jar ${publish}/${project}.jar
 
     cd ${publish}
-    java ${jvm_args} -Dspring.config.location=${publish}/application.yml -Xloggc:${log_path}/gc-${project}-$(date +%F).log -jar ${publish}/${project}.jar &
+    eval "$(readlink -f /bin/java) ${jvm_args} -Dspring.config.location=${publish}/application.yml -Xloggc:${log_path}/gc-${project}-$(date +%F).log -jar ${publish}/${project}.jar &"
     sleep 5
     ps aux | grep java | grep '${project}'
 }
@@ -1493,12 +1493,12 @@ start_jar() {
     check_file "$1"
     cd ${publish}
 
-    tmp_jvm_args="$3 ${jvm_args}"
+    tmp_jvm_args="${jvm_args} $3"
     if [ -n "$4" ]; then
         tmp_jvm_args="${tmp_jvm_args} -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=$3"
     fi
     
-    java ${tmp_jvm_args} -jar ${1} &
+    eval "$(readlink -f /bin/java) ${tmp_jvm_args} -jar ${1} &"
     sleep 5
     log "进程 ${1} 信息:\n$(ps aux | grep -v grep | grep java | grep --color=auto ${1})"
 }
