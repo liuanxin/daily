@@ -9,7 +9,7 @@
 
 
 ** 不好的方式
-spring 有使用一个 [[https://spring.io/blog/2014/12/02/latest-jackson-integration-improvements-in-spring][json return]], 然而这种方式并不是那么的友好. 当不同的接口想要基于相同的对象返回不同的字段时, 这种方式会完全无法实现.
+使用 [[https://spring.io/blog/2014/12/02/latest-jackson-integration-improvements-in-spring][JsonView]] 注解, 这样一来, 实体中将会有大量的注解信息
 
 
 ** 通常的做法
