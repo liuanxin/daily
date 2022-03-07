@@ -318,6 +318,7 @@ compile() {
     cd "${source}/${project}"
     # 测试环境用 develop 分支打包
     git checkout develop
+    git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit | head -n 10
     
     if [ -e "/etc/profile" ]; then
         source /etc/profile
@@ -707,9 +708,11 @@ online() {
     
     print_log "git clone ${version_url} ${project}"
     git clone ${version_url} ${online_project_file}
+    git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit | head -n 10
     cd ${online_project_file}
     if [ "$3" != '' ]; then
         git checkout $3
+        git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit | head -n 10
         print_info "切换到 $3 分支或版本"
     fi
     print_info "导出的版本信息是: $(git log | head -n 1 | awk '{print $2}')"
@@ -1237,6 +1240,7 @@ update() {
         git clone ${version_url}
         cd "${project}"
     fi
+    git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit | head -n 10
 }
 compile() {
     cd "${source}/${project}"
