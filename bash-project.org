@@ -308,6 +308,7 @@ update() {
         git clone ${version_url} ${project}
         log "代码克隆完成"
     fi
+    git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit | head -n 10
 }
 # 使用 maven 编译打包代码
 compile() {
@@ -1445,6 +1446,7 @@ update() {
         git clone ${version_url} ${project}
         log "代码克隆完成"
     fi
+    git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit | head -n 10
 }
 # 使用 maven 编译打包代码
 compile() {
