@@ -183,7 +183,7 @@ export CATALINA_OPTS JAVA_OPTS
 #+BEGIN_SRC bash
 #!/usr/bin/env bash
 
-now="$(date +%Y%m%d%H%M%S)"
+now="$(date '+%Y-%m-%d-%H-%M-%S')"
 current_file="$(readlink -f $0)"
 
 print_error() {
@@ -645,7 +645,7 @@ exit 1
 #+BEGIN_SRC bash
 #!/usr/bin/env bash
 
-now="$(date +%Y%m%d%H%M%S)"
+now="$(date '+%Y-%m-%d-%H-%M-%S')"
 
 red() {
     echo -e "\033[31m[INFO] ------------------------------------------------------------------------\033[0m"
@@ -676,7 +676,7 @@ print_info() {
     echo -e "\033[34m[INFO] ------------------------------------------------------------------------\033[0m"
 }
 
-now="$(date +%Y%m%d%H%M%S)"
+now="$(date '+%Y-%m-%d-%H-%M-%S')"
 current_file="$(readlink -f $0)"
 
 work_dir="/home/$(whoami)"    # 工作目录
@@ -768,7 +768,7 @@ exit 1
 #+BEGIN_SRC bash
 #!/usr/bin/env bash
 
-now="$(date +%Y%m%d%H%M%S)"
+now="$(date '+%Y-%m-%d-%H-%M-%S')"
 
 print_error() {
     echo -e "\033[31m[error] ------------------------------------------------------------------------\033[0m"
@@ -816,7 +816,7 @@ print_info() {
 }
 
 current_file="$(readlink -f $0)"
-now="$(date +%Y%m%d%H%M%S)"
+now="$(date '+%Y-%m-%d-%H-%M-%S')"
 
 work_dir="/home/$(whoami)"    # 工作目录
 project="xxxyyyzzz"           # 项目名
@@ -1322,7 +1322,7 @@ print_info() {
     echo -e "\033[34m[INFO] ------------------------------------------------------------------------\033[0m"
 }
 
-now="$(date +%Y%m%d%H%M%S)"
+now="$(date '+%Y-%m-%d-%H-%M-%S')"
 file_name="hotel-${now}.tgz"
 release_online="admin@ip:~/temp/"
 
@@ -1340,7 +1340,7 @@ print_info "「~/bash/hotel-release.sh rel ${now} ${md5}」"
 #+BEGIN_SRC bash
 #!/usr/bin/env bash
 
-now="$(date +%Y%m%d%H%M%S)"
+now="$(date '+%Y-%m-%d-%H-%M-%S')"
 current_file="$(readlink -f $0)"
 
 print_error() {
@@ -1686,7 +1686,7 @@ release() {
   fi
 
   current_file="$(readlink -f $0)"
-  now="$(date +%Y%m%d%H%M%S)"
+  now="$(date '+%Y-%m-%d-%H-%M-%S')"
   back_file_name="hotel-${now}.tgz"
 
   cd ~/temp/
