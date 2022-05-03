@@ -308,9 +308,9 @@ update() {
         git clone ${version_url} ${project}
         log "代码克隆完成"
     fi
-    # Git >= 2.22 可以使用 git branch --show-current 命令
+    # Git >= 2.22 开始可以用 git branch --show-current 命令
     log "当前分支 --> $(git rev-parse --abbrev-ref HEAD)"
-    # Git >= v2.6.0-rc0 后支持 --date 选项 --date=format:'%Y-%m-%d %H:%M:%S'
+    # Git >= v2.6.0-rc0 开始可以加 --date 选项 --date=format:'%Y-%m-%d %H:%M:%S'
     git log --pretty=format:'[%Cred%h%Creset] (%C(yellow)%ad%Creset) [%Cgreen%s%Creset] (%C(bold blue)%cr%Creset) <%Cred%an%Creset>' | head -n 10
 }
 # 使用 maven 编译打包代码
