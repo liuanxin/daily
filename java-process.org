@@ -90,12 +90,12 @@ S0:   新生代中幸存 1 区当前使用比例
 S1:   新生代中幸存 2 区当前使用比例
 E:    新生代中 Eden 区使用比例
 O:    老年代使用比例
-M:    元空间区使用比例
+M:    元空间(metaspace)使用比例
 CCS:  压缩使用比例
-YGC:  年轻代垃圾回收次数
-FGC:  老年代垃圾回收次数
-FGCT: 老年代垃圾回收消耗时间
-GCT:  垃圾回收消耗总时间
+YGC:  新生代 gc 次数
+FGC:  老年代 gc 次数
+FGCT: 老年代 gc 用时
+GCT:  gc 总用时
 
 
 
@@ -113,14 +113,14 @@ EC:   新生代中 Eden 区的容量
 EU:   新生代中 Eden 区已使用空间
 OC:   老年代的容量
 OU:   老年代已使用空间
-MC:   metaspace 的容量
-MU:   metaspace 已使用空间
-YGC:  年轻代 gc 数量
-YGCT: 年轻代 gc 时间
-FGC:  老年代 gc 数量
-FGCT: 老年代 gc 时间
+MC:   元空间(metaspace)的容量
+MU:   元空间(metaspace)已使用空间
+YGC:  新生代 gc 次数
+YGCT: 新生代 gc 用时
+FGC:  老年代 gc 次数
+FGCT: 老年代 gc 用时
 CGC:  并发 gc 数量
-CGCT: 并发 GC 时间
+CGCT: 并发 gc 用时
 GCT:  gc 总用时
 #+END_SRC
 
