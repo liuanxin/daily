@@ -98,6 +98,8 @@ YGC:  年轻代 gc 数量
 YGCT: 年轻代 gc 时间
 FGC:  老年代 gc 数量
 FGCT: 老年代 gc 时间
+CGC:  并发 gc 数量
+CGCT: 并发 GC 时间
 GCT:  gc 总用时
 #+END_SRC
 
