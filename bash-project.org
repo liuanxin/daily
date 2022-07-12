@@ -355,7 +355,7 @@ kill_jar() {
     fi
 }
 check_process() {
-    sleep 1
+    sleep 2
     process="$(ps aux | grep ${1} | grep java | grep -v grep | awk '{print $2}')"
     if [ -n "${process}" ]; then
         log "进程 ${process} 还在"
@@ -390,7 +390,7 @@ start_jar() {
     # echo "$(readlink -f /bin/java) ${tmp_jvm_args} -Xloggc:${log_path}/${gc_file} -jar ${run_file} &"
     eval "$(readlink -f /bin/java) ${tmp_jvm_args} -Xloggc:${log_path}/${gc_file} -jar ${run_file} &"
     
-    sleep 10
+    sleep 8
     log "进程 ${1} 信息:\n$(ps aux | grep -v grep | grep java | grep --color=auto ${1})"
 }
 # 发布 jar 包项目
@@ -486,7 +486,7 @@ kill_tomcat() {
     fi
 }
 check_process() {
-    sleep 1
+    sleep 2
     process="$(ps aux | grep ${1} | grep java | grep -v grep | awk '{print $2}')"
     if [ -n "${process}" ]; then
         log "进程 ${process} 还在"
@@ -948,7 +948,7 @@ kill_jar() {
     fi
 }
 check_process() {
-    sleep 1
+    sleep 2
     process="$(ps aux | grep ${1} | grep java | grep -v grep | awk '{print $2}')"
     if [ -n "${process}" ]; then
         log "进程 ${process} 还在"
@@ -966,7 +966,7 @@ start_jar() {
     check_file "$1"
     # echo "$(readlink -f /bin/java) ${jvm_args} -Xloggc:${log_path}/${2} -jar ${1} &"
     eval "$(readlink -f /bin/java) ${jvm_args} -jar ${1} &"
-    sleep 10
+    sleep 8
     log "进程 ${1} 信息:\n$(ps aux | grep -v grep | grep java | grep --color=auto ${1})"
 }
 # 发布 jar 包项目
@@ -1061,7 +1061,7 @@ kill_tomcat() {
 }
 
 check_process() {
-    sleep 1
+    sleep 2
     process="$(ps aux | grep ${1} | grep java | grep -v grep | awk '{print $2}')"
     if [ -n "${process}" ]; then
         log "进程 ${process} 还在"
@@ -1271,7 +1271,7 @@ kill_process() {
     fi
 }
 check_process() {
-    sleep 1
+    sleep 2
     process="$(ps aux | grep ${1} | grep java | grep -v grep | awk '{print $2}')"
     if [ -n "${process}" ]; then
         log "进程 ${process} 还在"
@@ -1491,7 +1491,7 @@ kill_jar() {
     fi
 }
 check_process() {
-    sleep 1
+    sleep 2
     process="$(ps aux | grep ${1} | grep java | grep -v grep | awk '{print $2}')"
     if [ -n "${process}" ]; then
         log "进程 ${process} 还在"
