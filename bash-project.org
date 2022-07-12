@@ -373,7 +373,6 @@ start_jar() {
     debug_port="$3"
     
     check_file "$1"
-    cd ${publish}
     tmp_jvm_args="${jvm_args}"
 
     # 有传端口参数就按传进来的为准, 没有则以发布文件上的端口 + 1000 为准(如 user-8081, 调试端口则为 9081)
@@ -413,8 +412,9 @@ release_jar() {
         error_and_exit "没有此发布包: ${release}, 请确认是否有打包代码"
     fi
 
-    current_release="${publish}/${file_name}.${suffix}"
-    backup_release="${backup}/${package##*/}-${now}.${suffix}"
+    check_create_directory ${publish}/${file_name}
+    current_release="${publish}/${file_name}/${file_name}.${suffix}"
+    backup_release="${backup}/${file_name}-${now}.${suffix}"
 
     log "开始发布「${comment}」"
     backup_project "${current_release}" "${backup_release}" "revert_${package}"
@@ -440,7 +440,7 @@ revert_jar() {
         error_and_exit "没有此还原包: ${backup_file}"
     fi
 
-    current_release="${publish}/${file_name}.${suffix}"
+    current_release="${publish}/${file_name}/${file_name}.${suffix}"
 
     log "开始还原「${comment}」"
     kill_jar "${current_release}"
@@ -602,7 +602,7 @@ case "$1" in
                 if [ "war" = "$(cut -d '|' -f 2 <<< "${file}")" ]; then
                     kill_tomcat "$(cut -d '|' -f 3 <<< "${file}")"
                 else
-                    kill_jar "${publish}/${file}.jar"
+                    kill_jar "${publish}/${file}/${file}.jar"
                 fi
                 exit 1
             elif [ "$1" = "restart-${name}" ]; then
@@ -610,8 +610,8 @@ case "$1" in
                     kill_tomcat "$(cut -d '|' -f 3 <<< "${file}")"
                     start_tomcat "$(cut -d '|' -f 3 <<< "${file}")"
                 else
-                    kill_jar "${publish}/${file}.jar"
-                    start_jar "${publish}/${file}.jar" "gc-${name}.log"
+                    kill_jar "${publish}/${file}/${file}.jar"
+                    start_jar "${publish}/${file}/${file}.jar" "gc-${name}.log"
                 fi
                 exit 1
             elif [ "$1" = "revert-${name}" ]; then
@@ -988,8 +988,9 @@ release_jar() {
         error_and_exit "没有此发布包: ${release}, 请确认是否有打包代码"
     fi
 
-    current_release="${publish}/${file_name}.${suffix}"
-    backup_release="${backup}/${package}-${now}.${suffix}"
+    check_create_directory ${publish}/${file_name}
+    current_release="${publish}/${file_name}/${file_name}.${suffix}"
+    backup_release="${backup}/${file_name}-${now}.${suffix}"
 
     log "开始发布「${comment}」"
     backup_project "${current_release}" "${backup_release}" "${revert}"
@@ -1016,7 +1017,7 @@ revert_jar() {
         error_and_exit "没有此还原包: ${backup_file}"
     fi
 
-    current_release="${publish}/${file_name}.${suffix}"
+    current_release="${publish}/${file_name}/${file_name}.${suffix}"
 
     log "开始还原「${comment}」"
     kill_jar "${current_release}"
@@ -1177,7 +1178,7 @@ case "$1" in
                 if [ "war" = "$(cut -d '|' -f 2 <<< "${file}")" ]; then
                     kill_tomcat "$(cut -d '|' -f 3 <<< "${file}")"
                 else
-                    kill_jar "${publish}/${file}.jar"
+                    kill_jar "${publish}/${file}/${file}.jar"
                 fi
                 exit 1
             elif [ "$1" = "restart-${name}" ]; then
@@ -1185,8 +1186,8 @@ case "$1" in
                     kill_tomcat "$(cut -d '|' -f 3 <<< "${file}")"
                     start_tomcat "$(cut -d '|' -f 3 <<< "${file}")"
                 else
-                    kill_jar "${publish}/${file}.jar"
-                    start_jar "${publish}/${file}.jar" "gc-${name}.log"
+                    kill_jar "${publish}/${file}/${file}.jar"
+                    start_jar "${publish}/${file}/${file}.jar" "gc-${name}.log"
                 fi
                 exit 1
             elif [ "$1" = "revert-${name}" ]; then
@@ -1279,11 +1280,12 @@ check_process() {
     fi
 }
 release() {
-    rm -fr ${publish}/${project}.jar
-    mv ${source}/${project}/target/${project}.jar ${publish}/${project}.jar
+    mkdir -p ${publish}/${project}
+    rm -fr ${publish}/${project}/${project}.jar
+    mv ${source}/${project}/target/${project}.jar ${publish}/${project}/${project}.jar
 
-    cd ${publish}
-    eval "$(readlink -f /bin/java) ${jvm_args} -Dspring.config.location=${publish}/application.yml -Xloggc:${log_path}/gc-${project}-$(date +%F).log -jar ${publish}/${project}.jar &"
+    cd ${publish}/${project}
+    eval "$(readlink -f /bin/java) ${jvm_args} -Dspring.config.location=${publish}/application.yml -Xloggc:${log_path}/gc-${project}-$(date +%F).log -jar ${publish}/${project}/${project}.jar &"
     sleep 5
     ps aux | grep java | grep '${project}'
 }
@@ -1505,8 +1507,6 @@ start_jar() {
     fi
 
     check_file "$1"
-    cd ${publish}
-
     tmp_jvm_args="${jvm_args} $3"
     if [ -n "$4" ]; then
         tmp_jvm_args="${tmp_jvm_args} -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=$3"
@@ -1537,15 +1537,16 @@ release_jar() {
         error_and_exit "没有此发布包: ${release}, 请确认是否有打包代码"
     fi
 
-    current_release="${publish}/${file_name}.${suffix}"
-    backup_release="${backup}/${package##*/}-${now}.${suffix}"
+    check_create_directory ${publish}/${file_name}
+    current_release="${publish}/${file_name}/${file_name}.${suffix}"
+    backup_release="${backup}/${file_name}-${now}.${suffix}"
 
     log "开始发布「${comment}」"
     backup_project "${current_release}" "${backup_release}" "revert_${package}"
     kill_jar "${current_release}"
     rm -fr "${current_release}"
     mv "${release}" "${current_release}"
-    start_jar "${current_release}" "gc-${package##*/}.log" "${project_jvm_args}" "${debug_port}"
+    start_jar "${current_release}" "gc-${file_name##*/}.log" "${project_jvm_args}" "${debug_port}"
     log "「${comment}」发布完成"
 }
 # 还原 jar 包项目
@@ -1559,12 +1560,12 @@ revert_jar() {
     time="$4"
 
     suffix="jar"
-    backup_file="${backup}/${package##*/}-${time}.${suffix}"
+    backup_file="${backup}/${file_name}-${time}.${suffix}"
     if [ ! -e "${backup_file}" ]; then
         error_and_exit "没有此还原包: ${backup_file}"
     fi
 
-    current_release="${publish}/${file_name}.${suffix}"
+    current_release="${publish}/${file_name}/${file_name}.${suffix}"
 
     log "开始还原「${comment}」"
     kill_jar "${current_release}"
@@ -1624,7 +1625,7 @@ case "$1" in
                 release_jar "${desc}" "${name}" "${file}" "${args}"
                 exit 1
             elif [ "$1" = "stop-${name}" ]; then
-                kill_jar "${publish}/${file}.jar"
+                kill_jar "${publish}/${file}/${file}.jar"
                 exit 1
             elif [ "$1" = "restart-${name}" ]; then
                 file_name="$(cut -d '|' -f 1 <<< "$name")"
@@ -1632,8 +1633,8 @@ case "$1" in
                 if [ "${file_name}" = "${debug_port}" ]; then
                     debug_port=""
                 fi
-                kill_jar "${publish}/${file}.jar"
-                start_jar "${publish}/${file}.jar" "gc-${file_name}.log" "${args}" "${debug_port}"
+                kill_jar "${publish}/${file}/${file}.jar"
+                start_jar "${publish}/${file}/${file}.jar" "gc-${file_name}.log" "${args}" "${debug_port}"
                 exit 1
             elif [ "$1" = "revert-${name}" ]; then
                 revert_jar "${desc}" "${name}" "${file}" "$2"
