@@ -60,7 +60,7 @@ tar axf apache-tomcat-8.5.42.tar.gz && mv apache-tomcat-8.5.42 ~/server/
 
 在每个 tomcat 的 bin 目录下新建 setenv.sh 文件来写配置(不要直接写到 catalina.sh 中, catalina.sh 文件最前面有详细注释)
 #+BEGIN_SRC bash
-#!/bin/sh
+#!/usr/bin/env bash
 
 # 当前运行环境
 profile="test"
@@ -1310,7 +1310,7 @@ exit 1
 
 前端本地
 #+BEGIN_SRC bash
-#!/bin/bash
+#!/usr/bin/env bash
 
 print_error() {
   echo -e "\033[31m[error] ------------------------------------------------------------------------\033[0m"
@@ -1664,7 +1664,7 @@ exit 1
 
 前端线上
 #+BEGIN_SRC bash
-#!/bin/bash
+#!/usr/bin/env bash
 
 print_error() {
   echo -e "\033[31m[error] ------------------------------------------------------------------------\033[0m"
