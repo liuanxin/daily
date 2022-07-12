@@ -1,4 +1,4 @@
-在 centos 的系统中初始化机器
+ 在 centos 的系统中初始化机器
 #+BEGIN_SRC bash
 # javac 在 java-1.8.0-openjdk-devel 包里面
 yum install java-1.8.0-openjdk java-1.8.0-openjdk-devel git subversion
@@ -419,7 +419,7 @@ release_jar() {
     log "开始发布「${comment}」"
     backup_project "${current_release}" "${backup_release}" "revert_${package}"
     kill_jar "${current_release}"
-    rm "${current_release}"
+    rm -fr "${current_release}"
     mv "${release}" "${current_release}"
     start_jar "${current_release}" "gc-${package##*/}-${profile}-$(date +%F).log" "${debug_port}"
     log "「${comment}」发布完成"
@@ -529,7 +529,7 @@ release_tomcat() {
     log "开始发布「${comment}」"
     backup_project "${current_release}" "${backup_release}" "revert_${package##*/}"
     kill_tomcat "${tomcat}"
-    rm "${current_release}"
+    rm -fr "${current_release}"
     mv ${release} ${current_release}
     start_tomcat "${tomcat}"
     log "「${comment}」发布完成"
@@ -994,7 +994,7 @@ release_jar() {
     log "开始发布「${comment}」"
     backup_project "${current_release}" "${backup_release}" "${revert}"
     kill_jar "${current_release}"
-    rm "${current_release}"
+    rm -fr "${current_release}"
     mv "${release}" "${current_release}"
     start_jar "${current_release}" "${gc_file}"
     log "「${comment}」发布完成"
@@ -1104,7 +1104,7 @@ release_tomcat() {
     log "开始发布「${comment}」"
     backup_project "${current_release}" "${backup_release}" "revert_${package##*/}"
     kill_tomcat "${tomcat}"
-    rm "${current_release}"
+    rm -fr "${current_release}"
     mv ${release} ${current_release}
     start_tomcat "${tomcat}"
     log "「${comment}」发布完成"
@@ -1543,7 +1543,7 @@ release_jar() {
     log "开始发布「${comment}」"
     backup_project "${current_release}" "${backup_release}" "revert_${package}"
     kill_jar "${current_release}"
-    rm "${current_release}"
+    rm -fr "${current_release}"
     mv "${release}" "${current_release}"
     start_jar "${current_release}" "gc-${package##*/}.log" "${project_jvm_args}" "${debug_port}"
     log "「${comment}」发布完成"
