@@ -128,6 +128,15 @@ GCT:  gc 总用时
 1. 先用 ~top -Hp $pid~ 查看占用最多 CPU 或内存(P 或 M)的线程信息 pid(十进制), 记下来转成十六进制(linux 中 ~printf %x 十进制数~ 输出十六进制, ~printf %d 十六进制~ 输出十进制数, 十六进制数以 0x 开头)
 2. 再用 ~jstack -l pid > p.log~ (或者使用 ~jcmd pid Thread.print > p.log~)可以列出所有正在运行的线程信息, 找到 nid=Oxid(十六进制) 对应的线程信息, 就可以看到对应的代码片段是在哪里运行了
 
+cpu 占用高的可以使用这个脚本: ~https://github.com/oldratlee/useful-scripts/blob/dev-2.x/bin/show-busy-java-threads~
+#+BEGIN_SRC bash
+$ jcmd
+2277 com.intellij.idea.Main
+35304 jdk.jcmd/sun.tools.jcmd.JCmd
+
+# 监控 2277 进程, 每次打印最耗 CPU 的前 5 个线程, 每过 10 秒监控 1 次, 共监控 2 次
+$ bash show-busy-java-threads.sh -p 2277 -c 5 10 2
+#+END_SRC
 
 三种方式生成 ~dump~ 文件: \\
 
