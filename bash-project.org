@@ -586,6 +586,7 @@ case "$1" in
     restart)
         check "$2" "$3"
         compile
+
         for i in ${!module_name_arr[@]}; do
             if [ "1" = "${module_batch_arr[$i]}" ]; then
                 name="${module_name_arr[$i]}"
@@ -1164,7 +1165,6 @@ case "$1" in
     restart)
         check "$2" "$3"
         compile
-        # compile "common,user,product,order"
 
         for i in ${!module_name_arr[@]}; do
             if [ "1" = "${module_batch_arr[$i]}" ]; then
