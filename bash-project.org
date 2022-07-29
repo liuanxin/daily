@@ -387,7 +387,7 @@ start_jar() {
         tmp_jvm_args="${tmp_jvm_args} -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=${debug_port}"
     fi
     # echo "$(readlink -f /bin/java) ${tmp_jvm_args} -Xloggc:${log_path}/${gc_file} -jar ${run_file} &"
-    eval "$(readlink -f /bin/java) ${tmp_jvm_args} -Xloggc:${log_path}/${gc_file} -jar ${run_file} &"
+    $(readlink -f /bin/java) ${tmp_jvm_args} -Xloggc:${log_path}/${gc_file} -jar ${run_file} &
     
     sleep 8
     log "进程 ${1} 信息:\n$(ps aux | grep -v grep | grep java | grep --color=auto ${1})"
@@ -561,6 +561,24 @@ revert_tomcat() {
 
     log "「${comment}」还原完成"
 }
+usage() {
+    echo "usage:"
+    # echo "  「${current_file} restart」     打包及发布需要频繁更新的模块(公共,用户,商品,订单)"
+    echo ""
+    for i in ${!module_name_arr[@]}; do
+        name="${module_name_arr[$i]}"
+        desc="${module_desc_arr[$i]}"
+        file="${module_file_arr[$i]}"
+        if [ -n "${name}" ] && [ -n "${desc}" ] && [ -n "${file}" ]; then
+            echo "  「${current_file} ${name}」                    打包及发布「${desc}」"
+            echo "  「${current_file} stop-${name}」               停止「${desc}」"
+            echo "  「${current_file} restart-${name}」            重启「${desc}」"
+            echo "  「${current_file} revert-${name} {timestamp}」 还原「${desc}」"
+            echo ""
+        fi
+    done
+    echo -e "   \033[31m{timestamp} 若不记得请去 ${log_path}/INSTALL.log 查看\033[0m"
+}
 
 
 
@@ -624,22 +642,7 @@ case "$1" in
             fi
         done
 
-        echo "usage:"
-        # echo "  「${current_file} restart」     打包及发布需要频繁更新的模块(公共,用户,商品,订单)"
-        echo ""
-        for i in ${!module_name_arr[@]}; do
-            name="${module_name_arr[$i]}"
-            desc="${module_desc_arr[$i]}"
-            file="${module_file_arr[$i]}"
-            if [ -n "${name}" ] && [ -n "${desc}" ] && [ -n "${file}" ]; then
-                echo "  「${current_file} ${name}」                    打包及发布「${desc}」"
-                echo "  「${current_file} stop-${name}」               停止「${desc}」"
-                echo "  「${current_file} restart-${name}」            重启「${desc}」"
-                echo "  「${current_file} revert-${name} {timestamp}」 还原「${desc}」"
-                echo ""
-            fi
-        done
-        echo -e "   \033[31m{timestamp} 若不记得请去 ${log_path}/INSTALL.log 查看\033[0m"
+        usage
 esac
 exit 1
 #+END_SRC
@@ -965,7 +968,7 @@ start_jar() {
 
     check_file "$1"
     # echo "$(readlink -f /bin/java) ${jvm_args} -Xloggc:${log_path}/${2} -jar ${1} &"
-    eval "$(readlink -f /bin/java) ${jvm_args} -jar ${1} &"
+    $(readlink -f /bin/java) ${jvm_args} -jar ${1} &
     sleep 8
     log "进程 ${1} 信息:\n$(ps aux | grep -v grep | grep java | grep --color=auto ${1})"
 }
@@ -1137,6 +1140,24 @@ revert_tomcat() {
 
     log "「${comment}」还原完成"
 }
+usage() {
+    echo "usage:"
+    echo "  「${current_file} restart」     打包及发布需要频繁更新的模块(公共,用户,商品,订单)"
+    echo ""
+    for i in ${!module_name_arr[@]}; do
+        name="${module_name_arr[$i]}"
+        desc="${module_desc_arr[$i]}"
+        file="${module_file_arr[$i]}"
+        if [ -n "${name}" ] && [ -n "${desc}" ] && [ -n "${file}" ]; then
+            echo "  「${current_file} ${name} time md5」           打包及发布「${desc}」"
+            echo "  「${current_file} stop-${name}」               关闭「${desc}」"
+            echo "  「${current_file} restart-${name}」            重启「${desc}」"
+            echo "  「${current_file} revert-${name} {timestamp}」 还原「${desc}」"
+            echo ""
+        fi
+    done
+    echo -e "   \033[31m{timestamp} 若不记得请去 INSTALL.log 查看\033[0m"
+}
 
 
 case "$1" in
@@ -1200,22 +1221,7 @@ case "$1" in
             fi
         done
 
-        echo "usage:"
-        echo "  「${current_file} restart」     打包及发布需要频繁更新的模块(公共,用户,商品,订单)"
-        echo ""
-        for i in ${!module_name_arr[@]}; do
-            name="${module_name_arr[$i]}"
-            desc="${module_desc_arr[$i]}"
-            file="${module_file_arr[$i]}"
-            if [ -n "${name}" ] && [ -n "${desc}" ] && [ -n "${file}" ]; then
-                echo "  「${current_file} ${name} time md5」           打包及发布「${desc}」"
-                echo "  「${current_file} stop-${name}」               关闭「${desc}」"
-                echo "  「${current_file} restart-${name}」            重启「${desc}」"
-                echo "  「${current_file} revert-${name} {timestamp}」 还原「${desc}」"
-                echo ""
-            fi
-        done
-        echo -e "   \033[31m{timestamp} 若不记得请去 INSTALL.log 查看\033[0m"
+        usage
 esac
 exit 1
 #+END_SRC
@@ -1285,7 +1291,7 @@ release() {
     mv ${source}/${project}/target/${project}.jar ${publish}/${project}/${project}.jar
 
     cd ${publish}/${project}
-    eval "$(readlink -f /bin/java) ${jvm_args} -Dspring.config.location=${publish}/application.yml -Xloggc:${log_path}/gc-${project}-$(date +%F).log -jar ${publish}/${project}/${project}.jar &"
+    $(readlink -f /bin/java) ${jvm_args} -Dspring.config.location=${publish}/application.yml -Xloggc:${log_path}/gc-${project}-$(date +%F).log -jar ${publish}/${project}/${project}.jar &
     sleep 5
     ps aux | grep java | grep '${project}'
 }
@@ -1512,7 +1518,7 @@ start_jar() {
         tmp_jvm_args="${tmp_jvm_args} -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=$3"
     fi
     
-    eval "$(readlink -f /bin/java) ${tmp_jvm_args} -jar ${1} &"
+    $(readlink -f /bin/java) ${tmp_jvm_args} -jar ${1} &
     sleep 5
     log "进程 ${1} 信息:\n$(ps aux | grep -v grep | grep java | grep --color=auto ${1})"
 }
@@ -1592,6 +1598,24 @@ backup_project() {
         fi
     fi
 }
+usage() {
+    echo "usage:"
+    echo "  「${current_file} restart」     打包及发布 web 服务"
+    echo ""
+    for i in ${!module_name_arr[@]}; do
+        name="${module_name_arr[$i]}"
+        desc="${module_desc_arr[$i]}"
+        file="${module_file_arr[$i]}"
+        if [ -n "${name}" ] && [ -n "${desc}" ] && [ -n "${file}" ]; then
+            echo "  「${current_file} ${name}」                    打包及发布「${desc}」"
+            echo "  「${current_file} stop-${name}」               停止「${desc}」"
+            echo "  「${current_file} restart-${name}」            重启「${desc}」"
+            echo "  「${current_file} revert-${name} {timestamp}」 还原「${desc}」"
+            echo ""
+        fi
+    done
+    echo -e "   \033[31m{timestamp} 若不记得请去 ${log_path}/INSTALL.log 查看\033[0m"
+}
 
 
 case "$1" in
@@ -1642,22 +1666,7 @@ case "$1" in
             fi
         done
 
-        echo "usage:"
-        echo "  「${current_file} restart」     打包及发布 web 服务"
-        echo ""
-        for i in ${!module_name_arr[@]}; do
-            name="${module_name_arr[$i]}"
-            desc="${module_desc_arr[$i]}"
-            file="${module_file_arr[$i]}"
-            if [ -n "${name}" ] && [ -n "${desc}" ] && [ -n "${file}" ]; then
-                echo "  「${current_file} ${name}」                    打包及发布「${desc}」"
-                echo "  「${current_file} stop-${name}」               停止「${desc}」"
-                echo "  「${current_file} restart-${name}」            重启「${desc}」"
-                echo "  「${current_file} revert-${name} {timestamp}」 还原「${desc}」"
-                echo ""
-            fi
-        done
-        echo -e "   \033[31m{timestamp} 若不记得请去 ${log_path}/INSTALL.log 查看\033[0m"
+        usage
 esac
 exit 1
 #+END_SRC
