@@ -60,7 +60,7 @@ tar axf apache-tomcat-8.5.42.tar.gz && mv apache-tomcat-8.5.42 ~/server/
 
 在每个 tomcat 的 bin 目录下新建 setenv.sh 文件来写配置(不要直接写到 catalina.sh 中, catalina.sh 文件最前面有详细注释)
 #+BEGIN_SRC bash
-#!/usr/bin/env bash
+#!/bin/env bash
 
 # 当前运行环境
 profile="test"
@@ -181,7 +181,7 @@ export CATALINA_OPTS JAVA_OPTS
 
 测试环境的一键部署脚本
 #+BEGIN_SRC bash
-#!/usr/bin/env bash
+#!/bin/env bash
 
 now="$(date '+%Y-%m-%d-%H-%M-%S')"
 current_file="$(readlink -f $0)"
@@ -651,7 +651,7 @@ exit 1
 
 写在一台可以连上版本控制的机器上, 由此机器向线上服务器推源码
 #+BEGIN_SRC bash
-#!/usr/bin/env bash
+#!/bin/env bash
 
 now="$(date '+%Y-%m-%d-%H-%M-%S')"
 
@@ -775,7 +775,7 @@ exit 1
 
 线上的发布脚本
 #+BEGIN_SRC bash
-#!/usr/bin/env bash
+#!/bin/env bash
 
 now="$(date '+%Y-%m-%d-%H-%M-%S')"
 
@@ -1228,7 +1228,7 @@ exit 1
 
 部署从 mysql 同步数据进 es 的服务脚本(先在 ~/project 目录下建一个 application.yml, 内容参照: [[https://github.com/liuanxin/mysql2es/blob/master/src/main/resources/application-prod.yml][es-sync-config]])
 #+BEGIN_SRC bash
-#!/usr/bin/env bash
+#!/bin/env bash
 
 jvm_args="-server"
 jvm_args="${jvm_args} -Dfile.encoding=UTF-8 -Xms128m -Xmx128m -XX:+UseG1GC "
@@ -1316,7 +1316,7 @@ exit 1
 
 前端本地
 #+BEGIN_SRC bash
-#!/usr/bin/env bash
+#!/bin/env bash
 
 print_error() {
   echo -e "\033[31m[error] ------------------------------------------------------------------------\033[0m"
@@ -1353,7 +1353,7 @@ print_info "「~/bash/hotel-release.sh rel ${now} ${md5}」"
 
 各项目不同启动参数的版本
 #+BEGIN_SRC bash
-#!/usr/bin/env bash
+#!/bin/env bash
 
 now="$(date '+%Y-%m-%d-%H-%M-%S')"
 current_file="$(readlink -f $0)"
@@ -1673,7 +1673,7 @@ exit 1
 
 前端线上
 #+BEGIN_SRC bash
-#!/usr/bin/env bash
+#!/bin/env bash
 
 print_error() {
   echo -e "\033[31m[error] ------------------------------------------------------------------------\033[0m"
