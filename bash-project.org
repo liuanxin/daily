@@ -181,9 +181,9 @@ export CATALINA_OPTS JAVA_OPTS
 
 测试环境的一键部署脚本
 #+BEGIN_SRC bash
-#!/bin/env bash
+#!/usr/bin/env bash
 
-now="$(date '+%Y-%m-%d-%H-%M-%S')"
+now="$(date +%Y%m%d%H%M%S)"
 current_file="$(readlink -f $0)"
 
 print_error() {
@@ -215,11 +215,6 @@ check_file() {
         error_and_exit "文件 ${1} 不存在, 无法完成此操作"
     fi
 }
-log_in_file() {
-    check_create_directory ${log_path}
-    print_info "${1}"
-    echo "$(date '+%Y-%m-%d %H:%M:%S.%3N') : ${1}" >> "${log_path}/INSTALL.log"
-}
 log() {
     echo "[INFO] ------------------------------------------------------------------------"
     echo -e "[INFO] $(date '+%Y-%m-%d %H:%M:%S.%3N') : ${1}"
@@ -232,124 +227,80 @@ print_info() {
 }
 
 
-release_path="/home/$(whoami)"        # 发布目录
-project="project"                     # 项目名
-source="${release_path}/source"       # 源码目录
-publish="${release_path}/project"     # 发布目录
-backup="${release_path}/backup"       # 备份目录
-log_path="${release_path}/logs"       # 日志目录
-tomcat_path="${release_path}/server"  # tomcat 目录
-
-profile="test"                        # 当前环境, 如果是用 tomcat 来发布的, 以 tomcat/bin/setenv.sh 中的配置为准
-
-jvm_args="${jvm_args} -server"
-jvm_args="${jvm_args} -Xms512m -Xmx1G -Dfile.encoding=UTF-8 -XX:+UseG1GC"
-# jvm_args="${jvm_args} -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=20M"
-# jvm_args="${jvm_args} -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintGCTimeStamps"
-jvm_args="${jvm_args} -Djava.security.egd=file:/dev/./urandom"
-jvm_args="${jvm_args} -Dspring.profiles.active=${profile}"
+source="/home/$(whoami)/source"
+console_log="/home/$(whoami)/logs"
+version_url="http://127.0.0.1:3000/java"
+jvm_args="${jvm_args} -Dfile.encoding=UTF-8 -Djava.security.egd=file:/dev/./urandom"
 
 
-# 项目模块, 主要是「模块的包名、说明、最终打成 jar 包的文件名」三个参数, batch 为 1 表示全局发布的时候包含进去
-module_name_arr+=("module-1-common/common-server")
-module_desc_arr+=("公共模块")
-module_file_arr+=("common-server-20870")
-module_batch_arr+=("1")
+module_name_arr+=("xxx")
+module_desc_arr+=("xxx模块")
+module_profile_arr+=("test")
+module_package_arr+=("xxx-server")
+module_path_arr+=("/path/xxx")
+module_file_arr+=("xxx-server.jar")
+module_jvm_arr+=("-Xms512M -Xmx512M -XX:MetaspaceSize=128M -XX:MaxMetaspaceSize=128M")
 
-module_name_arr+=("module-2-user/user-server")
-module_desc_arr+=("用户模块")
-module_file_arr+=("user-8081")
-module_batch_arr+=("1")
-
-module_name_arr+=("module-3-product/product-server")
-module_desc_arr+=("商品模块")
-module_file_arr+=("product-8082")
-module_batch_arr+=("1")
-
-module_name_arr+=("module-4-order/order-server")
-module_desc_arr+=("订单模块")
-module_file_arr+=("order-8083")
-module_batch_arr+=("1")
-
-
-module_name_arr+=("web-platform")
-module_desc_arr+=("web 后端") # 这个项目打包成 war, 用 tomcat 来发布, 最后一个 | 是 tomcat 的发布目录
-module_file_arr+=("web-platform-8100|war|${tomcat_path}/platform")
-module_batch_arr+=("1")
-
-module_name_arr+=("web-manager")
-module_desc_arr+=("后台管理")
-module_file_arr+=("web-manager-8200")
-module_batch_arr+=("1")
-
-module_name_arr+=("zero-task")
-module_desc_arr+=("定时任务")
-module_file_arr+=("zero-task")
-module_batch_arr+=("0")
-
-
-# 版本信息
-version_url="http://ip:port/origin/project.git"
+module_name_arr+=("yyy")
+module_desc_arr+=("yyy模块")
+module_profile_arr+=("test")
+module_package_arr+=("yyy-server")
+module_path_arr+=("/path/yyy")
+module_file_arr+=("yyy-server.jar")
+module_jvm_arr+=("-Xms1024M -Xmx1024M -XX:MetaspaceSize=256M -XX:MaxMetaspaceSize=256M")
 
 
 # 从版本控制更新代码, 为打包做准备
 update() {
-    log "开始更新代码"
+    desc="${1}"
+    package="${2}"
+    branch="${3}"
+    log "开始更新「${desc}」代码"
     check_create_directory "${source}"
 
     cd "${source}"
-    if [ -d "${project}" ]; then
-        cd "${project}"
+    if [ -d "${package}" ]; then
+        cd "${package}"
         log "git pull"
         git pull
-        log "代码拉取完成"
+        log "代码「${name}」拉取完成"
     else
-        log "git clone ${version_url} ${project}"
-        git clone ${version_url} ${project}
-        log "代码克隆完成"
+        log "git clone ${version_url}/${package}"
+        git clone ${version_url}/${package}
+        log "代码「${desc}」克隆完成"
     fi
-    # Git >= 2.22 开始可以用 git branch --show-current 命令
     log "当前分支 --> $(git rev-parse --abbrev-ref HEAD)"
-    # Git >= v2.6.0-rc0 开始可以加 --date 选项 --date=format:'%Y-%m-%d %H:%M:%S'
     git log --pretty=format:'[%Cred%h%Creset] (%C(yellow)%ad%Creset) [%Cgreen%s%Creset] (%C(bold blue)%cr%Creset) <%Cred%an%Creset>' | head -n 10
+
+    if [ "${branch}" != '' ]; then
+        print_info "切换到 ${branch} 分支或版本"
+        git checkout "${branch}"
+
+        log "目前分支 --> $(git rev-parse --abbrev-ref HEAD)"
+        git log --pretty=format:'[%Cred%h%Creset] (%C(yellow)%ad%Creset) [%Cgreen%s%Creset] (%C(bold blue)%cr%Creset) <%Cred%an%Creset>' | head -n 10
+    fi
 }
 # 使用 maven 编译打包代码
 compile() {
-    check_directory "${source}/${project}"
+    desc="${1}"
+    package="${2}"
+    check_directory "${source}/${package}"
 
-    log "开始打包代码"
-    cd "${source}/${project}"
-    # 测试环境用 develop 分支打包
-    git checkout develop
-    log "当前分支 --> $(git rev-parse --abbrev-ref HEAD)"
-    git log --pretty=format:'[%Cred%h%Creset] (%C(yellow)%ad%Creset) [%Cgreen%s%Creset] (%C(bold blue)%cr%Creset) <%Cred%an%Creset>' | head -n 10
-    
-    if [ -e "/etc/profile" ]; then
-        source /etc/profile
-    fi
-    if [ -e "/etc/bashrc" ]; then
-        source /etc/bashrc
-    fi
-    if [ -e "/etc/bash.bashrc" ]; then
-        source /etc/bash.bashr
-    fi
-    if [ "$*" != "" ]; then
-        mvn -DskipTests clean package -pl "$*" -am
-    else
-        mvn -DskipTests clean package
-    fi
-    log "代码打包完成"
+    log "开始打包「${desc}」代码"
+    cd "${source}/${package}"
+    rm -fr ~/.m2/repository/com/youdiancx
+    mvn clean package -DskipTests
+    log "代码「${desc}」打包完成"
 }
 
-# 杀掉 jar 进程
 kill_jar() {
     if [ "$#" != 1 ] || [ -z "$1" ]; then
         error_and_exit "usage: kill_jar \"运行的 jar 包路径\""
     fi
     process="$(ps aux | grep ${1} | grep java | grep -v grep | awk '{print $2}')"
-    log "项目 ${1} 进程号: (${process})"
+    log "项目「${1}」进程号: (${process})"
     if [ -n "${process}" ]; then
-        log "杀掉 ${1} 进程: ${process}"
+        log "杀掉「${1}」进程: ${process}"
         kill "${process}"
         check_process "${1}"
     fi
@@ -358,291 +309,91 @@ check_process() {
     sleep 2
     process="$(ps aux | grep ${1} | grep java | grep -v grep | awk '{print $2}')"
     if [ -n "${process}" ]; then
-        log "进程 ${process} 还在"
+        log "进程「${process}」还在"
         check_process "${1}"
     fi
 }
-# 启动 jar 进程
 start_jar() {
-    if [ "$#" -lt 2 ] || [ -z "$1" ] || [ -z "$2" ]; then
-        error_and_exit "usage: start_jar \"运行的 jar 包路径\" \"gc 文件名\" \"调试端口(可选)\""
-    fi
-
-    run_file="$1"
-    gc_file="$2"
-    debug_port="$3"
-    
     check_file "$1"
-    tmp_jvm_args="${jvm_args}"
-
-    # 有传端口参数就按传进来的为准, 没有则以发布文件上的端口 + 1000 为准(如 user-8081, 调试端口则为 9081)
-    if [ -z "${debug_port}" ]; then
-        file_port=$(cut -d '.' -f 1 <<< "${run_file##*-}")
-        # eq 是数值比较, 如果最后部分不是数字则强转会失败, 因此将失败信息导向黑洞
-        if [ -n "${file_port}" ] && [ "${file_port}" -eq "${file_port}" ] 2>/dev/null; then
-            debug_port="$[file_port + 1000]"
-        fi
-    fi
-    if [ -n "${debug_port}" ] && [ "${debug_port}" -eq "${debug_port}" ] 2>/dev/null; then 
-        tmp_jvm_args="${tmp_jvm_args} -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=${debug_port}"
-    fi
-    # echo "$(readlink -f /bin/java) ${tmp_jvm_args} -Xloggc:${log_path}/${gc_file} -jar ${run_file} &"
-    $(readlink -f /bin/java) ${tmp_jvm_args} -Xloggc:${log_path}/${gc_file} -jar ${run_file} &
-    
-    sleep 8
+    echo "$(readlink -f /bin/java) $2 -jar ${1} >${console_log}/console-${3}-${now}.log 2>&1 &"
+    $(readlink -f /bin/java) $2 -jar ${1} >${console_log}/console-${3}-${now}.log 2>&1 &
+    sleep 5
     log "进程 ${1} 信息:\n$(ps aux | grep -v grep | grep java | grep --color=auto ${1})"
 }
-# 发布 jar 包项目
 release_jar() {
     check_directory "${source}"
-    if [ "$#" != 3 ] || [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ]; then
-        error_and_exit "usage: release_jar \"发布包文字说明\" \"模块名\" \"文件名(不带后缀)\""
-    fi
-    comment="$1"
-    package="$2"
-    file_name="$(cut -d '|' -f 1 <<< "$3")"
-    debug_port="$(cut -d '|' -f 2 <<< "$3")"
-    if [ "${file_name}" = "${debug_port}" ]; then
-        debug_port=""
-    fi
-
-    suffix="jar"
-    release="${source}/${project}/${package}/target/${file_name}.${suffix}"
-    if [ ! -e "${release}" ]; then
-        error_and_exit "没有此发布包: ${release}, 请确认是否有打包代码"
-    fi
-
-    check_create_directory ${publish}/${file_name}
-    current_release="${publish}/${file_name}/${file_name}.${suffix}"
-    backup_release="${backup}/${file_name}-${now}.${suffix}"
-
-    log "开始发布「${comment}」"
-    backup_project "${current_release}" "${backup_release}" "revert_${package}"
-    kill_jar "${current_release}"
-    rm -fr "${current_release}"
-    mv "${release}" "${current_release}"
-    start_jar "${current_release}" "gc-${package##*/}-${profile}-$(date +%F).log" "${debug_port}"
-    log "「${comment}」发布完成"
-}
-# 还原 jar 包项目
-revert_jar() {
-    if [ "$#" != 4 ] || [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ] || [ -z "$4" ]; then
-        error_and_exit "usage: revert_jar \"还原包文字说明\" \"模块名\" \"文件名(不带后缀)\" \"还原包的时间戳\""
-    fi
     comment="$1"
     package="$2"
     file_name="$3"
-    time="$4"
+    project_jvm_args="$4"
+    path="$5"
+    name="$6"
 
-    suffix="jar"
-    backup_file="${backup}/${package##*/}-${time}.${suffix}"
-    if [ ! -e "${backup_file}" ]; then
-        error_and_exit "没有此还原包: ${backup_file}"
-    fi
-
-    current_release="${publish}/${file_name}/${file_name}.${suffix}"
-
-    log "开始还原「${comment}」"
-    kill_jar "${current_release}"
-    rm -fr "${current_release}"
-    cp -R "${backup_file}" "${current_release}"
-    start_jar "${current_release}" "gc-${package##*/}.log"
-    log "「${comment}」还原完成"
-}
-
-# 备份现有的发布包
-backup_project() {
-    check_create_directory ${backup}
-    if [ "$#" != 3 ] || [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ]; then
-        error_and_exit "usage: backup_project \"发布包文件路径\" \"备份的文件路径\" \"还原指令\""
-    fi
-    if [ -e "${1}" ]; then
-        log "复制包 => cp ${1} ${2}"
-        cp "${1}" "${2}"
-        
-        # -mtime +7 表示 7 天前的
-        log "删除 12 个小时以前的备份文件 => find ${backup} -mmin +720 -type f | grep -v "${2}" | xargs rm -fr"
-        find "${backup}" -mmin +720 -type f | grep -v "${2}" | xargs rm -fr
-        log_in_file "运行「${current_file} ${3} ${now}」还原之前的「${1}」版本"
-    fi
-}
-
-
-
-# 杀掉 tomcat 进程
-kill_tomcat() {
-    if [ "$#" != 1 ] || [ -z "$1" ]; then
-        error_and_exit "usage: kill_tomcat \"全路径的 tomcat 目录\""
-    fi
-    
-    process="$(ps aux | grep ${1} | grep java | grep -v grep | awk '{print $2}')"
-    echo "项目 ${1} 进程号: (${process})"
-    ${1}/bin/shutdown.sh && sleep 2
-    process="$(ps aux | grep ${1} | grep java | grep -v grep | awk '{print $2}')"
-    if [ -n "${process}" ]; then
-        log "杀掉 ${1} 进程: ${process}"
-        kill "${process}"
-        check_process "${1}"
-    fi
-}
-check_process() {
-    sleep 2
-    process="$(ps aux | grep ${1} | grep java | grep -v grep | awk '{print $2}')"
-    if [ -n "${process}" ]; then
-        log "进程 ${process} 还在"
-        check_process "${1}"
-    fi
-}
-# 启动 tomcat 进程
-start_tomcat() {
-    if [ "$#" != 1 ] || [ -z "$1" ]; then
-        error_and_exit "usage: start_tomcat \"尾部有 / 的全路径的 tomcat 目录\""
-    fi
-
-    check_directory "$1"
-
-    echo "rm -fr ${1}logs/* ${1}webapps/* ${1}work/*"
-    rm -fr ${1}logs/* ${1}webapps/* ${1}work/*
-    ${1}/bin/startup.sh && sleep 2
-    log "进程 ${1} 信息:\n$(ps aux | grep -v grep | grep java | grep --color=auto ${1})"
-}
-# 发布 tomcat 项目
-release_tomcat() {
-    check_directory "${source}"
-    if [ "$#" != 3 ] || [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ]; then
-        error_and_exit "usage: release_tomcat \"发布包文字说明\" \"全路径的 tomcat 目录\" \"发布时的包名\""
-    fi
-    comment="$1"
-    tomcat="$2"
-    package="$3"
-    check_directory "${tomcat}"
-
-    suffix="war"
-    release="${source}/${project}/${package}/target/${package}.${suffix}.original"
+    release="${source}/${package}/target/${file_name}"
     if [ ! -e "${release}" ]; then
         error_and_exit "没有此发布包: ${release}, 请确认是否有打包代码"
     fi
 
-    current_release="${publish}/${package}.${suffix}"
-    backup_release="${backup}/${package##*/}-${now}.${suffix}"
+    check_create_directory "${path}"
+    cd "${path}"
+    current_release="${path}/${file_name}"
 
     log "开始发布「${comment}」"
-    backup_project "${current_release}" "${backup_release}" "revert_${package##*/}"
-    kill_tomcat "${tomcat}"
+    kill_jar "${current_release}"
     rm -fr "${current_release}"
-    mv ${release} ${current_release}
-    start_tomcat "${tomcat}"
+    mv "${release}" "${current_release}"
+    start_jar "${current_release}" "${project_jvm_args}" "${name}"
     log "「${comment}」发布完成"
 }
-# 还原 tomcat 项目
-revert_tomcat() {
-    if [ "$#" != 4 ] || [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ] || [ -z "$4" ]; then
-        error_and_exit "usage: revert_tomcat \"还原包文字说明\" \"全路径的 tomcat 目录\" \"发布时的包名\" \"还原包的时间戳\""
-    fi
-    comment="$1"
-    tomcat="$2"
-    package="$3"
-    time="$4"
-    check_directory "${tomcat}"
 
-    suffix="war"
-    backup_file="${backup}/${package}-${time}.${suffix}"
-    if [ ! -e "${backup_file}" ]; then
-        error_and_exit "没有此还原包: ${backup_file}"
-    fi
-
-    current_release="${publish}/${package}.${suffix}"
-    log "开始还原「${comment}」"
-
-    kill_tomcat "${tomcat}"
-    rm -fr "${current_release}"
-    cp -R "${backup_file}" "${current_release}"
-    start_tomcat "${tomcat}"
-
-    log "「${comment}」还原完成"
-}
 usage() {
     echo "usage:"
-    # echo "  「${current_file} restart」     打包及发布需要频繁更新的模块(公共,用户,商品,订单)"
     echo ""
-    for i in ${!module_name_arr[@]}; do
+    for i in "${!module_name_arr[@]}"; do
         name="${module_name_arr[$i]}"
         desc="${module_desc_arr[$i]}"
         file="${module_file_arr[$i]}"
         if [ -n "${name}" ] && [ -n "${desc}" ] && [ -n "${file}" ]; then
-            echo "  「${current_file} ${name}」                    打包及发布「${desc}」"
-            echo "  「${current_file} stop-${name}」               停止「${desc}」"
-            echo "  「${current_file} restart-${name}」            重启「${desc}」"
-            echo "  「${current_file} revert-${name} {timestamp}」 还原「${desc}」"
+            echo "  「${current_file} ${name} {version}」 部署「${desc}」, {version} 表示分支或版本号, 不传则使用上次使用的分支"
+            echo "  「${current_file} restart-${name}」   重启「${desc}」"
+            echo "  「${current_file} start-${name}」     启动「${desc}」"
+            echo "  「${current_file} stop-${name}」      停止「${desc}」"
             echo ""
         fi
     done
-    echo -e "   \033[31m{timestamp} 若不记得请去 ${log_path}/INSTALL.log 查看\033[0m"
 }
 
 
-
 case "$1" in
-    restart)
-        check "$2" "$3"
-        compile
-
-        for i in ${!module_name_arr[@]}; do
-            if [ "1" = "${module_batch_arr[$i]}" ]; then
-                name="${module_name_arr[$i]}"
-                desc="${module_desc_arr[$i]}"
-                file="${module_file_arr[$i]}"
-                
-                if [ "war" = "$(cut -d '|' -f 2 <<< "${file}")" ]; then
-                    release_tomcat "${desc}" "$(cut -d '|' -f 3 <<< "${file}")" "$(cut -d '|' -f 1 <<< "${file}")"
-                else
-                    release_jar "${desc}" "${name}" "${file}"
-                fi
-            fi
-        done
-        ;;
-
     *)
-        for i in ${!module_name_arr[@]}; do
+        for i in "${!module_name_arr[@]}"; do
             name="${module_name_arr[$i]}"
             desc="${module_desc_arr[$i]}"
+            profile="${module_profile_arr[$i]}"
+            package="${module_package_arr[$i]}"
+            file_path="${module_path_arr[$i]}"
             file="${module_file_arr[$i]}"
+            args="${module_jvm_arr[$i]}"
+
+            run_args="${jvm_args} ${args} -Dspring.profiles.active=${profile} -Dproject.name=${package} -Dname=${name}"
 
             if [ "$1" = "${name}" ]; then
-                update
-                compile "${name}" # 如果模块名跟目录名不一致, 这样将会有问题. 这里是目录名
-                if [ "war" = "$(cut -d '|' -f 2 <<< "${file}")" ]; then
-                    release_tomcat "${desc}" "$(cut -d '|' -f 3 <<< "${file}")" "$(cut -d '|' -f 1 <<< "${file}")"
-                else
-                    release_jar "${desc}" "${name}" "${file}"
-                fi
-                exit 1
-            elif [ "$1" = "stop-${name}" ]; then
-                if [ "war" = "$(cut -d '|' -f 2 <<< "${file}")" ]; then
-                    kill_tomcat "$(cut -d '|' -f 3 <<< "${file}")"
-                else
-                    kill_jar "${publish}/${file}/${file}.jar"
-                fi
+                update "${desc}" "${package}" "$2"
+                compile "${desc}" "${package}"
+                release_jar "${desc}" "${package}" "${file}" "${run_args}" "${file_path}" "${name}"
                 exit 1
             elif [ "$1" = "restart-${name}" ]; then
-                if [ "war" = "$(cut -d '|' -f 2 <<< "${file}")" ]; then
-                    kill_tomcat "$(cut -d '|' -f 3 <<< "${file}")"
-                    start_tomcat "$(cut -d '|' -f 3 <<< "${file}")"
-                else
-                    kill_jar "${publish}/${file}/${file}.jar"
-                    start_jar "${publish}/${file}/${file}.jar" "gc-${name}.log"
-                fi
+                kill_jar "${file_path}/${file}"
+                start_jar "${file_path}/${file}" "${run_args}" "${name}"
                 exit 1
-            elif [ "$1" = "revert-${name}" ]; then
-                if [ "war" = "$(cut -d '|' -f 2 <<< "${file}")" ]; then
-                    revert_tomcat "${desc}" "$(cut -d '|' -f 3 <<< "${file}")" "$(cut -d '|' -f 1 <<< "${file}")" "$2"
-                else
-                    revert_jar "${desc}" "${name}" "${file}" "$2"
-                fi
+            elif [ "$1" = "start-${name}" ]; then
+                start_jar "${file_path}/${file}" "${run_args}" "${name}"
+                exit 1
+            elif [ "$1" = "stop-${name}" ]; then
+                kill_jar "${file_path}/${file}"
                 exit 1
             fi
         done
-
         usage
 esac
 exit 1
