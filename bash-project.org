@@ -288,7 +288,7 @@ compile() {
 
     log "开始打包「${desc}」代码"
     cd "${source}/${package}"
-    rm -fr ~/.m2/repository/com/youdiancx
+    rm -fr ~/.m2/repository/com/xxx
     mvn clean package -DskipTests
     log "代码「${desc}」打包完成"
 }
