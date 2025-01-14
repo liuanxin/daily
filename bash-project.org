@@ -1412,9 +1412,9 @@ case "$1" in
                 release_jar "${desc}" "${name}" "${file}" "${args}"
                 exit 1
             elif [ "$1" = "check-${name}" ]; then
-                check_process "${file_path}/${file}"
-                kill_jar "${file_path}/${file}"
-                start_jar "${file_path}/${file}" "${run_args}" "${name}"
+                check_process "${publish}/${file}/${file}.jar"
+                kill_jar "${publish}/${file}/${file}.jar"
+                start_jar "${publish}/${file}/${file}.jar" "gc-${file_name}.log" "${args}" "${debug_port}"
                 exit 1
             elif [ "$1" = "stop-${name}" ]; then
                 kill_jar "${publish}/${file}/${file}.jar"
