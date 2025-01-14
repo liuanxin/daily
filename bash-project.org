@@ -1143,6 +1143,10 @@ log_in_file() {
     print_info "${1}"
     echo "$(date '+%Y-%m-%d %H:%M:%S.%3N') : ${1}" >> "${log_path}/INSTALL.log"
 }
+log_to_file() {
+    check_create_directory "${log_path}"
+    echo "${1}" >> "${log_path}/INSTALL.log"
+}
 log() {
     echo "[INFO] ------------------------------------------------------------------------"
     echo -e "[INFO] $(date '+%Y-%m-%d %H:%M:%S.%3N') : ${1}"
@@ -1331,6 +1335,13 @@ revert_jar() {
     start_jar "${current_release}" "gc-${package##*/}.log"
     log "「${comment}」还原完成"
 }
+check_process() {
+    process="$(ps aux | grep ${1} | grep java | grep -v grep | awk '{print $2}')"
+    if [ -n "${process}" ]; then
+        log_to_file "进程「${process}」是在的(${1}), 无需重启"
+        exit 1
+    fi
+}
 
 # 备份现有的发布包
 backup_project() {
@@ -1359,6 +1370,7 @@ usage() {
         file="${module_file_arr[$i]}"
         if [ -n "${name}" ] && [ -n "${desc}" ] && [ -n "${file}" ]; then
             echo "  「${current_file} ${name}」                    打包及发布「${desc}」"
+            echo "  「${current_file} check-${name}」             检查「${desc}」(进程如果不在则重启)"
             echo "  「${current_file} stop-${name}」               停止「${desc}」"
             echo "  「${current_file} restart-${name}」            重启「${desc}」"
             echo "  「${current_file} revert-${name} {timestamp}」 还原「${desc}」"
@@ -1398,6 +1410,11 @@ case "$1" in
                 update
                 compile "${name}"
                 release_jar "${desc}" "${name}" "${file}" "${args}"
+                exit 1
+            elif [ "$1" = "check-${name}" ]; then
+                check_process "${file_path}/${file}"
+                kill_jar "${file_path}/${file}"
+                start_jar "${file_path}/${file}" "${run_args}" "${name}"
                 exit 1
             elif [ "$1" = "stop-${name}" ]; then
                 kill_jar "${publish}/${file}/${file}.jar"
